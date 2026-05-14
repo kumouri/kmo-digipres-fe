@@ -291,9 +291,17 @@ test("embed-demo: picking a slot, submitting the form, lands on the success stat
   await expect(page.getByText(/You're booked\./)).toBeVisible();
 });
 
-test("embed-demo: public contact form ships disabled until the BE endpoint lands", async ({ page }) => {
+test("embed-demo: public contact form posts a lead and lands on the success state", async ({ page }) => {
   await page.goto("/embed-demo");
   await expect(page.getByTestId("public-contact-form")).toBeVisible();
-  await expect(page.getByTestId("public-contact-form-banner")).toBeVisible();
+  // Submit stays disabled until email + at least one name field is filled.
   await expect(page.getByTestId("pcf-submit")).toBeDisabled();
+
+  await page.getByTestId("pcf-first-name").fill("Visitor");
+  await page.getByTestId("pcf-email").fill("visitor@example.test");
+  await expect(page.getByTestId("pcf-submit")).toBeEnabled();
+  await page.getByTestId("pcf-submit").click();
+
+  await expect(page.getByTestId("public-contact-form-success")).toBeVisible();
+  await expect(page.getByText(/Thanks — we got your message\./)).toBeVisible();
 });
