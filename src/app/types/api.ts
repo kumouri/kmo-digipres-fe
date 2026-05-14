@@ -62,6 +62,19 @@ export interface ContactDTO {
   customFields?: Record<string, unknown>;
 }
 
+// --- Companies --------------------------------------------------------------
+
+export interface CompanyDTO {
+  id?: string;
+  name?: string;
+  website?: string;
+  industry?: string;
+  addresses?: PostalAddress[];
+  tags?: string[];
+  ownerId?: string;
+  customFields?: Record<string, unknown>;
+}
+
 // --- Activities -------------------------------------------------------------
 
 export type ActivityType = "NOTE" | "EMAIL" | "CALL" | "MEETING" | "TASK";

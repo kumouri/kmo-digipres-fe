@@ -4,6 +4,7 @@
 
 import type {
   ActivityDTO,
+  CompanyDTO,
   ContactDTO,
   User,
 } from "@/types/api";
@@ -65,6 +66,43 @@ export const contactStore = {
   },
   delete(id: string): boolean {
     return contacts.delete(id);
+  },
+};
+
+// --- Companies --------------------------------------------------------------
+
+const seedCompany: CompanyDTO = {
+  id: "44444444-4444-4444-4444-444444444444",
+  name: "Analytical Engines Ltd.",
+  website: "https://analytical.example",
+  industry: "Computing",
+  addresses: [],
+  tags: ["seed"],
+};
+
+const companies = new Map<string, CompanyDTO>([[seedCompany.id!, seedCompany]]);
+
+export const companyStore = {
+  list(): CompanyDTO[] {
+    return Array.from(companies.values());
+  },
+  get(id: string): CompanyDTO | undefined {
+    return companies.get(id);
+  },
+  create(input: CompanyDTO): CompanyDTO {
+    const id = input.id ?? uuid();
+    const created: CompanyDTO = { ...input, id };
+    companies.set(id, created);
+    return created;
+  },
+  update(id: string, input: CompanyDTO): CompanyDTO | undefined {
+    if (!companies.has(id)) return undefined;
+    const updated: CompanyDTO = { ...input, id };
+    companies.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return companies.delete(id);
   },
 };
 
