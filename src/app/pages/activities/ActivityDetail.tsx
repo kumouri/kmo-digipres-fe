@@ -1,8 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import { ArrowLeft, Trash2 } from "lucide-react";
 
 import * as activitiesApi from "@/api/activities";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,16 +25,51 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ActivityForm,
+  activityToFormValues,
+  formValuesToActivity,
+} from "./ActivityForm";
 
 export function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading, isError } = useQuery({
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  const activityQuery = useQuery({
     queryKey: ["activities", id],
     queryFn: () => activitiesApi.getActivity(id!),
     enabled: Boolean(id),
   });
 
-  if (isLoading) {
+  const updateMutation = useMutation({
+    mutationFn: (body: Parameters<typeof activitiesApi.updateActivity>[1]) =>
+      activitiesApi.updateActivity(id!, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["activities"] });
+      qc.invalidateQueries({ queryKey: ["activities", id] });
+      // Activities can be on a contact's timeline — invalidate coarsely so
+      // any open timeline tab refetches.
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("Activity updated.");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Update failed."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => activitiesApi.deleteActivity(id!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["activities"] });
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("Activity deleted.");
+      navigate("/activities");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Delete failed."),
+  });
+
+  if (activityQuery.isLoading) {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton className="h-7 w-48" />
@@ -31,7 +78,7 @@ export function ActivityDetail() {
     );
   }
 
-  if (isError || !data) {
+  if (activityQuery.isError || !activityQuery.data) {
     return (
       <div className="flex flex-col items-start gap-3">
         <p className="text-sm text-muted-foreground">
@@ -46,75 +93,92 @@ export function ActivityDetail() {
     );
   }
 
+  const a = activityQuery.data;
+
   return (
     <section className="flex flex-col gap-4" data-testid="activity-detail">
-      <div className="flex flex-col gap-1">
-        <Link
-          to="/activities"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-3" /> All activities
-        </Link>
-        <h1 className="text-2xl font-medium">{data.summary ?? "Activity"}</h1>
-        <div className="flex flex-wrap gap-2">
-          {data.type ? <Badge variant="secondary">{data.type}</Badge> : null}
-          {data.direction ? <Badge variant="outline">{data.direction}</Badge> : null}
-          {data.subjectType ? (
-            <Badge variant="muted">{data.subjectType}</Badge>
-          ) : null}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <Link
+            to="/activities"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-3" /> All activities
+          </Link>
+          <h1 className="text-2xl font-medium">{a.summary ?? "Activity"}</h1>
+          <div className="flex flex-wrap gap-2">
+            {a.type ? <Badge variant="secondary">{a.type}</Badge> : null}
+            {a.direction ? <Badge variant="outline">{a.direction}</Badge> : null}
+            {a.subjectType ? <Badge variant="muted">{a.subjectType}</Badge> : null}
+            {a.occurredAt ? (
+              <span className="text-xs text-muted-foreground">
+                {new Date(a.occurredAt).toLocaleString()}
+              </span>
+            ) : null}
+          </div>
         </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" data-testid="delete-activity">
+              <Trash2 /> Delete
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this activity?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Removes the activity from the tenant. Any contact timeline
+                referencing it will refetch and drop the row.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={() => deleteMutation.mutate()}
+                data-testid="confirm-delete-activity"
+              >
+                Delete activity
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Details</CardTitle>
+          <CardTitle>Edit activity</CardTitle>
           <CardDescription>
-            <code>GET /api/activities/{data.id}</code>. Activities are
-            append-only via the backend — no update or delete endpoints
-            exposed.
+            Saves via <code>PUT /api/activities/{a.id}</code>.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          {data.body ? (
-            <div className="flex flex-col gap-1">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                Body
-              </span>
-              <p className="whitespace-pre-wrap">{data.body}</p>
-            </div>
-          ) : null}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Subject ID" value={data.subjectId} />
-            <Field
-              label="Occurred at"
-              value={data.occurredAt ? new Date(data.occurredAt).toLocaleString() : undefined}
-            />
-            <Field label="Due at" value={data.dueAt} />
-            <Field label="Completed at" value={data.completedAt} />
-          </div>
-          {data.payload && Object.keys(data.payload).length > 0 ? (
-            <div className="flex flex-col gap-1">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                Payload
-              </span>
-              <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
-                {JSON.stringify(data.payload, null, 2)}
-              </pre>
-            </div>
-          ) : null}
+        <CardContent>
+          <ActivityForm
+            defaultValues={activityToFormValues(a)}
+            submitLabel="Save changes"
+            isSubmitting={updateMutation.isPending}
+            onSubmit={(values) =>
+              updateMutation.mutate(formValuesToActivity(values, a))
+            }
+          />
         </CardContent>
       </Card>
-    </section>
-  );
-}
 
-function Field({ label, value }: { label: string; value: string | undefined }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span>{value ?? "—"}</span>
-    </div>
+      {a.payload && Object.keys(a.payload).length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Payload</CardTitle>
+            <CardDescription>
+              Channel-specific metadata stamped by the backend (read-only).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
+              {JSON.stringify(a.payload, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      ) : null}
+    </section>
   );
 }

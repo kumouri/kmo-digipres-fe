@@ -201,4 +201,13 @@ export const activityStore = {
   get(id: string): ActivityDTO | undefined {
     return activities.get(id);
   },
+  update(id: string, input: ActivityDTO): ActivityDTO | undefined {
+    if (!activities.has(id)) return undefined;
+    const updated: ActivityDTO = { ...input, id };
+    activities.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return activities.delete(id);
+  },
 };
