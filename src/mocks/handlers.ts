@@ -1,12 +1,14 @@
 import { http, HttpResponse, delay } from "msw";
 
 import type {
+  ActivityDTO,
   CompanyDTO,
   ContactDTO,
   DealDTO,
   LoginRequest,
   LoginResponse,
   MoveStageRequest,
+  SingleEmailCommunicationDTO,
 } from "@/types/api";
 import {
   SMOKE_PASSWORD,
@@ -171,5 +173,49 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const ok = dealStore.delete(params.id as string);
     return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Activities -----------------------------------------------------------
+  http.get(`${API_BASE}/activities`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(activityStore.list());
+  }),
+
+  http.get(`${API_BASE}/activities/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = activityStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/activities`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as ActivityDTO;
+    const created = activityStore.add(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Communication --------------------------------------------------------
+  // Mirrors CommunicationController.sendEmail: returns Mono<Boolean>, and on
+  // success logs an outbound EMAIL activity to the matching contact's
+  // timeline (matched by `to` email). Mock store doubles as the timeline.
+  http.post(`${API_BASE}/communication/singleEmail`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as SingleEmailCommunicationDTO;
+    const match = contactStore
+      .list()
+      .find((c) => c.emails?.includes(body.to));
+    if (match?.id) {
+      activityStore.add({
+        type: "EMAIL",
+        direction: "OUTBOUND",
+        subjectType: "CONTACT",
+        subjectId: match.id,
+        summary: body.subject,
+        body: body.body,
+        payload: { to: body.to, from: body.from },
+      });
+    }
+    return HttpResponse.json(true);
   }),
 ];

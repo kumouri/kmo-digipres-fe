@@ -146,3 +146,32 @@ test("moving a deal to LOST requires a reason and reflects on detail", async ({ 
     "Analytical Engine retainer",
   );
 });
+
+// --- Activities + email composer --------------------------------------------
+
+test("activities list renders the seeded activity", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Activities" }).click();
+  await expect(page).toHaveURL(/\/activities$/);
+  await expect(page.getByTestId("activities-page")).toBeVisible();
+  await expect(page.getByTestId("activity-row-summary").first()).toContainText(
+    "Initial outreach",
+  );
+});
+
+test("sending an email from contact detail adds an EMAIL activity to the timeline", async ({ page }) => {
+  await login(page);
+  await page.goto("/contacts");
+  await page.getByTestId("contact-row-name").first().click();
+  await page.getByTestId("timeline-tab").click();
+  await page.getByTestId("send-email-button").click();
+
+  await page.getByLabel("Subject").fill("Following up on our chat");
+  await page.getByLabel("Body").fill("Hi Ada — circling back on next steps.");
+  await page.getByTestId("send-email-submit").click();
+
+  // Backend logs an Activity automatically; the timeline query refetches.
+  await expect(
+    page.getByText("Following up on our chat", { exact: false }),
+  ).toBeVisible();
+});

@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Trash2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -31,11 +32,13 @@ import {
   contactToFormValues,
   formValuesToContact,
 } from "./ContactForm";
+import { SendEmailDialog } from "./SendEmailDialog";
 
 export function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const contactQuery = useQuery({
     queryKey: ["contacts", id],
@@ -177,10 +180,22 @@ export function ContactDetail() {
         <TabsContent value="timeline">
           <Card>
             <CardHeader>
-              <CardTitle>Activity timeline</CardTitle>
-              <CardDescription>
-                <code>GET /api/contacts/{c.id}/timeline</code>.
-              </CardDescription>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <CardTitle>Activity timeline</CardTitle>
+                  <CardDescription>
+                    <code>GET /api/contacts/{c.id}/timeline</code>.
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setEmailOpen(true)}
+                  disabled={!c.emails?.length}
+                  data-testid="send-email-button"
+                >
+                  <Mail /> Send email
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {timelineQuery.isLoading ? (
@@ -228,6 +243,12 @@ export function ContactDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <SendEmailDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        contact={c}
+      />
     </section>
   );
 }

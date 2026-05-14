@@ -134,3 +134,16 @@ export interface ActivityDTO {
   payload?: Record<string, unknown>;
   customFields?: Record<string, unknown>;
 }
+
+export const ACTIVITY_TYPES: ActivityType[] = ["NOTE", "EMAIL", "CALL", "MEETING", "TASK"];
+export const ACTIVITY_DIRECTIONS: ActivityDirection[] = ["INBOUND", "OUTBOUND", "INTERNAL"];
+export const SUBJECT_TYPES: SubjectType[] = ["CONTACT", "COMPANY", "DEAL", "WORK_ORDER"];
+
+// --- Communication ----------------------------------------------------------
+
+export interface SingleEmailCommunicationDTO {
+  to: string;
+  from: string;
+  subject: string;
+  body: string;
+}

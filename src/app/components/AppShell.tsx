@@ -1,6 +1,12 @@
 import { NavLink, Outlet } from "react-router";
 import type { LucideIcon } from "lucide-react";
-import { Building2, LayoutDashboard, Target, Users } from "lucide-react";
+import {
+  Activity,
+  Building2,
+  LayoutDashboard,
+  Target,
+  Users,
+} from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
 import { cn } from "./ui/utils";
@@ -11,12 +17,12 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-// Sidebar grows phase-by-phase. Activities joins in phase 6.
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/companies", label: "Companies", icon: Building2 },
   { to: "/deals", label: "Deals", icon: Target },
+  { to: "/activities", label: "Activities", icon: Activity },
 ];
 
 export function AppShell() {
