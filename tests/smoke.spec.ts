@@ -78,3 +78,27 @@ test("creating a contact via the dialog navigates to its detail", async ({ page 
   await expect(page.getByTestId("contact-detail")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Grace Hopper" })).toBeVisible();
 });
+
+// --- Companies --------------------------------------------------------------
+
+test("companies list renders the seeded company", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Companies" }).click();
+  await expect(page).toHaveURL(/\/companies$/);
+  await expect(page.getByTestId("companies-page")).toBeVisible();
+  await expect(page.getByTestId("company-row-name").first()).toContainText(
+    "Analytical Engines",
+  );
+});
+
+test("creating a company via the dialog navigates to its detail", async ({ page }) => {
+  await login(page);
+  await page.goto("/companies");
+  await page.getByTestId("new-company").click();
+
+  await page.getByLabel("Name *").fill("Babbage & Co.");
+  await page.getByRole("button", { name: "Create company" }).click();
+
+  await expect(page.getByTestId("company-detail")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Babbage & Co." })).toBeVisible();
+});

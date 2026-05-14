@@ -1,11 +1,17 @@
 import { http, HttpResponse, delay } from "msw";
 
-import type { ContactDTO, LoginRequest, LoginResponse } from "@/types/api";
+import type {
+  CompanyDTO,
+  ContactDTO,
+  LoginRequest,
+  LoginResponse,
+} from "@/types/api";
 import {
   SMOKE_PASSWORD,
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  companyStore,
   contactStore,
 } from "./store";
 
@@ -86,5 +92,39 @@ export const handlers = [
     return HttpResponse.json(
       activityStore.forSubject("CONTACT", params.id as string),
     );
+  }),
+
+  // --- Companies ------------------------------------------------------------
+  http.get(`${API_BASE}/companies`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(companyStore.list());
+  }),
+
+  http.get(`${API_BASE}/companies/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = companyStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/companies`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as CompanyDTO;
+    const created = companyStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/companies/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as CompanyDTO;
+    const updated = companyStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/companies/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = companyStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
   }),
 ];

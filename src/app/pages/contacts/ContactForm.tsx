@@ -1,8 +1,10 @@
 import { useFieldArray, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 
+import * as companiesApi from "@/api/companies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ContactDTO } from "@/types/api";
+
+const COMPANY_NONE_VALUE = "__none__";
 
 const phoneSchema = z.object({
   number: z.string().min(1, "Required"),
@@ -83,6 +87,42 @@ export function formValuesToContact(v: ContactFormValues, existing?: ContactDTO)
     ),
     tags,
   };
+}
+
+interface CompanySelectProps {
+  value: string;
+  onValueChange: (value: string) => void;
+}
+
+function CompanySelect({ value, onValueChange }: CompanySelectProps) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["companies"],
+    queryFn: companiesApi.listCompanies,
+  });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="company-id">Company</Label>
+      <Select
+        value={value || COMPANY_NONE_VALUE}
+        onValueChange={(v) => onValueChange(v === COMPANY_NONE_VALUE ? "" : v)}
+      >
+        <SelectTrigger id="company-id">
+          <SelectValue placeholder={isLoading ? "Loading…" : "Pick a company"} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={COMPANY_NONE_VALUE}>— No company —</SelectItem>
+          {data?.map((c) =>
+            c.id ? (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name ?? c.id}
+              </SelectItem>
+            ) : null,
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 interface ContactFormProps {
@@ -160,14 +200,11 @@ export function ContactForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="company-id">Company ID</Label>
-        <Input
-          id="company-id"
-          placeholder="UUID — typeahead lands in phase 4"
-          {...register("companyId")}
-        />
-      </div>
+      <CompanySelect
+        value={watch("companyId")}
+        onValueChange={(v) => setValue("companyId", v)}
+      />
+
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="tags">Tags</Label>
