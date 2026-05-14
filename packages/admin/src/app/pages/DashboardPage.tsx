@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kmosf/crm-components";
 import { useAuth } from "@/auth/useAuth";
 
 export function DashboardPage() {

@@ -14,18 +14,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@kmosf/crm-components";
+import { Badge } from "@kmosf/crm-components";
+import { Button } from "@kmosf/crm-components";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@kmosf/crm-components";
+import { Skeleton } from "@kmosf/crm-components";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kmosf/crm-components";
 import * as contactsApi from "@/api/contacts";
 import {
   ContactForm,

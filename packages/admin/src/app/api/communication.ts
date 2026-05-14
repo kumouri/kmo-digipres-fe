@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { SingleEmailCommunicationDTO } from "@/types/api";
+import type { SingleEmailCommunicationDTO } from "@kmosf/crm-components";
 
 export function sendSingleEmail(body: SingleEmailCommunicationDTO): Promise<boolean> {
   return api<boolean>("/communication/singleEmail", {

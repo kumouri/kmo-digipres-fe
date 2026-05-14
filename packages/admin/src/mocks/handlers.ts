@@ -9,7 +9,7 @@ import type {
   LoginResponse,
   MoveStageRequest,
   SingleEmailCommunicationDTO,
-} from "@/types/api";
+} from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
   SMOKE_TOKEN,

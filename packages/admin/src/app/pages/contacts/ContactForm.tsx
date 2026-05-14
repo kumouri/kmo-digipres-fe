@@ -5,17 +5,17 @@ import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 
 import * as companiesApi from "@/api/companies";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@kmosf/crm-components";
+import { Input } from "@kmosf/crm-components";
+import { Label } from "@kmosf/crm-components";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { ContactDTO } from "@/types/api";
+} from "@kmosf/crm-components";
+import type { ContactDTO } from "@kmosf/crm-components";
 
 const COMPANY_NONE_VALUE = "__none__";
 

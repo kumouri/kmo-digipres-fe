@@ -4,18 +4,18 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@kmosf/crm-components";
+import { Button } from "@kmosf/crm-components";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@kmosf/crm-components";
 import { DataTable, type Column } from "@/components/DataTable";
 import * as contactsApi from "@/api/contacts";
-import type { ContactDTO } from "@/types/api";
+import type { ContactDTO } from "@kmosf/crm-components";
 import {
   ContactForm,
   contactToFormValues,

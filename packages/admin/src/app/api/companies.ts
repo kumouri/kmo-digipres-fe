@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { CompanyDTO } from "@/types/api";
+import type { CompanyDTO } from "@kmosf/crm-components";
 
 export function listCompanies(): Promise<CompanyDTO[]> {
   return api<CompanyDTO[]>("/companies");

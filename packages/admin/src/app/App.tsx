@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { CrmProvider } from "@kmosf/crm-components";
 import { RouterProvider } from "react-router";
 import { Toaster } from "sonner";
 
+import { adminClient } from "./api/client";
 import { AuthProvider } from "./auth/AuthProvider";
 import { router } from "./router";
 
@@ -19,9 +21,11 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <CrmProvider client={adminClient}>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </CrmProvider>
       <Toaster richColors closeButton position="top-right" />
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
     </QueryClientProvider>

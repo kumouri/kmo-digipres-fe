@@ -1,4 +1,4 @@
-import { Skeleton } from "./ui/skeleton";
+import { Skeleton } from "@kmosf/crm-components";
 
 /**
  * Suspense fallback for lazy-loaded route components. Intentionally generic —

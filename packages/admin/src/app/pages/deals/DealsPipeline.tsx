@@ -17,8 +17,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import * as dealsApi from "@/api/deals";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@kmosf/crm-components";
+import { Button } from "@kmosf/crm-components";
 import {
   Dialog,
   DialogContent,
@@ -26,14 +26,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@kmosf/crm-components";
+import { Input } from "@kmosf/crm-components";
+import { Label } from "@kmosf/crm-components";
 import {
   PIPELINE_STAGES,
   type DealDTO,
   type PipelineStage,
-} from "@/types/api";
+} from "@kmosf/crm-components";
 
 const STAGE_VARIANTS: Record<PipelineStage, "default" | "secondary" | "muted" | "destructive"> = {
   NEW: "muted",

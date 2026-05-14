@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { ChevronDown, LogOut } from "lucide-react";
 
 import { useAuth } from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kmosf/crm-components";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@kmosf/crm-components";
 
 export function UserMenu() {
   const { user, logout } = useAuth();

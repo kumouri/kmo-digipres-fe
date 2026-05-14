@@ -15,7 +15,7 @@ import {
   setStoredToken,
   UNAUTHORIZED_EVENT,
 } from "@/api/client";
-import type { LoginRequest, User } from "@/types/api";
+import type { LoginRequest, User } from "@kmosf/crm-components";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 

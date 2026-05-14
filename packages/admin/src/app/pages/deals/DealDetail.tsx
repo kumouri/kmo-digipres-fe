@@ -13,17 +13,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@kmosf/crm-components";
+import { Badge } from "@kmosf/crm-components";
+import { Button } from "@kmosf/crm-components";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@kmosf/crm-components";
+import { Skeleton } from "@kmosf/crm-components";
 import * as dealsApi from "@/api/deals";
 import { DealForm, dealToFormValues, formValuesToDeal } from "./DealForm";
 

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 import * as commsApi from "@/api/communication";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kmosf/crm-components";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +14,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "@kmosf/crm-components";
+import { Input } from "@kmosf/crm-components";
+import { Label } from "@kmosf/crm-components";
+import { Textarea } from "@kmosf/crm-components";
 import { useAuth } from "@/auth/useAuth";
-import type { ContactDTO } from "@/types/api";
+import type { ContactDTO } from "@kmosf/crm-components";
 
 const schema = z.object({
   to: z.string().email("Recipient must be a valid email"),

@@ -5,18 +5,18 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import * as dealsApi from "@/api/deals";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@kmosf/crm-components";
+import { Button } from "@kmosf/crm-components";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@kmosf/crm-components";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kmosf/crm-components";
 import { DataTable, type Column } from "@/components/DataTable";
-import type { DealDTO } from "@/types/api";
+import type { DealDTO } from "@kmosf/crm-components";
 import { DealForm, dealToFormValues, formValuesToDeal } from "./DealForm";
 import { DealsPipeline } from "./DealsPipeline";
 

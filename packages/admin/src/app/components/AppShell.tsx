@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
-import { cn } from "./ui/utils";
+import { cn } from "@kmosf/crm-components";
 
 interface NavItem {
   to: string;
