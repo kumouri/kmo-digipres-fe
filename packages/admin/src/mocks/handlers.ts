@@ -225,6 +225,42 @@ export const handlers = [
     return HttpResponse.json(meeting, { status: 201 });
   }),
 
+  // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant
+  // resolved from the path, contact stamped with the path's tenantId, 400
+  // when neither firstName nor lastName is supplied. Mock store doubles as
+  // the tenant directory — only "smoke-tenant" exists for tests.
+  http.post(
+    `${API_BASE}/public/:tenantSlug/contacts`,
+    async ({ params, request }) => {
+      if (params.tenantSlug !== "smoke-tenant") {
+        return new HttpResponse(null, { status: 404 });
+      }
+      const body = (await request.json()) as {
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        message?: string;
+      };
+      if (!body.email) return new HttpResponse(null, { status: 400 });
+      if (!body.firstName && !body.lastName) {
+        return new HttpResponse(null, { status: 400 });
+      }
+      const displayName =
+        `${body.firstName ?? ""} ${body.lastName ?? ""}`.trim() || body.email;
+      const created = contactStore.create({
+        type: "PERSON",
+        firstName: body.firstName,
+        lastName: body.lastName,
+        displayName,
+        emails: [body.email],
+        phones: body.phone ? [{ number: body.phone, label: "primary" }] : [],
+        tags: ["public-form"],
+      });
+      return HttpResponse.json(created, { status: 201 });
+    },
+  ),
+
   // --- Communication --------------------------------------------------------
   // Mirrors CommunicationController.sendEmail: returns Mono<Boolean>, and on
   // success logs an outbound EMAIL activity to the matching contact's

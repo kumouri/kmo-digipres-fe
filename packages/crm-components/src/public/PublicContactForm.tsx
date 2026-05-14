@@ -40,14 +40,11 @@ const EMPTY: PublicContactFormValues = {
 
 /**
  * Anonymous lead-capture form. Submits to `POST /public/{tenantSlug}/contacts`
- * on the KMOSF CRM backend.
- *
- * NOTE: this component is **scaffolded but disabled** until the backend
- * endpoint ships. The endpoint is tracked under the
- * `feat/public-contacts-endpoint` branch in `kmo-digipres-be` (phase 5 of the
- * `crm-components-library-init` plan). The UI is shipped now so admin /
- * embed pages can already preview the form; the submit button stays disabled
- * with an inline banner explaining the gating.
+ * on the KMOSF CRM backend. The BE enforces:
+ *  - `email` required + valid
+ *  - at least one of `firstName` / `lastName`
+ *  - per-IP, per-tenant rate limit (~10/min)
+ * — surface backend errors via the inline `submitError` field.
  */
 export function PublicContactForm({
   apiBaseUrl,
@@ -131,17 +128,6 @@ export function PublicContactForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div
-          className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
-          data-testid="public-contact-form-banner"
-          role="status"
-        >
-          <strong>Scaffolded:</strong> the BE endpoint{" "}
-          <code>POST /public/{tenantSlug}/contacts</code> ships in the
-          <code> feat/public-contacts-endpoint</code> branch of{" "}
-          <code>kmo-digipres-be</code>. Until then the form submission button
-          stays disabled.
-        </div>
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
@@ -206,9 +192,12 @@ export function PublicContactForm({
           ) : null}
           <Button
             type="submit"
-            disabled
+            disabled={
+              submitting ||
+              !values.email.trim() ||
+              (!values.firstName.trim() && !values.lastName.trim())
+            }
             data-testid="pcf-submit"
-            title="Disabled until POST /public/contacts ships in kmo-digipres-be"
           >
             {submitting ? "Sending…" : "Send"}
           </Button>
