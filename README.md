@@ -9,50 +9,65 @@ backend. Single-page React app, Vite-built, Tailwind-styled.
 
 ## Status
 
-This repo is being built out under the plan
-`init-kmo-digipres-fe` (see
-`C:\Users\willa\.claude\plans\init-kmo-digipres-fe-as-the-declarative-candle.md`).
-Phase 1 — scaffold — is the current shipping state: empty admin shell with
-no auth, no resource pages.
+The `init-kmo-digipres-fe` plan (phases 1–6) has shipped the admin SPA. The
+repo is now an **npm workspace** with two packages:
 
-| Phase | Branch suffix                | What lands                                   |
-| ----- | ---------------------------- | -------------------------------------------- |
-| 1     | `-phase-1-scaffold`          | Vite/React/TS/Tailwind, Router, Playwright   |
-| 2     | `-phase-2-auth`              | Login, JWT, protected shell, /auth/me        |
-| 3     | `-phase-3-contacts`          | Contacts CRUD + timeline                     |
-| 4     | `-phase-4-companies`         | Companies CRUD                               |
-| 5     | `-phase-5-deals`             | Deals CRUD + kanban pipeline                 |
-| 6     | `-phase-6-activities-email`  | Activities CRUD + send-email composer        |
+| Package                  | Path                          | Purpose                                                   |
+| ------------------------ | ----------------------------- | --------------------------------------------------------- |
+| `@kmosf/crm-admin`       | `packages/admin/`             | The admin SPA (existing UI: login, contacts, deals, etc.) |
+| `@kmosf/crm-components`  | `packages/crm-components/`    | Reusable CRM-backed React components (in build-out)       |
+
+The library build-out follows the plan `crm-components-library-init`
+(see `C:\Users\willa\.claude\plans\research-standard-components-that-resilient-nova.md`).
+Phase 1 — workspace migration — is the current shipping state. The library
+is a skeleton; phases 2–4 will lift primitives, admin views, and add public
+widgets.
 
 ## Stack
 
 - **Vite 6** · **React 18** · **TypeScript 5** (full strict)
 - **Tailwind 4** via `@tailwindcss/vite` — tokens live in
-  [`src/styles/globals.css`](src/styles/globals.css) under `@theme`; no
-  `tailwind.config.js`
-- **shadcn-style primitives** in [`src/app/components/ui/`](src/app/components/ui/)
-  (Radix + CVA + `cn()`)
+  [`packages/admin/src/styles/globals.css`](packages/admin/src/styles/globals.css)
+  under `@theme`; no `tailwind.config.js`
+- **shadcn-style primitives** in
+  [`packages/admin/src/app/components/ui/`](packages/admin/src/app/components/ui/)
+  (Radix + CVA + `cn()`) — to be lifted to `@kmosf/crm-components` in phase 2
 - **React Router 7** (data router)
 - **TanStack Query 5** for server state (`useQuery` / `useMutation`)
 - **react-hook-form + zod** for forms
-- **Playwright** for smoke tests; **MSW** mocks the backend in test mode
+- **Playwright** for smoke tests at the workspace root; **MSW** mocks the
+  backend in test mode
 - **sonner** for toasts, **lucide-react** for icons
+- **npm workspaces** (npm 9+); single root `package-lock.json`; the library
+  builds via Vite library mode with `vite-plugin-dts`
 
-Path alias: `@/` → `./src/app`.
+Path alias inside `@kmosf/crm-admin`: `@/` → `./src/app` (resolves relative
+to `packages/admin/`).
 
 ## Local development
 
+All commands run from the **workspace root** unless noted. The root scripts
+proxy to `@kmosf/crm-admin`.
+
 ```powershell
 nvm use            # Node 22 (see .nvmrc)
-npm install
-cp .env.example .env
-npm run dev        # http://localhost:5173
+npm install        # installs all workspaces
+cp packages/admin/.env.example packages/admin/.env
+npm run dev        # http://localhost:5173 (admin SPA)
 ```
 
 Run typecheck and build before pushing:
 
 ```powershell
+npm run typecheck  # runs typecheck across all workspaces
+npm run build      # builds @kmosf/crm-admin
 npm run verify     # typecheck + build
+```
+
+Build just the library:
+
+```powershell
+npm run build -w @kmosf/crm-components
 ```
 
 ## Running against the real backend
@@ -115,6 +130,7 @@ and
 ## Branching
 
 This repo follows the KMOSF workspace conventions documented in the parent
-[`CLAUDE.md`](../../CLAUDE.md). For the current init plan, work on
-`init-kmo-digipres-fe-phase-N-<desc>` branches, one PR per phase, and reference
-the plan file in each PR description.
+[`CLAUDE.md`](../../CLAUDE.md). The current active plan is
+`crm-components-library-init`; phase branches are named
+`crm-components-library-init-phase-N-<desc>`, one PR per phase, with the
+plan file referenced in each PR description.

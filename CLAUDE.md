@@ -18,70 +18,107 @@ For end-user docs (how to run it, env vars, tenant bootstrap), see
 
 ## Plan-driven development
 
-The current build-out follows a single plan, `init-kmo-digipres-fe`, stored at
-`C:\Users\willa\.claude\plans\init-kmo-digipres-fe-as-the-declarative-candle.md`.
-It is split into six phases — one PR per phase, scope as documented there:
+`init-kmo-digipres-fe` (six phases, scaffold → auth → contacts → companies →
+deals → activities+email) is complete. The repo is now driven by the
+`crm-components-library-init` plan, stored at
+`C:\Users\willa\.claude\plans\research-standard-components-that-resilient-nova.md`.
+It converts this repo into an npm workspace and extracts a reusable CRM
+component library. Phases — one PR per phase:
 
-1. `init-kmo-digipres-fe-phase-1-scaffold` — Vite/React/TS/Tailwind, Router, Playwright
-2. `init-kmo-digipres-fe-phase-2-auth` — Login, JWT, protected shell, `/auth/me`
-3. `init-kmo-digipres-fe-phase-3-contacts` — Contacts CRUD + timeline
-4. `init-kmo-digipres-fe-phase-4-companies` — Companies CRUD
-5. `init-kmo-digipres-fe-phase-5-deals` — Deals CRUD + kanban
-6. `init-kmo-digipres-fe-phase-6-activities-email` — Activities CRUD + email composer
+1. `crm-components-library-init-phase-1-workspace-migration` — split into
+   `packages/admin` (existing SPA) + `packages/crm-components` (skeleton)
+2. `crm-components-library-init-phase-2-primitives-and-api-client` — lift
+   shadcn primitives, `types/api.ts`, and the DI-friendly `createCrmClient`
+   into the library
+3. `crm-components-library-init-phase-3-admin-views` — lift the contact /
+   company / deal / activity page components, decouple from `useNavigate` /
+   `useAuth`
+4. `crm-components-library-init-phase-4-public-widgets` — `<BookingWidget>`,
+   `<PublicContactForm>` (latter gated on Phase 5)
+5. `feat/public-contacts-endpoint` (in `kmo-digipres-be`, dispatched by
+   sub-agent) — `POST /public/{tenantSlug}/contacts` unlocking
+   `<PublicContactForm>`
 
-After phase 6, switch to `feat/<desc>` or `fix/<desc>` for unplanned work and
-spin up a new `<plan-slug>` for any larger initiative. See the workspace
-[`CLAUDE.md`](../../CLAUDE.md) for the full convention.
+Tier-2 portal-authenticated components (PortalProfile, PortalInvoices,
+PortalActivities, NewsletterSignup, SupportTicketForm) are tracked in the
+plan but deferred until a client engagement pulls them into scope.
+
+For unplanned fixes outside any plan, use `feat/<desc>` or `fix/<desc>`.
+See the workspace [`CLAUDE.md`](../../CLAUDE.md) for the full convention.
 
 ## Stack
 
 - **Vite 6** · **React 18** · **TypeScript 5** (full strict — `noUnusedLocals`,
   `noUnusedParameters`, `noFallthroughCasesInSwitch`, `noUncheckedSideEffectImports`)
 - **Tailwind 4** via `@tailwindcss/vite` (no `tailwind.config.js`; tokens in
-  [`src/styles/globals.css`](src/styles/globals.css) via `@theme`)
-- **shadcn-style primitives** in [`src/app/components/ui/`](src/app/components/ui/) —
-  Radix UI under the hood, composed with CVA + `cn()` (clsx + tailwind-merge)
+  [`packages/admin/src/styles/globals.css`](packages/admin/src/styles/globals.css)
+  via `@theme`)
+- **shadcn-style primitives** in
+  [`packages/admin/src/app/components/ui/`](packages/admin/src/app/components/ui/)
+  — Radix UI under the hood, composed with CVA + `cn()` (clsx + tailwind-merge).
+  Slated to move to `packages/crm-components/src/primitives/` in phase 2.
 - **React Router 7** (data router via `createBrowserRouter`)
 - **TanStack Query 5** owns server state
 - **react-hook-form + zod + @hookform/resolvers** for forms
-- **Playwright + MSW** for smoke tests; no live backend required in CI
+- **Playwright + MSW** for smoke tests at the workspace root; no live backend
+  required in CI
 - **sonner** for toasts, **lucide-react** for icons
+- **npm workspaces** (npm 9+) — single root `package-lock.json`; root scripts
+  proxy to `@kmosf/crm-admin` for `dev` / `build` / `typecheck`. Library
+  build uses Vite library mode + `vite-plugin-dts`.
 - **Node 22** pinned in `.nvmrc`
 
-Path alias: `@/` → `./src/app`. Use it for cross-cutting imports
-(`@/components/ui/button`, `@/api/contacts`, etc.); relative imports are fine
-within a single feature folder.
+Path alias **inside `@kmosf/crm-admin`**: `@/` → `./src/app`. Use it for
+cross-cutting imports within the admin SPA (`@/components/ui/button`,
+`@/api/contacts`, etc.). The library does not use a path alias; relative
+imports within `packages/crm-components/src/` are fine.
 
 ## Folder layout
 
 ```
-src/
-├── main.tsx
-├── styles/globals.css
-└── app/
-    ├── App.tsx                  # QueryClientProvider + RouterProvider + Toaster
-    ├── router.tsx               # createBrowserRouter([...routes])
-    ├── api/                     # client.ts + one file per backend resource
-    ├── auth/                    # AuthProvider, useAuth, ProtectedRoute (phase 2)
-    ├── components/
-    │   ├── AppShell.tsx         # sidebar + topnav (phase 2)
-    │   ├── UserMenu.tsx         # (phase 2)
-    │   ├── DataTable.tsx        # (phase 3)
-    │   └── ui/                  # shadcn primitives
-    ├── pages/                   # one folder per resource (phase 3+)
-    └── types/api.ts             # TS mirror of backend DTOs
-
-tests/
-├── smoke.spec.ts                # Playwright suite — mirrors AuthSmokeIT.java
-└── mocks/handlers.ts            # MSW handlers, grow per phase
+.                                  # workspace root
+├── package.json                   # workspace metadata + proxy scripts
+├── package-lock.json              # single root lockfile (npm workspaces)
+├── playwright.config.ts           # webServer points at @kmosf/crm-admin
+├── tests/
+│   └── smoke.spec.ts              # Playwright suite — mirrors AuthSmokeIT.java
+└── packages/
+    ├── admin/                     # @kmosf/crm-admin (the existing SPA)
+    │   ├── package.json
+    │   ├── vite.config.ts
+    │   ├── tsconfig.{json,app.json,node.json}
+    │   ├── index.html
+    │   ├── .env.example
+    │   ├── public/
+    │   │   └── mockServiceWorker.js
+    │   └── src/
+    │       ├── main.tsx
+    │       ├── styles/globals.css
+    │       ├── mocks/             # MSW handlers + browser worker
+    │       └── app/
+    │           ├── App.tsx        # QueryClientProvider + RouterProvider
+    │           ├── router.tsx
+    │           ├── api/           # client.ts + per-resource fetchers
+    │           ├── auth/          # AuthProvider, useAuth, ProtectedRoute
+    │           ├── components/    # AppShell, UserMenu, DataTable, ui/
+    │           ├── pages/         # one folder per resource
+    │           └── types/api.ts   # TS mirror of backend DTOs (moves in phase 2)
+    └── crm-components/            # @kmosf/crm-components (library)
+        ├── package.json           # exports ./src/index.ts; vite-lib build target
+        ├── vite.config.ts         # library mode + vite-plugin-dts
+        ├── tsconfig.json
+        └── src/
+            └── index.ts           # currently empty; populated in phases 2–4
 ```
 
 ## Working with the backend
 
 The backend is the **source of truth for DTO shapes**. When the backend's
-`model/request/*DTO.java` files change, update [`src/app/types/api.ts`](src/app/types/api.ts)
+`model/request/*DTO.java` files change, update
+[`packages/admin/src/app/types/api.ts`](packages/admin/src/app/types/api.ts)
 to match — field names, types, optionality. Don't infer types from runtime
-responses; read the Java.
+responses; read the Java. (Phase 2 moves this file to
+`packages/crm-components/src/types/api.ts`; this CLAUDE.md will update then.)
 
 Endpoints rooted at `http://localhost:8080/api` (CORS pre-configured for
 `localhost:5173`). JWT goes in `Authorization: Bearer <token>`. The 12-hour
