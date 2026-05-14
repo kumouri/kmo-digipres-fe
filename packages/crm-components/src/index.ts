@@ -41,6 +41,22 @@ export { useDealsApi } from "./hooks/useDealsApi";
 export { useActivitiesApi } from "./hooks/useActivitiesApi";
 export { useCommunicationApi } from "./hooks/useCommunicationApi";
 
+// Public widgets — standalone, no CrmProvider / Router required.
+export {
+  BookingWidget,
+  type BookingWidgetProps,
+} from "./public/BookingWidget";
+export {
+  PublicContactForm,
+  type PublicContactFormProps,
+  type PublicContactFormValues,
+} from "./public/PublicContactForm";
+export {
+  PublicBookingError,
+  bookSlot,
+  fetchBookingView,
+} from "./api/public-booking";
+
 // Admin views (require <CrmProvider> + a React Router context).
 export {
   ContactsList,

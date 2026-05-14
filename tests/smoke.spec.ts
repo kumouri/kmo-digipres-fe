@@ -262,3 +262,38 @@ test("sending an email from contact detail adds an EMAIL activity to the timelin
     page.getByText("Following up on our chat", { exact: false }),
   ).toBeVisible();
 });
+
+// --- Public widgets (Phase 4) ----------------------------------------------
+// /embed-demo renders the standalone library components unauthenticated.
+
+test("embed-demo: booking widget loads slots without a login", async ({ page }) => {
+  await page.goto("/embed-demo");
+  await expect(page.getByTestId("booking-widget")).toBeVisible();
+  await expect(page.getByText("Intro call with the team")).toBeVisible();
+  const slots = page.getByTestId("slot-button");
+  await expect(slots.first()).toBeVisible();
+  // Mock-store seeds three slots; assert at least one rendered.
+  expect(await slots.count()).toBeGreaterThan(0);
+});
+
+test("embed-demo: picking a slot, submitting the form, lands on the success state", async ({ page }) => {
+  await page.goto("/embed-demo");
+  await expect(page.getByTestId("booking-widget")).toBeVisible();
+
+  await page.getByTestId("slot-button").first().click();
+  await expect(page.getByTestId("selected-slot-label")).toBeVisible();
+
+  await page.getByTestId("booking-name-input").fill("Visitor McTest");
+  await page.getByTestId("booking-email-input").fill("visitor@example.test");
+  await page.getByTestId("confirm-booking").click();
+
+  await expect(page.getByTestId("booking-widget-success")).toBeVisible();
+  await expect(page.getByText(/You're booked\./)).toBeVisible();
+});
+
+test("embed-demo: public contact form ships disabled until the BE endpoint lands", async ({ page }) => {
+  await page.goto("/embed-demo");
+  await expect(page.getByTestId("public-contact-form")).toBeVisible();
+  await expect(page.getByTestId("public-contact-form-banner")).toBeVisible();
+  await expect(page.getByTestId("pcf-submit")).toBeDisabled();
+});

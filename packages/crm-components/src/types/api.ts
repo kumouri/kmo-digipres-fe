@@ -147,3 +147,36 @@ export interface SingleEmailCommunicationDTO {
   subject: string;
   body: string;
 }
+
+// --- Public booking ---------------------------------------------------------
+
+/** Public-facing projection of a BookingLink (mirrors BookingPublicView.java). */
+export interface BookingPublicView {
+  slug: string;
+  title: string;
+  description?: string;
+  durationMinutes: number;
+  timezone: string;
+  /** ISO-8601 instants of bookable starts in the requested window. */
+  availableSlots: string[];
+}
+
+/** Payload for POST /public/booking/{slug}/book (mirrors BookSlotRequest.java). */
+export interface BookSlotRequest {
+  /** ISO-8601 instant of the chosen slot's start. */
+  slotStart: string;
+  attendeeEmail: string;
+  attendeeName: string;
+  notes?: string;
+}
+
+/** Subset of Meeting returned by POST .../book. */
+export interface BookedMeeting {
+  id: string;
+  tenantId: string;
+  name?: string;
+  description?: string;
+  location?: string;
+  start: string;
+  end: string;
+}

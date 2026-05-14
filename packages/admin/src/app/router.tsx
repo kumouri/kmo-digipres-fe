@@ -14,6 +14,9 @@ import { DashboardPage } from "./pages/DashboardPage";
 const LoginPage = lazy(() =>
   import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
+const EmbedDemoPage = lazy(() =>
+  import("./pages/EmbedDemoPage").then((m) => ({ default: m.EmbedDemoPage })),
+);
 const ContactsList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ContactsList })),
 );
@@ -53,6 +56,14 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<RouteFallback />}>
         <LoginPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/embed-demo",
+    element: (
+      <Suspense fallback={<RouteFallback />}>
+        <EmbedDemoPage />
       </Suspense>
     ),
   },
