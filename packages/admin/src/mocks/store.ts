@@ -9,7 +9,7 @@ import type {
   DealDTO,
   PipelineStage,
   User,
-} from "@/types/api";
+} from "@kmosf/crm-components";
 
 export const SMOKE_USER: User = {
   id: "11111111-1111-1111-1111-111111111111",

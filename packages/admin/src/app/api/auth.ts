@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { LoginRequest, LoginResponse, User } from "@/types/api";
+import type { LoginRequest, LoginResponse, User } from "@kmosf/crm-components";
 
 export function login(body: LoginRequest): Promise<LoginResponse> {
   return api<LoginResponse>("/auth/login", {

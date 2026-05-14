@@ -7,9 +7,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "./ui/table";
-import { Skeleton } from "./ui/skeleton";
-import { cn } from "./ui/utils";
+} from "@kmosf/crm-components";
+import { Skeleton } from "@kmosf/crm-components";
+import { cn } from "@kmosf/crm-components";
 
 export interface Column<T> {
   key: string;

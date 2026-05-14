@@ -7,16 +7,16 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/auth/useAuth";
 import { ApiError } from "@/api/client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kmosf/crm-components";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@kmosf/crm-components";
+import { Input } from "@kmosf/crm-components";
+import { Label } from "@kmosf/crm-components";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),

@@ -2,17 +2,17 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@kmosf/crm-components";
+import { Input } from "@kmosf/crm-components";
+import { Label } from "@kmosf/crm-components";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@kmosf/crm-components";
+import { Textarea } from "@kmosf/crm-components";
 import {
   ACTIVITY_DIRECTIONS,
   ACTIVITY_TYPES,
@@ -21,7 +21,7 @@ import {
   type ActivityDirection,
   type ActivityType,
   type SubjectType,
-} from "@/types/api";
+} from "@kmosf/crm-components";
 
 const formSchema = z.object({
   type: z.enum(["NOTE", "EMAIL", "CALL", "MEETING", "TASK"]),

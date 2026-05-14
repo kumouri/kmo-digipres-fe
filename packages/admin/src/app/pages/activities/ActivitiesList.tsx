@@ -5,17 +5,17 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import * as activitiesApi from "@/api/activities";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@kmosf/crm-components";
+import { Button } from "@kmosf/crm-components";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@kmosf/crm-components";
 import { DataTable, type Column } from "@/components/DataTable";
-import type { ActivityDTO } from "@/types/api";
+import type { ActivityDTO } from "@kmosf/crm-components";
 import {
   ActivityForm,
   formValuesToActivity,
