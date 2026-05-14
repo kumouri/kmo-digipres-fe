@@ -8,33 +8,35 @@ import { DashboardPage } from "./pages/DashboardPage";
 
 // Each route below is its own dynamic-imported chunk. The Dashboard stays
 // eager because it's the post-login landing screen — splitting it would just
-// add a Suspense flash for no real win.
+// add a Suspense flash for no real win. The four CRM resources lazy-load
+// from @kmosf/crm-components (the library chunk is shared across all of
+// them, so the first navigation pays the cost and the rest are instant).
 const LoginPage = lazy(() =>
   import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
 const ContactsList = lazy(() =>
-  import("./pages/contacts/ContactsList").then((m) => ({ default: m.ContactsList })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.ContactsList })),
 );
 const ContactDetail = lazy(() =>
   import("./pages/contacts/ContactDetail").then((m) => ({ default: m.ContactDetail })),
 );
 const CompaniesList = lazy(() =>
-  import("./pages/companies/CompaniesList").then((m) => ({ default: m.CompaniesList })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.CompaniesList })),
 );
 const CompanyDetail = lazy(() =>
-  import("./pages/companies/CompanyDetail").then((m) => ({ default: m.CompanyDetail })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.CompanyDetail })),
 );
 const DealsList = lazy(() =>
-  import("./pages/deals/DealsList").then((m) => ({ default: m.DealsList })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.DealsList })),
 );
 const DealDetail = lazy(() =>
-  import("./pages/deals/DealDetail").then((m) => ({ default: m.DealDetail })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.DealDetail })),
 );
 const ActivitiesList = lazy(() =>
-  import("./pages/activities/ActivitiesList").then((m) => ({ default: m.ActivitiesList })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.ActivitiesList })),
 );
 const ActivityDetail = lazy(() =>
-  import("./pages/activities/ActivityDetail").then((m) => ({ default: m.ActivityDetail })),
+  import("@kmosf/crm-components").then((m) => ({ default: m.ActivityDetail })),
 );
 
 function LazyOutlet() {

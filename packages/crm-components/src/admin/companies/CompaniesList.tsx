@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kmosf/crm-components";
-import { DataTable, type Column } from "@/components/DataTable";
-import * as companiesApi from "@/api/companies";
+import { DataTable, type Column } from "../../components/DataTable";
+import { useCompaniesApi } from "../../hooks/useCompaniesApi";
 import type { CompanyDTO } from "@kmosf/crm-components";
 import {
   CompanyForm,
@@ -81,6 +81,7 @@ const columns: Column<CompanyDTO>[] = [
 export function CompaniesList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const companiesApi = useCompaniesApi();
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading } = useQuery({

@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from "@kmosf/crm-components";
 import { Skeleton } from "@kmosf/crm-components";
-import * as companiesApi from "@/api/companies";
+import { useCompaniesApi } from "../../hooks/useCompaniesApi";
 import {
   CompanyForm,
   companyToFormValues,
@@ -35,6 +35,7 @@ export function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const companiesApi = useCompaniesApi();
 
   const companyQuery = useQuery({
     queryKey: ["companies", id],

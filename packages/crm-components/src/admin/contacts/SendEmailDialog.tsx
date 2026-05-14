@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import * as commsApi from "@/api/communication";
+import { useCommunicationApi } from "../../hooks/useCommunicationApi";
 import { Button } from "@kmosf/crm-components";
 import {
   Dialog,
@@ -18,7 +18,6 @@ import {
 import { Input } from "@kmosf/crm-components";
 import { Label } from "@kmosf/crm-components";
 import { Textarea } from "@kmosf/crm-components";
-import { useAuth } from "@/auth/useAuth";
 import type { ContactDTO } from "@kmosf/crm-components";
 
 const schema = z.object({
@@ -34,20 +33,19 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contact: ContactDTO;
+  /** Pre-fills the "from" field; consumer plugs in the current user's email. */
+  defaultFrom?: string;
 }
 
-export function SendEmailDialog({ open, onOpenChange, contact }: Props) {
+export function SendEmailDialog({ open, onOpenChange, contact, defaultFrom }: Props) {
   const qc = useQueryClient();
-  const { user } = useAuth();
-
-  const defaultTo = contact.emails?.[0] ?? "";
-  const defaultFrom = user?.email ?? "";
+  const commsApi = useCommunicationApi();
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
-      to: defaultTo,
-      from: defaultFrom,
+      to: contact.emails?.[0] ?? "",
+      from: defaultFrom ?? "",
       subject: "",
       body: "",
     },
@@ -57,12 +55,12 @@ export function SendEmailDialog({ open, onOpenChange, contact }: Props) {
     if (open) {
       form.reset({
         to: contact.emails?.[0] ?? "",
-        from: user?.email ?? "",
+        from: defaultFrom ?? "",
         subject: "",
         body: "",
       });
     }
-  }, [open, contact.emails, user?.email, form]);
+  }, [open, contact.emails, defaultFrom, form]);
 
   const mutation = useMutation({
     mutationFn: commsApi.sendSingleEmail,

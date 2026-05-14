@@ -10,8 +10,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.9.1",
     "@kmosf/crm-components": "*",
     "@tanstack/react-query": "^5.62.7",

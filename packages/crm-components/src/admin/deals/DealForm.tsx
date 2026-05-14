@@ -3,8 +3,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
-import * as companiesApi from "@/api/companies";
-import * as contactsApi from "@/api/contacts";
+import { useCompaniesApi } from "../../hooks/useCompaniesApi";
+import { useContactsApi } from "../../hooks/useContactsApi";
 import { Button } from "@kmosf/crm-components";
 import { Input } from "@kmosf/crm-components";
 import { Label } from "@kmosf/crm-components";
@@ -107,6 +107,8 @@ export function DealForm({
   });
 
   const stage = watch("stage");
+  const companiesApi = useCompaniesApi();
+  const contactsApi = useContactsApi();
 
   const companiesQ = useQuery({ queryKey: ["companies"], queryFn: companiesApi.listCompanies });
   const contactsQ = useQuery({ queryKey: ["contacts"], queryFn: contactsApi.listContacts });
