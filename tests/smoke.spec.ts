@@ -128,6 +128,60 @@ test("moving a deal to NEGOTIATION via the pipeline buttons updates the column",
   await expect(negotiation).toContainText("Analytical Engine retainer");
 });
 
+test("dragging a deal card to another column moves the deal", async ({ page }) => {
+  await login(page);
+  await page.goto("/deals");
+
+  const qualified = page.getByTestId("pipeline-column-QUALIFIED");
+  const proposal = page.getByTestId("pipeline-column-PROPOSAL");
+
+  await expect(qualified).toContainText("Analytical Engine retainer");
+
+  // @dnd-kit's PointerSensor needs an intermediate pointermove (activation
+  // constraint is 5px). Playwright's high-level dragTo() emits one move,
+  // which sometimes isn't enough. Drive the mouse manually with explicit
+  // steps so the sensor activates reliably.
+  const card = qualified.getByTestId("deal-card").first();
+  const sourceBox = await card.boundingBox();
+  const targetBox = await proposal.boundingBox();
+  if (!sourceBox || !targetBox) throw new Error("missing bounding box");
+
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2,
+    sourceBox.y + sourceBox.height / 2,
+  );
+  await page.mouse.down();
+  // Small wiggle past the 5px activation threshold.
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2 + 10,
+    sourceBox.y + sourceBox.height / 2,
+  );
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height / 2,
+    { steps: 10 },
+  );
+  await page.mouse.up();
+
+  await expect(proposal).toContainText("Analytical Engine retainer");
+});
+
+test("deal value field rejects negative numbers via inline error", async ({ page }) => {
+  await login(page);
+  await page.goto("/deals");
+  await page.getByTestId("new-deal").click();
+
+  await page.getByLabel("Title *").fill("Bad value deal");
+  // The browser may coerce -1 in a number input, but the zod regex catches
+  // anything that isn't a non-negative number with <=2 decimals.
+  await page.getByLabel("Value").fill("1.234");
+  await page.getByRole("button", { name: "Create deal" }).click();
+
+  await expect(
+    page.getByText("Use a non-negative number with at most 2 decimal places"),
+  ).toBeVisible();
+});
+
 test("moving a deal to LOST requires a reason and reflects on detail", async ({ page }) => {
   await login(page);
   await page.goto("/deals");
