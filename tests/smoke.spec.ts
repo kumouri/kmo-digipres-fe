@@ -1,16 +1,27 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 // These tests mirror the behavioral spec from the backend's
-// repos/kmo-digipres-be/src/test/java/com/kumouri/kmodigipresbe/auth/AuthSmokeIT.java.
-// MSW (started by main.tsx when VITE_USE_MOCKS=true) provides the backend
-// responses, so no Spring Boot is required.
+// repos/kmo-digipres-be/src/test/java/com/kumouri/kmodigipresbe/auth/AuthSmokeIT.java
+// and the controller contracts in /controller/. MSW (started by main.tsx when
+// VITE_USE_MOCKS=true) provides the backend responses, so no Spring Boot is
+// required.
 
 const SMOKE_EMAIL = "smoke@example.test";
 const SMOKE_PASSWORD = "hunter2hunter2";
 
+async function login(page: Page) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(SMOKE_EMAIL);
+  await page.getByLabel("Password").fill(SMOKE_PASSWORD);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByTestId("dashboard")).toBeVisible();
+}
+
 test.beforeEach(async ({ context }) => {
   await context.clearCookies();
 });
+
+// --- Auth (mirrors AuthSmokeIT.java) ---------------------------------------
 
 test("unauthenticated visit to a protected route redirects to /login", async ({ page }) => {
   await page.goto("/");
@@ -19,13 +30,8 @@ test("unauthenticated visit to a protected route redirects to /login", async ({ 
 });
 
 test("successful login lands on the dashboard with the user menu visible", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(SMOKE_EMAIL);
-  await page.getByLabel("Password").fill(SMOKE_PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-
+  await login(page);
   await expect(page).toHaveURL("http://localhost:5173/");
-  await expect(page.getByTestId("dashboard")).toBeVisible();
   await expect(page.getByTestId("user-menu-trigger")).toBeVisible();
   await expect(page.getByText(SMOKE_EMAIL)).toBeVisible();
 });
@@ -40,12 +46,35 @@ test("wrong password keeps the user on /login and surfaces an error", async ({ p
   await expect(page.getByText(/invalid email or password/i)).toBeVisible();
 });
 
-test("home placeholder smoke test (post-phase-1 sanity)", async ({ page }) => {
-  // After authenticating, the protected root renders the dashboard. Acts as
-  // a smoke test that the protected shell + auth provider hydrate end-to-end.
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(SMOKE_EMAIL);
-  await page.getByLabel("Password").fill(SMOKE_PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: /welcome/i })).toBeVisible();
+// --- Contacts ---------------------------------------------------------------
+
+test("contacts list renders the seeded contact", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Contacts" }).click();
+  await expect(page).toHaveURL(/\/contacts$/);
+  await expect(page.getByTestId("contacts-page")).toBeVisible();
+  await expect(page.getByTestId("contact-row-name").first()).toContainText("Ada Lovelace");
+});
+
+test("clicking a contact row opens detail with timeline tab", async ({ page }) => {
+  await login(page);
+  await page.goto("/contacts");
+  await page.getByTestId("contact-row-name").first().click();
+  await expect(page.getByTestId("contact-detail")).toBeVisible();
+  await page.getByTestId("timeline-tab").click();
+  await expect(page.getByTestId("contact-timeline")).toBeVisible();
+  await expect(page.getByText("Initial outreach")).toBeVisible();
+});
+
+test("creating a contact via the dialog navigates to its detail", async ({ page }) => {
+  await login(page);
+  await page.goto("/contacts");
+  await page.getByTestId("new-contact").click();
+
+  // Dialog is open; fill the required field and submit.
+  await page.getByLabel("Display name *").fill("Grace Hopper");
+  await page.getByRole("button", { name: "Create contact" }).click();
+
+  await expect(page.getByTestId("contact-detail")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Grace Hopper" })).toBeVisible();
 });

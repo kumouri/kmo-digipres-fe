@@ -4,6 +4,8 @@ import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ContactsList } from "./pages/contacts/ContactsList";
+import { ContactDetail } from "./pages/contacts/ContactDetail";
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +19,8 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <DashboardPage /> },
+          { path: "contacts", element: <ContactsList /> },
+          { path: "contacts/:id", element: <ContactDetail /> },
         ],
       },
     ],
