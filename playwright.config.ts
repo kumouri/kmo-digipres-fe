@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --port 5173 --strictPort",
+    command: "npm run dev -w @kmosf/crm-admin -- --port 5173 --strictPort",
     port: 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
