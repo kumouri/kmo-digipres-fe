@@ -3,6 +3,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { ArrowRight } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 import * as dealsApi from "@/api/deals";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +55,13 @@ export function DealsPipeline() {
   const [lostTarget, setLostTarget] = useState<MoveTarget | null>(null);
   const [lostReason, setLostReason] = useState("");
 
+  const sensors = useSensors(
+    // Require 5px of movement before a drag starts so clicks on the Link /
+    // Move buttons inside cards keep working.
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
   const moveMutation = useMutation({
     mutationFn: ({ id, stage, lostReason: reason }: {
       id: string;
@@ -68,13 +87,23 @@ export function DealsPipeline() {
   });
 
   const handleMove = (deal: DealDTO, stage: PipelineStage) => {
-    if (!deal.id) return;
+    if (!deal.id || deal.stage === stage) return;
     if (stage === "LOST") {
       setLostTarget({ deal, stage });
       setLostReason("");
       return;
     }
     moveMutation.mutate({ id: deal.id, stage });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const dealId = String(active.id).replace(/^deal:/, "");
+    const targetStage = String(over.id).replace(/^column:/, "") as PipelineStage;
+    const deal = data?.find((d) => d.id === dealId);
+    if (!deal) return;
+    handleMove(deal, targetStage);
   };
 
   const confirmLost = () => {
@@ -94,36 +123,32 @@ export function DealsPipeline() {
 
   return (
     <>
-      <div
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6"
-        data-testid="deals-pipeline"
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragEnd={handleDragEnd}
       >
-        {grouped.map(({ stage, deals }) => (
-          <section
-            key={stage}
-            className="flex flex-col gap-2 rounded-lg border bg-card p-3"
-            data-testid={`pipeline-column-${stage}`}
-          >
-            <header className="flex items-center justify-between">
-              <Badge variant={STAGE_VARIANTS[stage]}>{stage}</Badge>
-              <span className="text-xs text-muted-foreground">{deals.length}</span>
-            </header>
-            <div className="flex flex-col gap-2">
+        <div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6"
+          data-testid="deals-pipeline"
+        >
+          {grouped.map(({ stage, deals }) => (
+            <DroppableColumn key={stage} stage={stage} count={deals.length}>
               {deals.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No deals.</p>
               ) : (
                 deals.map((d) => (
-                  <DealCard
+                  <DraggableDealCard
                     key={d.id}
                     deal={d}
                     onMove={(toStage) => handleMove(d, toStage)}
                   />
                 ))
               )}
-            </div>
-          </section>
-        ))}
-      </div>
+            </DroppableColumn>
+          ))}
+        </div>
+      </DndContext>
 
       <Dialog
         open={!!lostTarget}
@@ -167,21 +192,65 @@ export function DealsPipeline() {
   );
 }
 
+interface DroppableColumnProps {
+  stage: PipelineStage;
+  count: number;
+  children: React.ReactNode;
+}
+
+function DroppableColumn({ stage, count, children }: DroppableColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: `column:${stage}` });
+  return (
+    <section
+      ref={setNodeRef}
+      className={
+        "flex flex-col gap-2 rounded-lg border bg-card p-3 transition-colors " +
+        (isOver ? "border-primary bg-primary/5" : "")
+      }
+      data-testid={`pipeline-column-${stage}`}
+    >
+      <header className="flex items-center justify-between">
+        <Badge variant={STAGE_VARIANTS[stage]}>{stage}</Badge>
+        <span className="text-xs text-muted-foreground">{count}</span>
+      </header>
+      <div className="flex flex-col gap-2">{children}</div>
+    </section>
+  );
+}
+
 interface DealCardProps {
   deal: DealDTO;
   onMove: (stage: PipelineStage) => void;
 }
 
-function DealCard({ deal, onMove }: DealCardProps) {
+function DraggableDealCard({ deal, onMove }: DealCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `deal:${deal.id}`,
+  });
+
+  const style = transform
+    ? { transform: CSS.Translate.toString(transform) }
+    : undefined;
+
   const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div
-      className="flex flex-col gap-1 rounded-md border bg-background p-2"
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={
+        "flex flex-col gap-1 rounded-md border bg-background p-2 outline-none " +
+        "focus-visible:ring-2 focus-visible:ring-ring " +
+        (isDragging ? "opacity-50 cursor-grabbing" : "cursor-grab")
+      }
       data-testid="deal-card"
     >
       <Link
         to={`/deals/${deal.id}`}
         className="text-sm font-medium hover:underline"
+        onPointerDown={(e) => e.stopPropagation()}
       >
         {deal.title ?? "Untitled deal"}
       </Link>
@@ -190,7 +259,10 @@ function DealCard({ deal, onMove }: DealCardProps) {
           {deal.currency ?? "USD"} {deal.value.toLocaleString()}
         </span>
       ) : null}
-      <div className="flex flex-wrap gap-1 pt-1">
+      <div
+        className="flex flex-wrap gap-1 pt-1"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {!menuOpen ? (
           <Button
             size="sm"

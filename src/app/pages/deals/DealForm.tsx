@@ -19,11 +19,23 @@ import { PIPELINE_STAGES, type DealDTO, type PipelineStage } from "@/types/api";
 
 const NONE = "__none__";
 
+const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY"] as const;
+
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   stage: z.enum(["NEW", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON", "LOST"]),
-  value: z.string().default(""),
-  currency: z.string().default("USD"),
+  value: z
+    .union([
+      z.literal(""),
+      z
+        .string()
+        .regex(
+          /^\d+(\.\d{1,2})?$/,
+          "Use a non-negative number with at most 2 decimal places",
+        ),
+    ])
+    .default(""),
+  currency: z.enum(CURRENCY_OPTIONS).default("USD"),
   expectedCloseDate: z.string().default(""),
   primaryContactId: z.string().default(""),
   companyId: z.string().default(""),
@@ -32,12 +44,20 @@ const formSchema = z.object({
 
 export type DealFormValues = z.infer<typeof formSchema>;
 
+type CurrencyOption = (typeof CURRENCY_OPTIONS)[number];
+
+function coerceCurrency(value: string | undefined): CurrencyOption {
+  return CURRENCY_OPTIONS.includes(value as CurrencyOption)
+    ? (value as CurrencyOption)
+    : "USD";
+}
+
 export function dealToFormValues(d: DealDTO | undefined): DealFormValues {
   return {
     title: d?.title ?? "",
     stage: d?.stage ?? "NEW",
     value: d?.value != null ? String(d.value) : "",
-    currency: d?.currency ?? "USD",
+    currency: coerceCurrency(d?.currency),
     expectedCloseDate: d?.expectedCloseDate ?? "",
     primaryContactId: d?.primaryContactId ?? "",
     companyId: d?.companyId ?? "",
@@ -133,14 +153,36 @@ export function DealForm({
           <Input
             id="deal-value"
             type="number"
+            inputMode="decimal"
+            min="0"
             step="0.01"
             placeholder="0.00"
+            aria-invalid={errors.value ? true : undefined}
             {...register("value")}
           />
+          {errors.value ? (
+            <p className="text-xs text-destructive">{errors.value.message}</p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="deal-currency">Currency</Label>
-          <Input id="deal-currency" {...register("currency")} />
+          <Select
+            value={watch("currency")}
+            onValueChange={(v) =>
+              setValue("currency", v as (typeof CURRENCY_OPTIONS)[number])
+            }
+          >
+            <SelectTrigger id="deal-currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCY_OPTIONS.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
