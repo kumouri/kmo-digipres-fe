@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-import * as dealsApi from "@/api/deals";
+import { useDealsApi } from "../../hooks/useDealsApi";
 import { Badge } from "@kmosf/crm-components";
 import { Button } from "@kmosf/crm-components";
 import {
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@kmosf/crm-components";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kmosf/crm-components";
-import { DataTable, type Column } from "@/components/DataTable";
+import { DataTable, type Column } from "../../components/DataTable";
 import type { DealDTO } from "@kmosf/crm-components";
 import { DealForm, dealToFormValues, formValuesToDeal } from "./DealForm";
 import { DealsPipeline } from "./DealsPipeline";
@@ -62,6 +62,7 @@ const columns: Column<DealDTO>[] = [
 export function DealsList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const dealsApi = useDealsApi();
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading } = useQuery({

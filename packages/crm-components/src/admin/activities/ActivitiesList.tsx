@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-import * as activitiesApi from "@/api/activities";
+import { useActivitiesApi } from "../../hooks/useActivitiesApi";
 import { Badge } from "@kmosf/crm-components";
 import { Button } from "@kmosf/crm-components";
 import {
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kmosf/crm-components";
-import { DataTable, type Column } from "@/components/DataTable";
+import { DataTable, type Column } from "../../components/DataTable";
 import type { ActivityDTO } from "@kmosf/crm-components";
 import {
   ActivityForm,
@@ -70,6 +70,7 @@ const columns: Column<ActivityDTO>[] = [
 export function ActivitiesList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const activitiesApi = useActivitiesApi();
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading } = useQuery({

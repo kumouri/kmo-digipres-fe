@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
-import * as dealsApi from "@/api/deals";
+import { useDealsApi } from "../../hooks/useDealsApi";
 import { Badge } from "@kmosf/crm-components";
 import { Button } from "@kmosf/crm-components";
 import {
@@ -51,6 +51,7 @@ interface MoveTarget {
 
 export function DealsPipeline() {
   const qc = useQueryClient();
+  const dealsApi = useDealsApi();
   const { data } = useQuery({ queryKey: ["deals"], queryFn: dealsApi.listDeals });
   const [lostTarget, setLostTarget] = useState<MoveTarget | null>(null);
   const [lostReason, setLostReason] = useState("");

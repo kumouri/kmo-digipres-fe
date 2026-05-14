@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kmosf/crm-components";
-import { DataTable, type Column } from "@/components/DataTable";
-import * as contactsApi from "@/api/contacts";
+import { DataTable, type Column } from "../../components/DataTable";
+import { useContactsApi } from "../../hooks/useContactsApi";
 import type { ContactDTO } from "@kmosf/crm-components";
 import {
   ContactForm,
@@ -65,6 +65,7 @@ const columns: Column<ContactDTO>[] = [
 export function ContactsList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const contactsApi = useContactsApi();
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading } = useQuery({

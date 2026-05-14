@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 
-import * as companiesApi from "@/api/companies";
+import { useCompaniesApi } from "../../hooks/useCompaniesApi";
 import { Button } from "@kmosf/crm-components";
 import { Input } from "@kmosf/crm-components";
 import { Label } from "@kmosf/crm-components";
@@ -95,6 +95,7 @@ interface CompanySelectProps {
 }
 
 function CompanySelect({ value, onValueChange }: CompanySelectProps) {
+  const companiesApi = useCompaniesApi();
   const { data, isLoading } = useQuery({
     queryKey: ["companies"],
     queryFn: companiesApi.listCompanies,

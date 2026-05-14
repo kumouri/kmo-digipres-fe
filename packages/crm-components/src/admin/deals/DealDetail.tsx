@@ -24,13 +24,14 @@ import {
   CardTitle,
 } from "@kmosf/crm-components";
 import { Skeleton } from "@kmosf/crm-components";
-import * as dealsApi from "@/api/deals";
+import { useDealsApi } from "../../hooks/useDealsApi";
 import { DealForm, dealToFormValues, formValuesToDeal } from "./DealForm";
 
 export function DealDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const dealsApi = useDealsApi();
 
   const dealQuery = useQuery({
     queryKey: ["deals", id],

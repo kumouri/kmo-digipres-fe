@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { ArrowLeft, Trash2 } from "lucide-react";
 
-import * as activitiesApi from "@/api/activities";
+import { useActivitiesApi } from "../../hooks/useActivitiesApi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ export function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const activitiesApi = useActivitiesApi();
 
   const activityQuery = useQuery({
     queryKey: ["activities", id],
