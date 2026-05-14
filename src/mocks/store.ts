@@ -6,6 +6,8 @@ import type {
   ActivityDTO,
   CompanyDTO,
   ContactDTO,
+  DealDTO,
+  PipelineStage,
   User,
 } from "@/types/api";
 
@@ -103,6 +105,58 @@ export const companyStore = {
   },
   delete(id: string): boolean {
     return companies.delete(id);
+  },
+};
+
+// --- Deals ------------------------------------------------------------------
+
+const seedDeal: DealDTO = {
+  id: "55555555-5555-5555-5555-555555555555",
+  title: "Analytical Engine retainer",
+  stage: "QUALIFIED",
+  value: 12000,
+  currency: "USD",
+  expectedCloseDate: "2026-08-01",
+  primaryContactId: seedContact.id,
+  companyId: seedCompany.id,
+  lostReason: undefined,
+};
+
+const deals = new Map<string, DealDTO>([[seedDeal.id!, seedDeal]]);
+
+export const dealStore = {
+  list(): DealDTO[] {
+    return Array.from(deals.values());
+  },
+  get(id: string): DealDTO | undefined {
+    return deals.get(id);
+  },
+  create(input: DealDTO): DealDTO {
+    const id = input.id ?? uuid();
+    const created: DealDTO = { stage: "NEW", ...input, id };
+    deals.set(id, created);
+    return created;
+  },
+  update(id: string, input: DealDTO): DealDTO | undefined {
+    if (!deals.has(id)) return undefined;
+    const updated: DealDTO = { ...input, id };
+    deals.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return deals.delete(id);
+  },
+  move(id: string, stage: PipelineStage, lostReason: string | undefined): DealDTO | undefined {
+    const existing = deals.get(id);
+    if (!existing) return undefined;
+    if (stage === "LOST" && !lostReason?.trim()) return undefined;
+    const updated: DealDTO = {
+      ...existing,
+      stage,
+      lostReason: stage === "LOST" ? lostReason : undefined,
+    };
+    deals.set(id, updated);
+    return updated;
   },
 };
 

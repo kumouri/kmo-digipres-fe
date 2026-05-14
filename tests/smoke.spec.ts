@@ -102,3 +102,47 @@ test("creating a company via the dialog navigates to its detail", async ({ page 
   await expect(page.getByTestId("company-detail")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Babbage & Co." })).toBeVisible();
 });
+
+// --- Deals ------------------------------------------------------------------
+
+test("deals pipeline renders seeded deal in its QUALIFIED column", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Deals" }).click();
+  await expect(page).toHaveURL(/\/deals$/);
+  await expect(page.getByTestId("deals-pipeline")).toBeVisible();
+  const qualifiedColumn = page.getByTestId("pipeline-column-QUALIFIED");
+  await expect(qualifiedColumn).toContainText("Analytical Engine retainer");
+});
+
+test("moving a deal to NEGOTIATION via the pipeline buttons updates the column", async ({ page }) => {
+  await login(page);
+  await page.goto("/deals");
+
+  const qualified = page.getByTestId("pipeline-column-QUALIFIED");
+  const negotiation = page.getByTestId("pipeline-column-NEGOTIATION");
+  await expect(qualified).toContainText("Analytical Engine retainer");
+
+  await qualified.getByTestId("move-deal").click();
+  await qualified.getByTestId("move-to-NEGOTIATION").click();
+
+  await expect(negotiation).toContainText("Analytical Engine retainer");
+});
+
+test("moving a deal to LOST requires a reason and reflects on detail", async ({ page }) => {
+  await login(page);
+  await page.goto("/deals");
+  const qualified = page.getByTestId("pipeline-column-QUALIFIED");
+
+  await qualified.getByTestId("move-deal").click();
+  await qualified.getByTestId("move-to-LOST").click();
+
+  // Confirm button is disabled until a reason is typed.
+  const confirm = page.getByTestId("confirm-lost");
+  await expect(confirm).toBeDisabled();
+  await page.getByTestId("lost-reason-input").fill("Budget pulled");
+  await confirm.click();
+
+  await expect(page.getByTestId("pipeline-column-LOST")).toContainText(
+    "Analytical Engine retainer",
+  );
+});

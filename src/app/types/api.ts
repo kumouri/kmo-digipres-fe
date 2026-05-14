@@ -75,6 +75,44 @@ export interface CompanyDTO {
   customFields?: Record<string, unknown>;
 }
 
+// --- Deals ------------------------------------------------------------------
+
+export type PipelineStage =
+  | "NEW"
+  | "QUALIFIED"
+  | "PROPOSAL"
+  | "NEGOTIATION"
+  | "WON"
+  | "LOST";
+
+export const PIPELINE_STAGES: PipelineStage[] = [
+  "NEW",
+  "QUALIFIED",
+  "PROPOSAL",
+  "NEGOTIATION",
+  "WON",
+  "LOST",
+];
+
+export interface DealDTO {
+  id?: string;
+  title?: string;
+  stage?: PipelineStage;
+  value?: number;
+  currency?: string;
+  expectedCloseDate?: string;
+  primaryContactId?: string;
+  companyId?: string;
+  ownerId?: string;
+  lostReason?: string;
+  customFields?: Record<string, unknown>;
+}
+
+export interface MoveStageRequest {
+  stage: PipelineStage;
+  lostReason?: string;
+}
+
 // --- Activities -------------------------------------------------------------
 
 export type ActivityType = "NOTE" | "EMAIL" | "CALL" | "MEETING" | "TASK";

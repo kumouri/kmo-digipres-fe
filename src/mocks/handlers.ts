@@ -3,8 +3,10 @@ import { http, HttpResponse, delay } from "msw";
 import type {
   CompanyDTO,
   ContactDTO,
+  DealDTO,
   LoginRequest,
   LoginResponse,
+  MoveStageRequest,
 } from "@/types/api";
 import {
   SMOKE_PASSWORD,
@@ -13,6 +15,7 @@ import {
   activityStore,
   companyStore,
   contactStore,
+  dealStore,
 } from "./store";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
@@ -125,6 +128,48 @@ export const handlers = [
   http.delete(`${API_BASE}/companies/:id`, ({ request, params }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const ok = companyStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Deals ----------------------------------------------------------------
+  http.get(`${API_BASE}/deals`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(dealStore.list());
+  }),
+
+  http.get(`${API_BASE}/deals/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = dealStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/deals`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as DealDTO;
+    const created = dealStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/deals/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as DealDTO;
+    const updated = dealStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.post(`${API_BASE}/deals/:id/move`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as MoveStageRequest;
+    const moved = dealStore.move(params.id as string, body.stage, body.lostReason);
+    if (!moved) return new HttpResponse(null, { status: 400 });
+    return HttpResponse.json(moved);
+  }),
+
+  http.delete(`${API_BASE}/deals/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = dealStore.delete(params.id as string);
     return new HttpResponse(null, { status: ok ? 204 : 404 });
   }),
 ];

@@ -8,6 +8,8 @@ import { ContactsList } from "./pages/contacts/ContactsList";
 import { ContactDetail } from "./pages/contacts/ContactDetail";
 import { CompaniesList } from "./pages/companies/CompaniesList";
 import { CompanyDetail } from "./pages/companies/CompanyDetail";
+import { DealsList } from "./pages/deals/DealsList";
+import { DealDetail } from "./pages/deals/DealDetail";
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +27,8 @@ export const router = createBrowserRouter([
           { path: "contacts/:id", element: <ContactDetail /> },
           { path: "companies", element: <CompaniesList /> },
           { path: "companies/:id", element: <CompanyDetail /> },
+          { path: "deals", element: <DealsList /> },
+          { path: "deals/:id", element: <DealDetail /> },
         ],
       },
     ],
