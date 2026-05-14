@@ -2,6 +2,7 @@ import { http, HttpResponse, delay } from "msw";
 
 import type {
   ActivityDTO,
+  BookSlotRequest,
   CompanyDTO,
   ContactDTO,
   DealDTO,
@@ -15,6 +16,7 @@ import {
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  bookingStore,
   companyStore,
   contactStore,
   dealStore,
@@ -207,6 +209,20 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const ok = activityStore.delete(params.id as string);
     return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Public booking (unauth) ----------------------------------------------
+  http.get(`${API_BASE}/public/booking/:slug`, ({ params }) => {
+    const view = bookingStore.view(params.slug as string);
+    if (!view) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(view);
+  }),
+
+  http.post(`${API_BASE}/public/booking/:slug/book`, async ({ request, params }) => {
+    const body = (await request.json()) as BookSlotRequest;
+    const meeting = bookingStore.book(params.slug as string, body);
+    if (!meeting) return new HttpResponse(null, { status: 409 });
+    return HttpResponse.json(meeting, { status: 201 });
   }),
 
   // --- Communication --------------------------------------------------------

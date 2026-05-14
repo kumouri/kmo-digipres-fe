@@ -4,6 +4,9 @@
 
 import type {
   ActivityDTO,
+  BookSlotRequest,
+  BookedMeeting,
+  BookingPublicView,
   CompanyDTO,
   ContactDTO,
   DealDTO,
@@ -178,6 +181,59 @@ const seedActivities: ActivityDTO[] = [
 const activities = new Map<string, ActivityDTO>(
   seedActivities.map((a) => [a.id!, a]),
 );
+
+// --- Public booking links (Phase 4 widget) ---------------------------------
+
+// Three fake slots spread across the next 7 days at 10:00 / 14:00 / 11:00 UTC.
+// The widget queries by [from, to] window; we return all three regardless to
+// keep the smoke deterministic.
+function nextSlot(daysAhead: number, hourUtc: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + daysAhead);
+  d.setUTCHours(hourUtc, 0, 0, 0);
+  return d.toISOString();
+}
+
+const bookingLinks = new Map<string, BookingPublicView>([
+  [
+    "smoke-intro-call",
+    {
+      slug: "smoke-intro-call",
+      title: "Intro call with the team",
+      description: "30-minute discovery sync.",
+      durationMinutes: 30,
+      timezone: "UTC",
+      availableSlots: [nextSlot(1, 14), nextSlot(2, 10), nextSlot(3, 11)],
+    },
+  ],
+]);
+
+export const bookingStore = {
+  view(slug: string): BookingPublicView | undefined {
+    return bookingLinks.get(slug);
+  },
+  book(slug: string, req: BookSlotRequest): BookedMeeting | undefined {
+    const link = bookingLinks.get(slug);
+    if (!link) return undefined;
+    if (!link.availableSlots.includes(req.slotStart)) return undefined;
+    // Consume the slot so a second booking on the same slot 409s.
+    link.availableSlots = link.availableSlots.filter((s) => s !== req.slotStart);
+    const start = new Date(req.slotStart);
+    const end = new Date(start.getTime() + link.durationMinutes * 60_000);
+    return {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      name: link.title,
+      description: req.notes,
+      location: undefined,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    };
+  },
+  hasSlot(slug: string, slotStart: string): boolean {
+    return !!bookingLinks.get(slug)?.availableSlots.includes(slotStart);
+  },
+};
 
 export const activityStore = {
   list(): ActivityDTO[] {
