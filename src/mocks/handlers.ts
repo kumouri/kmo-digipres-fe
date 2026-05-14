@@ -195,6 +195,20 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
+  http.put(`${API_BASE}/activities/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as ActivityDTO;
+    const updated = activityStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/activities/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = activityStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
   // --- Communication --------------------------------------------------------
   // Mirrors CommunicationController.sendEmail: returns Mono<Boolean>, and on
   // success logs an outbound EMAIL activity to the matching contact's

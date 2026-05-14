@@ -213,6 +213,39 @@ test("activities list renders the seeded activity", async ({ page }) => {
   );
 });
 
+test("editing an activity updates its summary on the list view", async ({ page }) => {
+  await login(page);
+  await page.goto("/activities");
+  await page.getByTestId("activity-row-summary").first().click();
+  await expect(page.getByTestId("activity-detail")).toBeVisible();
+
+  const summary = page.getByLabel("Summary *");
+  await summary.fill("Updated outreach summary");
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  await page.getByRole("link", { name: "All activities" }).click();
+  await expect(page.getByTestId("activity-row-summary").first()).toContainText(
+    "Updated outreach summary",
+  );
+});
+
+test("deleting an activity removes it from the list and redirects", async ({ page }) => {
+  await login(page);
+  await page.goto("/activities");
+  // Snapshot the seeded summary so we can assert its absence later.
+  const seededSummary = await page
+    .getByTestId("activity-row-summary")
+    .first()
+    .innerText();
+
+  await page.getByTestId("activity-row-summary").first().click();
+  await page.getByTestId("delete-activity").click();
+  await page.getByTestId("confirm-delete-activity").click();
+
+  await expect(page).toHaveURL(/\/activities$/);
+  await expect(page.getByText(seededSummary, { exact: true })).toHaveCount(0);
+});
+
 test("sending an email from contact detail adds an EMAIL activity to the timeline", async ({ page }) => {
   await login(page);
   await page.goto("/contacts");

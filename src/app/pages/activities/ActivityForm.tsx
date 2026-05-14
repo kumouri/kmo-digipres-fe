@@ -45,21 +45,40 @@ export function defaultActivityValues(): ActivityFormValues {
   };
 }
 
-export function formValuesToActivity(v: ActivityFormValues): ActivityDTO {
+export function activityToFormValues(a: ActivityDTO | undefined): ActivityFormValues {
+  if (!a) return defaultActivityValues();
   return {
+    type: a.type ?? "NOTE",
+    direction: a.direction ?? "INTERNAL",
+    subjectType: a.subjectType ?? "CONTACT",
+    subjectId: a.subjectId ?? "",
+    summary: a.summary ?? "",
+    body: a.body ?? "",
+  };
+}
+
+export function formValuesToActivity(
+  v: ActivityFormValues,
+  existing?: ActivityDTO,
+): ActivityDTO {
+  return {
+    ...existing,
     type: v.type,
     direction: v.direction,
     subjectType: v.subjectType,
     subjectId: v.subjectId,
     summary: v.summary,
     body: v.body || undefined,
-    occurredAt: new Date().toISOString(),
+    // Only stamp occurredAt on initial create — don't overwrite the original
+    // timestamp on edit.
+    occurredAt: existing?.occurredAt ?? new Date().toISOString(),
   };
 }
 
 interface ActivityFormProps {
   onSubmit: SubmitHandler<ActivityFormValues>;
   submitLabel: string;
+  defaultValues?: ActivityFormValues;
   isSubmitting?: boolean;
   onCancel?: () => void;
 }
@@ -67,6 +86,7 @@ interface ActivityFormProps {
 export function ActivityForm({
   onSubmit,
   submitLabel,
+  defaultValues,
   isSubmitting,
   onCancel,
 }: ActivityFormProps) {
@@ -78,7 +98,7 @@ export function ActivityForm({
     formState: { errors },
   } = useForm<ActivityFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultActivityValues(),
+    defaultValues: defaultValues ?? defaultActivityValues(),
   });
 
   return (
