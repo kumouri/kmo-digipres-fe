@@ -16,32 +16,35 @@ separate product.
 For end-user docs (how to run it, env vars, tenant bootstrap), see
 [`README.md`](README.md). This file is for the engineering conventions.
 
-## Plan-driven development
+## Build status
 
 `init-kmo-digipres-fe` (six phases, scaffold → auth → contacts → companies →
-deals → activities+email) is complete. The repo is now driven by the
-`crm-components-library-init` plan, stored at
-`C:\Users\willa\.claude\plans\research-standard-components-that-resilient-nova.md`.
-It converts this repo into an npm workspace and extracts a reusable CRM
-component library. Phases — one PR per phase:
+deals → activities+email) is complete and merged. The `crm-components-library-init`
+plan (stored at
+`C:\Users\willa\.claude\plans\research-standard-components-that-resilient-nova.md`)
+is also fully shipped through its four phases plus the public-contact-form follow-on:
 
-1. `crm-components-library-init-phase-1-workspace-migration` — split into
-   `packages/admin` (existing SPA) + `packages/crm-components` (skeleton)
-2. `crm-components-library-init-phase-2-primitives-and-api-client` — lift
-   shadcn primitives, `types/api.ts`, and the DI-friendly `createCrmClient`
-   into the library
-3. `crm-components-library-init-phase-3-admin-views` — lift the contact /
-   company / deal / activity page components, decouple from `useNavigate` /
-   `useAuth`
-4. `crm-components-library-init-phase-4-public-widgets` — `<BookingWidget>`,
-   `<PublicContactForm>` (latter gated on Phase 5)
-5. `feat/public-contacts-endpoint` (in `kmo-digipres-be`, dispatched by
-   sub-agent) — `POST /public/{tenantSlug}/contacts` unlocking
-   `<PublicContactForm>`
+| Phase | What shipped |
+|---|---|
+| Phase 1: workspace-migration | Converted repo to npm workspace: `packages/admin` + `packages/crm-components` skeleton |
+| Phase 2: primitives-and-api-client | shadcn primitives, `types/api.ts`, DI-friendly `createCrmClient` lifted to library |
+| Phase 3: admin-views | Contact / company / deal / activity page components + DataTable lifted to `@kmosf/crm-components` |
+| Phase 4: public-widgets | `<BookingWidget>` + scaffolded `<PublicContactForm>` shipped in library |
+| `feat/enable-public-contact-form` | `<PublicContactForm>` wired to live BE `POST /public/{tenantSlug}/contacts` endpoint |
+
+**The backend is significantly further ahead than the FE.** The backend has
+Quote / Invoice / Stripe / Portal auth / Inbox / Sequences / Reports / Service Hub /
+Knowledge Base / AI assist / RAG + AskAI / Lead scoring v2 / GDPR compliance (DSR,
+consent, retention) / Automation / Webhooks / Home-services / QuickBooks / Restaurant /
+Salon-Spa / Square POS with no FE counterparts yet. FE feature parity is planned as
+"Phase B" in the back-office ultraplan
+(`C:\Users\willa\.claude\plans\ultraplan-research-back-office-iridescent-wilkes.md`).
+When adding new resource pages, derive `types/api.ts` types from the backend's DTO
+classes, not from runtime responses.
 
 Tier-2 portal-authenticated components (PortalProfile, PortalInvoices,
-PortalActivities, NewsletterSignup, SupportTicketForm) are tracked in the
-plan but deferred until a client engagement pulls them into scope.
+PortalActivities, SupportTicketForm) are deferred until a client engagement pulls
+them into scope.
 
 For unplanned fixes outside any plan, use `feat/<desc>` or `fix/<desc>`.
 See the workspace [`CLAUDE.md`](../../CLAUDE.md) for the full convention.
@@ -153,9 +156,7 @@ mocked endpoints return cross-tenant data.
 - **Forms** are `react-hook-form` + `zod`. Co-locate the schema with the form
   component; use `@hookform/resolvers/zod`. Submit handlers call API functions
   directly; surface errors with `toast.error(error.message)` from sonner.
-- **Error handling:** the backend has no error envelope yet — exceptions
-  bubble as 500s. The API client throws `ApiError(status, message)`. UI
-  layers should catch and toast; don't try to interpret 5xx bodies.
+- **Error handling:** the backend returns **RFC 7807 `ProblemDetail`** responses for all errors via `GlobalErrorHandler`. The API client throws `ApiError(status, message)`. UI layers should catch and toast. The `errorCode` and `correlationId` fields in the response body can help diagnose issues — log them; don't try to drive UI logic off them.
 - **No drag-and-drop in phase 5.** Pipeline uses explicit move buttons; revisit
   DnD in a polish pass.
 - **No pagination/server-side filtering yet.** Backend returns `Flux<DTO>`
@@ -173,5 +174,4 @@ mocked endpoints return cross-tenant data.
 - Cloudflare/Wrangler deploy pipeline — the sibling `kmosf-homepage` repo uses
   one, but admin UIs likely deploy behind auth on a different surface and
   haven't picked a target yet.
-- A response-envelope ergonomic layer over the backend's bare 500s — wait until
-  the backend lands a `@ControllerAdvice`.
+- A richer response-envelope ergonomic layer — the backend's RFC 7807 error responses are now handled, but a full typed-error client layer (mapping `errorCode` ranges to specific error classes) is deferred.
