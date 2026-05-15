@@ -33,3 +33,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Claude Code local state (agent worktrees, local settings)
+# Not committed: `git stash -u` would otherwise sweep live worktrees. See KMOSF Friction Log.
+.claude/
