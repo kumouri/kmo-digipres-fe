@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Override with SMOKE_PORT when 5273 is taken locally; CI uses the default.
+const PORT = Number(process.env.SMOKE_PORT) || 5273;
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
@@ -8,7 +11,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: "http://localhost:5273",
+    baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -19,8 +22,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -w @kmosf/crm-admin -- --port 5273 --strictPort",
-    port: 5273,
+    command: `npm run dev -w @kmosf/crm-admin -- --port ${PORT} --strictPort`,
+    port: PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
