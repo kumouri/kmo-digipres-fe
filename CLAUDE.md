@@ -18,11 +18,29 @@ When writing API calls or understanding FE–BE contracts, read `.claude/backend
 When writing components, queries, forms, or handling errors, read `.claude/conventions.md`.
 For what is explicitly out of scope for the current init plan, read `.claude/scope-boundaries.md`.
 
-## The backend is significantly further ahead
+## Phase B: FE feature parity (SHIPPED)
 
-The backend has Quote / Invoice / Stripe / Portal auth / Inbox / Sequences / Reports / Service Hub / Knowledge Base / AI assist / RAG + AskAI / Lead scoring v2 / GDPR compliance (DSR, consent, retention) / Automation / Webhooks / Home-services / QuickBooks / Restaurant / Salon-Spa / Square POS with no FE counterparts yet. FE feature parity is planned as "Phase B" in the back-office ultraplan (`C:\Users\willa\.claude\plans\ultraplan-research-back-office-iridescent-wilkes.md`).
+Phase B shipped the following 9 new admin areas on top of the Phase A baseline (Contacts, Companies, Deals, Activities):
 
-When adding new resource pages, derive `types/api.ts` types from the backend's DTO classes, not from runtime responses. Tier-2 portal-authenticated components (PortalProfile, PortalInvoices, PortalActivities, SupportTicketForm) are deferred until a client engagement pulls them into scope.
+| Area | Route | API surface |
+|---|---|---|
+| Quotes | `/quotes`, `/quotes/:id` | GET/POST/PUT/DELETE /quotes; POST /quotes/:id/status; GET /quotes/:id/pdf |
+| Invoices | `/invoices`, `/invoices/:id` | CRUD; POST /invoices/from-quote/:quoteId; POST /invoices/:id/status; GET/POST /invoices/:id/payments |
+| Tickets | `/tickets`, `/tickets/:id` | CRUD; POST /tickets/:id/transition; GET/POST /tickets/:id/comments |
+| Knowledge Base | `/knowledge-base`, `/knowledge-base/:id` | CRUD; POST /knowledge-base/articles/:id/publish; POST /knowledge-base/search |
+| Inbox | `/inbox`, `/inbox/:id` | GET /inbox/threads; GET/POST /inbox/threads/:id/messages; POST /inbox/threads/:id/claim |
+| Field Definitions | `/field-definitions`, `/field-definitions/:id` | CRUD /admin/field-definitions |
+| Audit Log | `/audit` | GET /audit; GET /audit/by-actor/:userId |
+| Reports + Dashboards | `/reports`, `/reports/:id`, `/dashboards`, `/dashboards/:id` | CRUD /reports/saved; POST /reports/saved/:id/run; CRUD /reports/dashboards |
+| AI-assist | AskAiDialog in header | POST /ai/ask; POST /ai/summarize-timeline; POST /ai/draft-reply |
+
+**Type generation**: OpenAPI types are now generated via `npm run gen:api` from the vendored spec at `packages/crm-components/openapi/openapi.json`. Types live in `packages/crm-components/src/types/openapi.ts` (auto-generated, do not edit) and are re-exported via alias shims in `packages/crm-components/src/types/api.ts`. Run `npm run gen:api:check` to detect drift between the vendored spec and generated types (used in CI).
+
+**Base URL**: `/api/v1` (set in `packages/admin/src/app/api/client.ts` line 12; MSW handlers use same constant in `handlers.ts`).
+
+**Remaining deferred (Tier-2)**: Stripe / Portal auth / Sequences / GDPR compliance (DSR, consent, retention) / Automation / Webhooks / Home-services / QuickBooks / Restaurant / Salon-Spa / Square POS / portal-authenticated components (PortalProfile, PortalInvoices, PortalActivities, SupportTicketForm). Deferred until a client engagement pulls them into scope.
+
+When adding new resource pages, derive `types/api.ts` types from the generated `openapi.ts` aliases (`components["schemas"]["X"]`), not from runtime responses. Use hand-written narrow interfaces only when generated types are too permissive for strict call sites.
 
 For unplanned fixes outside any plan, use `feat/<desc>` or `fix/<desc>`. See the workspace [`CLAUDE.md`](../../CLAUDE.md) for the full convention.
 
