@@ -31,7 +31,7 @@ test("unauthenticated visit to a protected route redirects to /login", async ({ 
 
 test("successful login lands on the dashboard with the user menu visible", async ({ page }) => {
   await login(page);
-  await expect(page).toHaveURL("http://localhost:5173/");
+  await expect(page).toHaveURL("http://localhost:5273/");
   await expect(page.getByTestId("user-menu-trigger")).toBeVisible();
   await expect(page.getByText(SMOKE_EMAIL)).toBeVisible();
 });
