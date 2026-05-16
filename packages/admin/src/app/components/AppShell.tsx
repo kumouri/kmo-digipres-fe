@@ -2,12 +2,14 @@ import { NavLink, Outlet } from "react-router";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
+  BarChart2,
   BookOpen,
   Building2,
   ClipboardList,
   FileText,
   Inbox,
   LayoutDashboard,
+  LayoutGrid,
   Receipt,
   Settings2,
   Target,
@@ -37,6 +39,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/field-definitions", label: "Field Definitions", icon: Settings2 },
   { to: "/audit", label: "Audit Log", icon: ClipboardList },
+  { to: "/reports", label: "Reports", icon: BarChart2 },
+  { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
 ];
 
 export function AppShell() {

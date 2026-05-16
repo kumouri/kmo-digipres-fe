@@ -80,6 +80,18 @@ const FieldDefinitionDetail = lazy(() =>
 const AuditList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.AuditList })),
 );
+const ReportsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReportsList })),
+);
+const ReportDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReportDetail })),
+);
+const DashboardsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.DashboardsList })),
+);
+const DashboardDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.DashboardDetail })),
+);
 
 function LazyOutlet() {
   return (
@@ -137,6 +149,10 @@ export const router = createBrowserRouter([
               { path: "field-definitions", element: <FieldDefinitionsList /> },
               { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
               { path: "audit", element: <AuditList /> },
+              { path: "reports", element: <ReportsList /> },
+              { path: "reports/:id", element: <ReportDetail /> },
+              { path: "dashboards", element: <DashboardsList /> },
+              { path: "dashboards/:id", element: <DashboardDetail /> },
             ],
           },
         ],

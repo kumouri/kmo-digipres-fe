@@ -2,9 +2,11 @@ import { http, HttpResponse, delay } from "msw";
 
 import type {
   ActivityDTO,
+  AuditEventDTO,
   BookSlotRequest,
   CompanyDTO,
   ContactDTO,
+  Dashboard,
   DealDTO,
   FieldDefinition,
   Invoice,
@@ -14,10 +16,10 @@ import type {
   MoveStageRequest,
   Payment,
   Quote,
+  SavedReport,
   SingleEmailCommunicationDTO,
   Ticket,
 } from "@kmosf/crm-components";
-import type { AuditEventDTO } from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
   SMOKE_TOKEN,
@@ -27,12 +29,14 @@ import {
   bookingStore,
   companyStore,
   contactStore,
+  dashboardStore,
   dealStore,
   fieldDefStore,
   inboxStore,
   invoiceStore,
   kbStore,
   quoteStore,
+  savedReportStore,
   ticketStore,
 } from "./store";
 
@@ -592,5 +596,90 @@ export const handlers = [
     const { userId } = params as { userId: string };
     const events: AuditEventDTO[] = auditStore.listByActor(userId);
     return HttpResponse.json(events);
+  }),
+
+  // --- Saved Reports --------------------------------------------------------
+  http.get(`${API_BASE}/reports/saved`, ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return HttpResponse.json(savedReportStore.list());
+  }),
+
+  http.post(`${API_BASE}/reports/saved`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as SavedReport;
+    return HttpResponse.json(savedReportStore.create(body), { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/reports/saved/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const report = savedReportStore.get(id);
+    if (!report) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(report);
+  }),
+
+  http.put(`${API_BASE}/reports/saved/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const body = (await request.json()) as SavedReport;
+    const updated = savedReportStore.update(id, body);
+    if (!updated) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/reports/saved/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    savedReportStore.delete(id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post(`${API_BASE}/reports/saved/:id/run`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const report = savedReportStore.get(id);
+    if (!report) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    // Return mock result rows based on the report entity type
+    const mockRows: Record<string, unknown>[] = [
+      { stage: "QUALIFIED", count: 3, totalValue: 15000 },
+      { stage: "NEGOTIATION", count: 2, totalValue: 25000 },
+    ];
+    return HttpResponse.json(mockRows);
+  }),
+
+  // --- Dashboards -----------------------------------------------------------
+  http.get(`${API_BASE}/reports/dashboards`, ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return HttpResponse.json(dashboardStore.list());
+  }),
+
+  http.post(`${API_BASE}/reports/dashboards`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as Dashboard;
+    return HttpResponse.json(dashboardStore.create(body), { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/reports/dashboards/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const dash = dashboardStore.get(id);
+    if (!dash) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(dash);
+  }),
+
+  http.put(`${API_BASE}/reports/dashboards/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const body = (await request.json()) as Dashboard;
+    const updated = dashboardStore.update(id, body);
+    if (!updated) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/reports/dashboards/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    dashboardStore.delete(id);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

@@ -10,6 +10,7 @@ import type {
   BookingPublicView,
   CompanyDTO,
   ContactDTO,
+  Dashboard,
   DealDTO,
   FieldDefinition,
   FieldDiff,
@@ -20,6 +21,7 @@ import type {
   Payment,
   PipelineStage,
   Quote,
+  SavedReport,
   Ticket,
   TicketComment,
   User,
@@ -790,5 +792,113 @@ export const auditStore = {
   },
   add(event: AuditEventDTO): void {
     auditEvents.push(event);
+  },
+};
+
+// --- Reports / Dashboards ---------------------------------------------------
+
+const seedSavedReport: SavedReport = {
+  id: "b0000000-b000-b000-b000-b00000000001",
+  tenantId: SMOKE_USER.tenantId,
+  name: "Open Deals by Stage",
+  description: "Count of open deals grouped by pipeline stage",
+  entityType: "DEAL",
+  filterTree: [],
+  groupBy: ["stage"],
+  aggregations: [],
+  chartHint: "BAR",
+  version: 1,
+  createdAt: "2026-05-14T00:00:00Z",
+  updatedAt: "2026-05-14T00:00:00Z",
+};
+
+const savedReports = new Map<string, SavedReport>([[seedSavedReport.id!, seedSavedReport]]);
+
+export const savedReportStore = {
+  list(): SavedReport[] {
+    return Array.from(savedReports.values());
+  },
+  get(id: string): SavedReport | undefined {
+    return savedReports.get(id);
+  },
+  create(input: SavedReport): SavedReport {
+    const id = uuid();
+    const created: SavedReport = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    savedReports.set(id, created);
+    return created;
+  },
+  update(id: string, input: SavedReport): SavedReport | undefined {
+    if (!savedReports.has(id)) return undefined;
+    const updated: SavedReport = {
+      ...savedReports.get(id),
+      ...input,
+      id,
+      version: (savedReports.get(id)?.version ?? 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    savedReports.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return savedReports.delete(id);
+  },
+};
+
+const seedDashboard: Dashboard = {
+  id: "c0000000-c000-c000-c000-c00000000001",
+  tenantId: SMOKE_USER.tenantId,
+  name: "Sales Overview",
+  description: "Key metrics for the sales team",
+  items: [
+    { savedReportId: seedSavedReport.id, gridX: 0, gridY: 0, gridW: 6, gridH: 4 },
+  ],
+  version: 1,
+  createdAt: "2026-05-14T00:00:00Z",
+  updatedAt: "2026-05-14T00:00:00Z",
+};
+
+const dashboards = new Map<string, Dashboard>([[seedDashboard.id!, seedDashboard]]);
+
+export const dashboardStore = {
+  list(): Dashboard[] {
+    return Array.from(dashboards.values());
+  },
+  get(id: string): Dashboard | undefined {
+    return dashboards.get(id);
+  },
+  create(input: Dashboard): Dashboard {
+    const id = uuid();
+    const created: Dashboard = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    dashboards.set(id, created);
+    return created;
+  },
+  update(id: string, input: Dashboard): Dashboard | undefined {
+    if (!dashboards.has(id)) return undefined;
+    const updated: Dashboard = {
+      ...dashboards.get(id),
+      ...input,
+      id,
+      version: (dashboards.get(id)?.version ?? 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    dashboards.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return dashboards.delete(id);
   },
 };

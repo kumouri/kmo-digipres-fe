@@ -102,3 +102,5 @@ export { FieldDefinitionsList, FieldDefinitionDetail } from "./admin/field-defin
 export { useFieldDefinitionsApi } from "./hooks/useFieldDefinitionsApi";
 export { AuditList } from "./admin/audit";
 export { useAuditApi } from "./hooks/useAuditApi";
+export { ReportsList, ReportDetail, DashboardsList, DashboardDetail } from "./admin/reports";
+export { useReportsApi } from "./hooks/useReportsApi";
