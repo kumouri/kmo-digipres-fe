@@ -258,3 +258,5 @@ export type AskResult = components["schemas"]["AskResult"];
 export type AiSummary = components["schemas"]["AiSummary"];
 export type AiDraft = components["schemas"]["AiDraft"];
 export type Citation = components["schemas"]["Citation"];
+export type SummarizeBody = components["schemas"]["SummarizeBody"];
+export type DraftReplyBody = components["schemas"]["DraftReplyBody"];

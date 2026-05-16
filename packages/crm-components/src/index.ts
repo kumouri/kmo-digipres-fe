@@ -104,3 +104,5 @@ export { AuditList } from "./admin/audit";
 export { useAuditApi } from "./hooks/useAuditApi";
 export { ReportsList, ReportDetail, DashboardsList, DashboardDetail } from "./admin/reports";
 export { useReportsApi } from "./hooks/useReportsApi";
+export { AskAiDialog } from "./admin/ai";
+export { useAiApi } from "./hooks/useAiApi";

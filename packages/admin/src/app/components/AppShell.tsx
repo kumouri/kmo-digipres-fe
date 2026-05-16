@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
-import { cn } from "@kmosf/crm-components";
+import { cn, AskAiDialog } from "@kmosf/crm-components";
 
 interface NavItem {
   to: string;
@@ -76,7 +76,10 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
           <div className="text-sm text-muted-foreground">Admin</div>
-          <UserMenu />
+          <div className="flex items-center gap-2">
+            <AskAiDialog />
+            <UserMenu />
+          </div>
         </header>
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
           <Outlet />

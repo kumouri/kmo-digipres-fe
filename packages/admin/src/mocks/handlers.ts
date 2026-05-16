@@ -2,11 +2,16 @@ import { http, HttpResponse, delay } from "msw";
 
 import type {
   ActivityDTO,
+  AiDraft,
+  AiSummary,
+  AskAiRequest,
+  AskResult,
   AuditEventDTO,
   BookSlotRequest,
   CompanyDTO,
   ContactDTO,
   Dashboard,
+  DraftReplyBody,
   DealDTO,
   FieldDefinition,
   Invoice,
@@ -18,6 +23,7 @@ import type {
   Quote,
   SavedReport,
   SingleEmailCommunicationDTO,
+  SummarizeBody,
   Ticket,
 } from "@kmosf/crm-components";
 import {
@@ -681,5 +687,45 @@ export const handlers = [
     const { id } = params as { id: string };
     dashboardStore.delete(id);
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  // --- AI assist ------------------------------------------------------------
+  http.post(`${API_BASE}/ai/ask`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as AskAiRequest;
+    const result: AskResult = {
+      answer: `Here is a mock AI answer for: "${body.question ?? ""}"`,
+      citations: [
+        {
+          sourceType: "KNOWLEDGE_BASE",
+          sourceId: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          contentPreview: "How to reset your password",
+          score: 0.92,
+        },
+      ],
+    };
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/ai/summarize-timeline`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as SummarizeBody;
+    const summary: AiSummary = {
+      text: `Mock timeline summary for contact ${body.contactId ?? "unknown"}.`,
+      inputTokens: 120,
+      outputTokens: 45,
+    };
+    return HttpResponse.json(summary);
+  }),
+
+  http.post(`${API_BASE}/ai/draft-reply`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as DraftReplyBody;
+    const draft: AiDraft = {
+      text: `Thank you for reaching out about "${body.threadSubject ?? "your inquiry"}". We will get back to you shortly.`,
+      inputTokens: 80,
+      outputTokens: 30,
+    };
+    return HttpResponse.json(draft);
   }),
 ];
