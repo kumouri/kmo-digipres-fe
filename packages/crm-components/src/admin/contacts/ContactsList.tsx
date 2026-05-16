@@ -115,7 +115,7 @@ export function ContactsList() {
           <DialogHeader>
             <DialogTitle>New contact</DialogTitle>
             <DialogDescription>
-              Persisted via <code>POST /api/contacts</code>.
+              Persisted via <code>POST /api/v1/contacts</code>.
             </DialogDescription>
           </DialogHeader>
           <ContactForm

@@ -36,6 +36,9 @@ jobs:
       - name: Install Playwright (chromium)
         run: npx playwright install --with-deps chromium
 
+      - name: Codegen drift check
+        run: npm run gen:api:check
+
       - name: Typecheck
         run: npm run typecheck
 

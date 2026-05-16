@@ -9,7 +9,7 @@ export { ApiError };
 export const TOKEN_STORAGE_KEY = "kmosf.jwt";
 export const UNAUTHORIZED_EVENT = "kmosf:unauthorized";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
 export function getStoredToken(): string | null {
   try {

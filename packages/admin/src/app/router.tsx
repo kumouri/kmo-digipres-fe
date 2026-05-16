@@ -41,6 +41,57 @@ const ActivitiesList = lazy(() =>
 const ActivityDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ActivityDetail })),
 );
+const QuotesList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.QuotesList })),
+);
+const QuoteDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.QuoteDetail })),
+);
+const InvoicesList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InvoicesList })),
+);
+const InvoiceDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InvoiceDetail })),
+);
+const TicketsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.TicketsList })),
+);
+const TicketDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.TicketDetail })),
+);
+const KnowledgeBaseList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.KnowledgeBaseList })),
+);
+const KnowledgeBaseDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.KnowledgeBaseDetail })),
+);
+const InboxList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InboxList })),
+);
+const InboxDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InboxDetail })),
+);
+const FieldDefinitionsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.FieldDefinitionsList })),
+);
+const FieldDefinitionDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.FieldDefinitionDetail })),
+);
+const AuditList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.AuditList })),
+);
+const ReportsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReportsList })),
+);
+const ReportDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReportDetail })),
+);
+const DashboardsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.DashboardsList })),
+);
+const DashboardDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.DashboardDetail })),
+);
 
 function LazyOutlet() {
   return (
@@ -85,6 +136,23 @@ export const router = createBrowserRouter([
               { path: "deals/:id", element: <DealDetail /> },
               { path: "activities", element: <ActivitiesList /> },
               { path: "activities/:id", element: <ActivityDetail /> },
+              { path: "quotes", element: <QuotesList /> },
+              { path: "quotes/:id", element: <QuoteDetail /> },
+              { path: "invoices", element: <InvoicesList /> },
+              { path: "invoices/:id", element: <InvoiceDetail /> },
+              { path: "tickets", element: <TicketsList /> },
+              { path: "tickets/:id", element: <TicketDetail /> },
+              { path: "knowledge-base", element: <KnowledgeBaseList /> },
+              { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
+              { path: "inbox", element: <InboxList /> },
+              { path: "inbox/:id", element: <InboxDetail /> },
+              { path: "field-definitions", element: <FieldDefinitionsList /> },
+              { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
+              { path: "audit", element: <AuditList /> },
+              { path: "reports", element: <ReportsList /> },
+              { path: "reports/:id", element: <ReportDetail /> },
+              { path: "dashboards", element: <DashboardsList /> },
+              { path: "dashboards/:id", element: <DashboardDetail /> },
             ],
           },
         ],

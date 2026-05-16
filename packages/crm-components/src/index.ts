@@ -88,3 +88,21 @@ export {
   activityToFormValues,
   formValuesToActivity,
 } from "./admin/activities";
+export { QuotesList, QuoteDetail } from "./admin/quotes";
+export { useQuotesApi } from "./hooks/useQuotesApi";
+export { InvoicesList, InvoiceDetail } from "./admin/invoices";
+export { useInvoicesApi } from "./hooks/useInvoicesApi";
+export { TicketsList, TicketDetail } from "./admin/tickets";
+export { useTicketsApi } from "./hooks/useTicketsApi";
+export { KnowledgeBaseList, KnowledgeBaseDetail } from "./admin/knowledge-base";
+export { useKnowledgeBaseApi } from "./hooks/useKnowledgeBaseApi";
+export { InboxList, InboxDetail } from "./admin/inbox";
+export { useInboxApi } from "./hooks/useInboxApi";
+export { FieldDefinitionsList, FieldDefinitionDetail } from "./admin/field-definitions";
+export { useFieldDefinitionsApi } from "./hooks/useFieldDefinitionsApi";
+export { AuditList } from "./admin/audit";
+export { useAuditApi } from "./hooks/useAuditApi";
+export { ReportsList, ReportDetail, DashboardsList, DashboardDetail } from "./admin/reports";
+export { useReportsApi } from "./hooks/useReportsApi";
+export { AskAiDialog } from "./admin/ai";
+export { useAiApi } from "./hooks/useAiApi";

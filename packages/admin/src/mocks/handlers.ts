@@ -2,27 +2,51 @@ import { http, HttpResponse, delay } from "msw";
 
 import type {
   ActivityDTO,
+  AiDraft,
+  AiSummary,
+  AskAiRequest,
+  AskResult,
+  AuditEventDTO,
   BookSlotRequest,
   CompanyDTO,
   ContactDTO,
+  Dashboard,
+  DraftReplyBody,
   DealDTO,
+  FieldDefinition,
+  Invoice,
+  KnowledgeBaseArticle,
   LoginRequest,
   LoginResponse,
   MoveStageRequest,
+  Payment,
+  Quote,
+  SavedReport,
   SingleEmailCommunicationDTO,
+  SummarizeBody,
+  Ticket,
 } from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  auditStore,
   bookingStore,
   companyStore,
   contactStore,
+  dashboardStore,
   dealStore,
+  fieldDefStore,
+  inboxStore,
+  invoiceStore,
+  kbStore,
+  quoteStore,
+  savedReportStore,
+  ticketStore,
 } from "./store";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
 function requireAuth(request: Request): boolean {
   const header = request.headers.get("authorization");
@@ -225,6 +249,284 @@ export const handlers = [
     return HttpResponse.json(meeting, { status: 201 });
   }),
 
+  // --- Quotes ---------------------------------------------------------------
+  http.get(`${API_BASE}/quotes`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(quoteStore.list());
+  }),
+
+  http.get(`${API_BASE}/quotes/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = quoteStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/quotes`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Quote;
+    const created = quoteStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/quotes/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Quote;
+    const updated = quoteStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/quotes/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = quoteStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/quotes/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "SENT";
+    const updated = quoteStore.changeStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  // Quote PDF — return a simple text response (no real PDF in smoke mode)
+  http.get(`${API_BASE}/quotes/:id/pdf`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return new HttpResponse("PDF_STUB", {
+      status: 200,
+      headers: { "Content-Type": "application/pdf" },
+    });
+  }),
+
+  // --- Invoices -------------------------------------------------------------
+  http.get(`${API_BASE}/invoices`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(invoiceStore.list());
+  }),
+
+  http.get(`${API_BASE}/invoices/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = invoiceStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/invoices`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Invoice;
+    const created = invoiceStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.post(`${API_BASE}/invoices/from-quote/:quoteId`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const quote = quoteStore.get(params.quoteId as string);
+    if (!quote) return new HttpResponse(null, { status: 404 });
+    const created = invoiceStore.createFromQuote(quote);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.delete(`${API_BASE}/invoices/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = invoiceStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/invoices/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "SENT";
+    const updated = invoiceStore.changeStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/invoices/:id/payments`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(invoiceStore.listPayments(params.id as string));
+  }),
+
+  http.post(`${API_BASE}/invoices/:id/payments`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Payment;
+    const created = invoiceStore.recordPayment(params.id as string, body);
+    if (!created) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Tickets ---------------------------------------------------------------
+  http.get(`${API_BASE}/tickets`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(ticketStore.list());
+  }),
+
+  http.get(`${API_BASE}/tickets/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = ticketStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/tickets`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Ticket;
+    const created = ticketStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/tickets/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Ticket;
+    const updated = ticketStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/tickets/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = ticketStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/tickets/:id/transition`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "OPEN";
+    const updated = ticketStore.transition(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/tickets/:id/comments`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(ticketStore.listComments(params.id as string));
+  }),
+
+  http.post(`${API_BASE}/tickets/:id/comments`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { body: string };
+    const created = ticketStore.addComment(params.id as string, body.body ?? "");
+    if (!created) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Knowledge Base -------------------------------------------------------
+  http.get(`${API_BASE}/knowledge-base/articles`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(kbStore.list());
+  }),
+
+  http.get(`${API_BASE}/knowledge-base/articles/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = kbStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/knowledge-base/articles`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as KnowledgeBaseArticle;
+    const created = kbStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/knowledge-base/articles/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as KnowledgeBaseArticle;
+    const updated = kbStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/knowledge-base/articles/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = kbStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/knowledge-base/articles/:id/publish`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const updated = kbStore.publish(params.id as string);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.post(`${API_BASE}/knowledge-base/search`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { query?: string };
+    return HttpResponse.json(kbStore.search(body.query ?? ""));
+  }),
+
+  // --- Inbox ----------------------------------------------------------------
+  http.get(`${API_BASE}/inbox/threads`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(inboxStore.listThreads());
+  }),
+
+  http.get(`${API_BASE}/inbox/threads/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = inboxStore.getThread(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/inbox/threads/:id/claim`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const updated = inboxStore.claimThread(params.id as string);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/inbox/threads/:id/messages`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(inboxStore.listMessages(params.id as string));
+  }),
+
+  http.post(`${API_BASE}/inbox/threads/:id/messages`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { body: string };
+    const created = inboxStore.replyToThread(params.id as string, body.body ?? "");
+    if (!created) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Field Definitions ----------------------------------------------------
+  http.get(`${API_BASE}/admin/field-definitions`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(fieldDefStore.list());
+  }),
+
+  http.get(`${API_BASE}/admin/field-definitions/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = fieldDefStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/admin/field-definitions`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as FieldDefinition;
+    const created = fieldDefStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/admin/field-definitions/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as FieldDefinition;
+    const updated = fieldDefStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/admin/field-definitions/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = fieldDefStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
   // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant
   // resolved from the path, contact stamped with the path's tenantId, 400
   // when neither firstName nor lastName is supplied. Mock store doubles as
@@ -283,5 +585,147 @@ export const handlers = [
       });
     }
     return HttpResponse.json(true);
+  }),
+
+  // --- Audit ----------------------------------------------------------------
+  http.get(`${API_BASE}/audit`, ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const url = new URL(request.url);
+    const entityType = url.searchParams.get("entityType") ?? "";
+    const entityId = url.searchParams.get("entityId") ?? "";
+    const events: AuditEventDTO[] = auditStore.listForEntity(entityType, entityId);
+    return HttpResponse.json(events);
+  }),
+
+  http.get(`${API_BASE}/audit/by-actor/:userId`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { userId } = params as { userId: string };
+    const events: AuditEventDTO[] = auditStore.listByActor(userId);
+    return HttpResponse.json(events);
+  }),
+
+  // --- Saved Reports --------------------------------------------------------
+  http.get(`${API_BASE}/reports/saved`, ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return HttpResponse.json(savedReportStore.list());
+  }),
+
+  http.post(`${API_BASE}/reports/saved`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as SavedReport;
+    return HttpResponse.json(savedReportStore.create(body), { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/reports/saved/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const report = savedReportStore.get(id);
+    if (!report) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(report);
+  }),
+
+  http.put(`${API_BASE}/reports/saved/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const body = (await request.json()) as SavedReport;
+    const updated = savedReportStore.update(id, body);
+    if (!updated) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/reports/saved/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    savedReportStore.delete(id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post(`${API_BASE}/reports/saved/:id/run`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const report = savedReportStore.get(id);
+    if (!report) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    // Return mock result rows based on the report entity type
+    const mockRows: Record<string, unknown>[] = [
+      { stage: "QUALIFIED", count: 3, totalValue: 15000 },
+      { stage: "NEGOTIATION", count: 2, totalValue: 25000 },
+    ];
+    return HttpResponse.json(mockRows);
+  }),
+
+  // --- Dashboards -----------------------------------------------------------
+  http.get(`${API_BASE}/reports/dashboards`, ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return HttpResponse.json(dashboardStore.list());
+  }),
+
+  http.post(`${API_BASE}/reports/dashboards`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as Dashboard;
+    return HttpResponse.json(dashboardStore.create(body), { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/reports/dashboards/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const dash = dashboardStore.get(id);
+    if (!dash) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(dash);
+  }),
+
+  http.put(`${API_BASE}/reports/dashboards/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    const body = (await request.json()) as Dashboard;
+    const updated = dashboardStore.update(id, body);
+    if (!updated) return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/reports/dashboards/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { id } = params as { id: string };
+    dashboardStore.delete(id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // --- AI assist ------------------------------------------------------------
+  http.post(`${API_BASE}/ai/ask`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as AskAiRequest;
+    const result: AskResult = {
+      answer: `Here is a mock AI answer for: "${body.question ?? ""}"`,
+      citations: [
+        {
+          sourceType: "KNOWLEDGE_BASE",
+          sourceId: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          contentPreview: "How to reset your password",
+          score: 0.92,
+        },
+      ],
+    };
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/ai/summarize-timeline`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as SummarizeBody;
+    const summary: AiSummary = {
+      text: `Mock timeline summary for contact ${body.contactId ?? "unknown"}.`,
+      inputTokens: 120,
+      outputTokens: 45,
+    };
+    return HttpResponse.json(summary);
+  }),
+
+  http.post(`${API_BASE}/ai/draft-reply`, async ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const body = (await request.json()) as DraftReplyBody;
+    const draft: AiDraft = {
+      text: `Thank you for reaching out about "${body.threadSubject ?? "your inquiry"}". We will get back to you shortly.`,
+      inputTokens: 80,
+      outputTokens: 30,
+    };
+    return HttpResponse.json(draft);
   }),
 ];

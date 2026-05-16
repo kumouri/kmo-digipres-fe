@@ -4,13 +4,26 @@
 
 import type {
   ActivityDTO,
+  AuditEventDTO,
   BookSlotRequest,
   BookedMeeting,
   BookingPublicView,
   CompanyDTO,
   ContactDTO,
+  Dashboard,
   DealDTO,
+  FieldDefinition,
+  FieldDiff,
+  InboxMessage,
+  InboxThread,
+  Invoice,
+  KnowledgeBaseArticle,
+  Payment,
   PipelineStage,
+  Quote,
+  SavedReport,
+  Ticket,
+  TicketComment,
   User,
 } from "@kmosf/crm-components";
 
@@ -235,6 +248,485 @@ export const bookingStore = {
   },
 };
 
+// --- Quotes -----------------------------------------------------------------
+
+const seedQuote: Quote = {
+  id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  tenantId: SMOKE_USER.tenantId,
+  quoteNumber: "Q-0001",
+  status: "DRAFT",
+  currency: "USD",
+  lineItems: [
+    {
+      description: "Website Design Package",
+      quantity: 1,
+      unitPrice: 2500,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 2500,
+    },
+  ],
+  subtotal: 2500,
+  discountTotal: 0,
+  taxTotal: 0,
+  total: 2500,
+  notes: "Seed quote for smoke tests.",
+};
+
+const quotes = new Map<string, Quote>([[seedQuote.id!, seedQuote]]);
+
+export const quoteStore = {
+  list(): Quote[] {
+    return Array.from(quotes.values());
+  },
+  get(id: string): Quote | undefined {
+    return quotes.get(id);
+  },
+  create(input: Quote): Quote {
+    const id = input.id ?? uuid();
+    const created: Quote = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      quoteNumber: `Q-${String(quotes.size + 1).padStart(4, "0")}`,
+      status: "DRAFT",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    quotes.set(id, created);
+    return created;
+  },
+  update(id: string, input: Quote): Quote | undefined {
+    if (!quotes.has(id)) return undefined;
+    const updated: Quote = { ...quotes.get(id), ...input, id };
+    quotes.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return quotes.delete(id);
+  },
+  changeStatus(id: string, target: string): Quote | undefined {
+    const existing = quotes.get(id);
+    if (!existing) return undefined;
+    const updated: Quote = {
+      ...existing,
+      status: target as Quote["status"],
+      statusChangedAt: new Date().toISOString(),
+    };
+    quotes.set(id, updated);
+    return updated;
+  },
+};
+
+// --- Invoices ---------------------------------------------------------------
+
+const seedInvoice: Invoice = {
+  id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  tenantId: SMOKE_USER.tenantId,
+  invoiceNumber: "INV-0001",
+  status: "SENT",
+  currency: "USD",
+  lineItems: [
+    {
+      description: "Website Design Package",
+      quantity: 1,
+      unitPrice: 2500,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 2500,
+    },
+  ],
+  subtotal: 2500,
+  discountTotal: 0,
+  taxTotal: 0,
+  total: 2500,
+  balance: 2500,
+};
+
+const invoices = new Map<string, Invoice>([[seedInvoice.id!, seedInvoice]]);
+const paymentsByInvoice = new Map<string, Payment[]>([
+  [seedInvoice.id!, []],
+]);
+
+export const invoiceStore = {
+  list(): Invoice[] {
+    return Array.from(invoices.values());
+  },
+  get(id: string): Invoice | undefined {
+    return invoices.get(id);
+  },
+  create(input: Invoice): Invoice {
+    const id = input.id ?? uuid();
+    const created: Invoice = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      invoiceNumber: `INV-${String(invoices.size + 1).padStart(4, "0")}`,
+      status: "DRAFT",
+      balance: input.total ?? 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    invoices.set(id, created);
+    paymentsByInvoice.set(id, []);
+    return created;
+  },
+  createFromQuote(quote: Quote): Invoice {
+    const id = uuid();
+    const created: Invoice = {
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      quoteId: quote.id,
+      invoiceNumber: `INV-${String(invoices.size + 1).padStart(4, "0")}`,
+      status: "DRAFT",
+      currency: quote.currency ?? "USD",
+      lineItems: quote.lineItems ?? [],
+      subtotal: quote.subtotal ?? 0,
+      discountTotal: quote.discountTotal ?? 0,
+      taxTotal: quote.taxTotal ?? 0,
+      total: quote.total ?? 0,
+      balance: quote.total ?? 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    invoices.set(id, created);
+    paymentsByInvoice.set(id, []);
+    return created;
+  },
+  delete(id: string): boolean {
+    paymentsByInvoice.delete(id);
+    return invoices.delete(id);
+  },
+  changeStatus(id: string, target: string): Invoice | undefined {
+    const existing = invoices.get(id);
+    if (!existing) return undefined;
+    const updated: Invoice = {
+      ...existing,
+      status: target as Invoice["status"],
+      statusChangedAt: new Date().toISOString(),
+    };
+    invoices.set(id, updated);
+    return updated;
+  },
+  listPayments(invoiceId: string): Payment[] {
+    return paymentsByInvoice.get(invoiceId) ?? [];
+  },
+  recordPayment(invoiceId: string, payment: Payment): Payment | undefined {
+    const invoice = invoices.get(invoiceId);
+    if (!invoice) return undefined;
+    const id = uuid();
+    const created: Payment = {
+      ...payment,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      invoiceId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const existing = paymentsByInvoice.get(invoiceId) ?? [];
+    paymentsByInvoice.set(invoiceId, [...existing, created]);
+    // Update balance
+    const newBalance = (invoice.balance ?? invoice.total ?? 0) - (payment.amount ?? 0);
+    const updated: Invoice = {
+      ...invoice,
+      balance: Math.max(0, newBalance),
+      status: newBalance <= 0 ? "PAID" : "PARTIALLY_PAID",
+    };
+    invoices.set(invoiceId, updated);
+    return created;
+  },
+};
+
+// --- Tickets ----------------------------------------------------------------
+
+const seedTicket: Ticket = {
+  id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+  tenantId: SMOKE_USER.tenantId,
+  subject: "Website contact form not working",
+  body: "The contact form on the homepage returns a 500 error.",
+  status: "OPEN",
+  priority: "HIGH",
+  slaResponseDue: new Date(Date.now() + 2 * 3600_000).toISOString(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const tickets = new Map<string, Ticket>([[seedTicket.id!, seedTicket]]);
+const commentsByTicket = new Map<string, TicketComment[]>([[seedTicket.id!, []]]);
+
+export const ticketStore = {
+  list(): Ticket[] {
+    return Array.from(tickets.values());
+  },
+  get(id: string): Ticket | undefined {
+    return tickets.get(id);
+  },
+  create(input: Ticket): Ticket {
+    const id = uuid();
+    const created: Ticket = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      status: "NEW",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    tickets.set(id, created);
+    commentsByTicket.set(id, []);
+    return created;
+  },
+  update(id: string, input: Ticket): Ticket | undefined {
+    if (!tickets.has(id)) return undefined;
+    const updated: Ticket = { ...tickets.get(id), ...input, id };
+    tickets.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    commentsByTicket.delete(id);
+    return tickets.delete(id);
+  },
+  transition(id: string, target: string): Ticket | undefined {
+    const existing = tickets.get(id);
+    if (!existing) return undefined;
+    const updated: Ticket = {
+      ...existing,
+      status: target as Ticket["status"],
+      resolvedAt: target === "RESOLVED" ? new Date().toISOString() : existing.resolvedAt,
+      updatedAt: new Date().toISOString(),
+    };
+    tickets.set(id, updated);
+    return updated;
+  },
+  listComments(ticketId: string): TicketComment[] {
+    return commentsByTicket.get(ticketId) ?? [];
+  },
+  addComment(ticketId: string, body: string): TicketComment | undefined {
+    if (!tickets.has(ticketId)) return undefined;
+    const comment: TicketComment = {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      ticketId,
+      authorUserId: SMOKE_USER.id,
+      body,
+      createdAt: new Date().toISOString(),
+    };
+    const existing = commentsByTicket.get(ticketId) ?? [];
+    commentsByTicket.set(ticketId, [...existing, comment]);
+    return comment;
+  },
+};
+
+// --- Knowledge Base ---------------------------------------------------------
+
+const seedArticles: KnowledgeBaseArticle[] = [
+  {
+    id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    tenantId: SMOKE_USER.tenantId,
+    title: "How to reset your password",
+    body: "Visit the login page and click 'Forgot password' to get a reset link.",
+    tags: ["authentication", "account"],
+    slug: "how-to-reset-password",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+const kbArticles = new Map<string, KnowledgeBaseArticle>(
+  seedArticles.map((a) => [a.id!, a]),
+);
+
+export const kbStore = {
+  list(): KnowledgeBaseArticle[] {
+    return Array.from(kbArticles.values());
+  },
+  get(id: string): KnowledgeBaseArticle | undefined {
+    return kbArticles.get(id);
+  },
+  create(input: KnowledgeBaseArticle): KnowledgeBaseArticle {
+    const id = uuid();
+    const created: KnowledgeBaseArticle = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      slug: input.slug ?? input.title?.toLowerCase().replace(/\s+/g, "-") ?? id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    kbArticles.set(id, created);
+    return created;
+  },
+  update(id: string, input: KnowledgeBaseArticle): KnowledgeBaseArticle | undefined {
+    if (!kbArticles.has(id)) return undefined;
+    const updated: KnowledgeBaseArticle = { ...kbArticles.get(id), ...input, id };
+    kbArticles.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return kbArticles.delete(id);
+  },
+  publish(id: string): KnowledgeBaseArticle | undefined {
+    const existing = kbArticles.get(id);
+    if (!existing) return undefined;
+    const updated: KnowledgeBaseArticle = {
+      ...existing,
+      publishedAt: new Date().toISOString(),
+    };
+    kbArticles.set(id, updated);
+    return updated;
+  },
+  search(query: string): KnowledgeBaseArticle[] {
+    const q = query.toLowerCase();
+    return Array.from(kbArticles.values()).filter(
+      (a) =>
+        a.title?.toLowerCase().includes(q) ||
+        a.body?.toLowerCase().includes(q) ||
+        (a.tags ?? []).some((t) => t.toLowerCase().includes(q)),
+    );
+  },
+};
+
+// --- Inbox ------------------------------------------------------------------
+
+const SEED_THREAD_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+
+const seedThread: InboxThread = {
+  id: SEED_THREAD_ID,
+  tenantId: SMOKE_USER.tenantId,
+  fromAddress: "client@example.test",
+  subjectNormalized: "Question about the proposal",
+  firstMessageAt: new Date().toISOString(),
+  lastMessageAt: new Date().toISOString(),
+  messageCount: 1,
+  status: "UNCLAIMED",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const seedMessage: InboxMessage = {
+  id: uuid(),
+  tenantId: SMOKE_USER.tenantId,
+  threadId: SEED_THREAD_ID,
+  messageId: "msg-001",
+  from: "client@example.test",
+  to: ["support@kmosf.example"],
+  subject: "Question about the proposal",
+  textBody: "Hi, I had some questions about the proposal you sent over.",
+  receivedAt: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const inboxThreads = new Map<string, InboxThread>([[seedThread.id!, seedThread]]);
+const inboxMessages = new Map<string, InboxMessage[]>([
+  [SEED_THREAD_ID, [seedMessage]],
+]);
+
+export const inboxStore = {
+  listThreads(): InboxThread[] {
+    return Array.from(inboxThreads.values());
+  },
+  getThread(id: string): InboxThread | undefined {
+    return inboxThreads.get(id);
+  },
+  claimThread(id: string): InboxThread | undefined {
+    const existing = inboxThreads.get(id);
+    if (!existing) return undefined;
+    const updated: InboxThread = {
+      ...existing,
+      status: "CLAIMED",
+      claimedByUserId: SMOKE_USER.id,
+      updatedAt: new Date().toISOString(),
+    };
+    inboxThreads.set(id, updated);
+    return updated;
+  },
+  listMessages(threadId: string): InboxMessage[] {
+    return inboxMessages.get(threadId) ?? [];
+  },
+  replyToThread(threadId: string, body: string): InboxMessage | undefined {
+    const thread = inboxThreads.get(threadId);
+    if (!thread) return undefined;
+    const msg: InboxMessage = {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      threadId,
+      messageId: `reply-${Date.now()}`,
+      from: SMOKE_USER.email,
+      to: [thread.fromAddress ?? ""],
+      subject: `Re: ${thread.subjectNormalized ?? ""}`,
+      textBody: body,
+      receivedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const existing = inboxMessages.get(threadId) ?? [];
+    inboxMessages.set(threadId, [...existing, msg]);
+    const updatedThread: InboxThread = {
+      ...thread,
+      messageCount: (thread.messageCount ?? 1) + 1,
+      lastMessageAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    inboxThreads.set(threadId, updatedThread);
+    return msg;
+  },
+};
+
+// --- Field Definitions ------------------------------------------------------
+
+const seedFieldDef: FieldDefinition = {
+  id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  tenantId: SMOKE_USER.tenantId,
+  entityType: "CONTACT",
+  key: "preferred_contact_method",
+  label: "Preferred Contact Method",
+  type: "TEXT",
+  required: false,
+  visibilityRoles: ["STAFF", "ADMIN"],
+  version: 1,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const fieldDefs = new Map<string, FieldDefinition>([[seedFieldDef.id!, seedFieldDef]]);
+
+export const fieldDefStore = {
+  list(): FieldDefinition[] {
+    return Array.from(fieldDefs.values());
+  },
+  get(id: string): FieldDefinition | undefined {
+    return fieldDefs.get(id);
+  },
+  create(input: FieldDefinition): FieldDefinition {
+    const id = uuid();
+    const created: FieldDefinition = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    fieldDefs.set(id, created);
+    return created;
+  },
+  update(id: string, input: FieldDefinition): FieldDefinition | undefined {
+    if (!fieldDefs.has(id)) return undefined;
+    const updated: FieldDefinition = {
+      ...fieldDefs.get(id),
+      ...input,
+      id,
+      version: (fieldDefs.get(id)?.version ?? 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    fieldDefs.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return fieldDefs.delete(id);
+  },
+};
+
 export const activityStore = {
   list(): ActivityDTO[] {
     return Array.from(activities.values());
@@ -265,5 +757,148 @@ export const activityStore = {
   },
   delete(id: string): boolean {
     return activities.delete(id);
+  },
+};
+
+// --- Audit Events -----------------------------------------------------------
+
+const SMOKE_CONTACT_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"; // same as quoteStore seed contact ref
+
+const seedAuditEvent: AuditEventDTO = {
+  id: "a0000000-a000-a000-a000-a00000000001",
+  actorUserId: SMOKE_USER.id,
+  entityType: "CONTACT",
+  entityId: SMOKE_CONTACT_ID,
+  op: "UPDATE",
+  fieldDiffs: [
+    { field: "firstName", before: "John" as unknown, after: "Jonathan" as unknown } as FieldDiff,
+  ],
+  at: "2026-05-15T10:00:00Z",
+  requestId: "req-001",
+};
+
+const auditEvents: AuditEventDTO[] = [seedAuditEvent];
+
+export const auditStore = {
+  listForEntity(entityType: string, entityId: string): AuditEventDTO[] {
+    return auditEvents
+      .filter((e) => e.entityType === entityType && e.entityId === entityId)
+      .sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
+  },
+  listByActor(userId: string): AuditEventDTO[] {
+    return auditEvents
+      .filter((e) => e.actorUserId === userId)
+      .sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
+  },
+  add(event: AuditEventDTO): void {
+    auditEvents.push(event);
+  },
+};
+
+// --- Reports / Dashboards ---------------------------------------------------
+
+const seedSavedReport: SavedReport = {
+  id: "b0000000-b000-b000-b000-b00000000001",
+  tenantId: SMOKE_USER.tenantId,
+  name: "Open Deals by Stage",
+  description: "Count of open deals grouped by pipeline stage",
+  entityType: "DEAL",
+  filterTree: [],
+  groupBy: ["stage"],
+  aggregations: [],
+  chartHint: "BAR",
+  version: 1,
+  createdAt: "2026-05-14T00:00:00Z",
+  updatedAt: "2026-05-14T00:00:00Z",
+};
+
+const savedReports = new Map<string, SavedReport>([[seedSavedReport.id!, seedSavedReport]]);
+
+export const savedReportStore = {
+  list(): SavedReport[] {
+    return Array.from(savedReports.values());
+  },
+  get(id: string): SavedReport | undefined {
+    return savedReports.get(id);
+  },
+  create(input: SavedReport): SavedReport {
+    const id = uuid();
+    const created: SavedReport = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    savedReports.set(id, created);
+    return created;
+  },
+  update(id: string, input: SavedReport): SavedReport | undefined {
+    if (!savedReports.has(id)) return undefined;
+    const updated: SavedReport = {
+      ...savedReports.get(id),
+      ...input,
+      id,
+      version: (savedReports.get(id)?.version ?? 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    savedReports.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return savedReports.delete(id);
+  },
+};
+
+const seedDashboard: Dashboard = {
+  id: "c0000000-c000-c000-c000-c00000000001",
+  tenantId: SMOKE_USER.tenantId,
+  name: "Sales Overview",
+  description: "Key metrics for the sales team",
+  items: [
+    { savedReportId: seedSavedReport.id, gridX: 0, gridY: 0, gridW: 6, gridH: 4 },
+  ],
+  version: 1,
+  createdAt: "2026-05-14T00:00:00Z",
+  updatedAt: "2026-05-14T00:00:00Z",
+};
+
+const dashboards = new Map<string, Dashboard>([[seedDashboard.id!, seedDashboard]]);
+
+export const dashboardStore = {
+  list(): Dashboard[] {
+    return Array.from(dashboards.values());
+  },
+  get(id: string): Dashboard | undefined {
+    return dashboards.get(id);
+  },
+  create(input: Dashboard): Dashboard {
+    const id = uuid();
+    const created: Dashboard = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    dashboards.set(id, created);
+    return created;
+  },
+  update(id: string, input: Dashboard): Dashboard | undefined {
+    if (!dashboards.has(id)) return undefined;
+    const updated: Dashboard = {
+      ...dashboards.get(id),
+      ...input,
+      id,
+      version: (dashboards.get(id)?.version ?? 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    dashboards.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return dashboards.delete(id);
   },
 };

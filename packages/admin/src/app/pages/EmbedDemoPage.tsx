@@ -1,7 +1,7 @@
 import { BookingWidget, PublicContactForm } from "@kmosf/crm-components";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
 // Mock-mode + dev surface for the public widgets. Reachable unauthenticated
 // at /embed-demo so Playwright can exercise the booking flow without a login,
