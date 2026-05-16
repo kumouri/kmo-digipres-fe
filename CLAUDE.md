@@ -123,11 +123,25 @@ to match — field names, types, optionality. Don't infer types from runtime
 responses; read the Java. (Phase 2 moves this file to
 `packages/crm-components/src/types/api.ts`; this CLAUDE.md will update then.)
 
-Endpoints rooted at `http://localhost:8080/api` (CORS pre-configured for
-`localhost:5173`). JWT goes in `Authorization: Bearer <token>`. The 12-hour
+Endpoints rooted at `http://localhost:8080/api/v1` (CORS pre-configured for
+`localhost:5173`). **Phase A updated the BE base path from `/api` to `/api/v1`.**
+The FE API client must target `/api/v1/*`; the legacy `/api/*` paths are still
+accepted by the BE rewrite filter (with deprecation headers) during Phase A→B
+migration, but the FE codegen switch to `/api/v1` is Phase B work (openapi-typescript
+codegen off the committed `docs/api/openapi.json`).
+JWT goes in `Authorization: Bearer <token>`. The 12-hour
 TTL means session loss on a long break is normal — `/auth/me` validates on
 mount, and a `401` from any call broadcasts a `kmosf:unauthorized` window
 event that forces logout.
+
+**OpenAPI:** The BE now publishes a committed OpenAPI spec at `GET /api/v1/v3/api-docs`
+(JSON) and `/api/v1/openapi` (Swagger UI), both unauthenticated. The committed file is
+at `../kmo-digipres-be/docs/api/openapi.json`. Phase B will wire `openapi-typescript`
+codegen off this spec to replace the hand-maintained `types/api.ts`.
+
+**Auth discovery:** `GET /api/v1/auth/discovery` (unauthenticated) returns the current
+auth mode (`local`|`zitadel`) and, in zitadel mode, OIDC endpoint coordinates. The FE
+should call this on app boot to route to the correct login flow (Phase A2).
 
 ### Behavioral spec
 
