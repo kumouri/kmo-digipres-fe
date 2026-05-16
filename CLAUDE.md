@@ -35,7 +35,7 @@ Phase C adds the project-delivery vertical on top of the Phase B baseline:
 - `TASK_STATUSES`: `["TODO","IN_PROGRESS","BLOCKED","DONE"]` — the kanban columns
 - `TASK_PRIORITIES`: `["LOW","MEDIUM","HIGH","URGENT"]`
 
-**Smoke test count after Phase C**: 60 Phase-B specs + 6 new `projects.spec.ts` = 66 total. (Environment note: port-5173 collision with another dev server on the dev machine causes all specs to fail locally; pre-existing on `main`. CI runs on a clean server; no conflict expected there.)
+**Smoke test count after Phase C**: 60 Phase-B specs + 6 new `projects.spec.ts` = 66 total. (Environment note: the local smoke server runs on port 5273 — relocated from Vite's default 5173 because sibling-repo dev servers, e.g. `demo-sites`, squat 5173–5175. CI uses `reuseExistingServer:false`, so it always starts its own server on the configured port; unaffected.)
 
 **Type generation** (unchanged): `npm run gen:api` copies updated BE spec → vendored `openapi/openapi.json` → regenerates `types/openapi.ts`; `npm run gen:api:check` exits 0. Run after any BE spec update.
 
