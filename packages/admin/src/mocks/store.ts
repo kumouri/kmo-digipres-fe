@@ -18,10 +18,13 @@ import type {
   InboxThread,
   Invoice,
   KnowledgeBaseArticle,
+  Milestone,
   Payment,
   PipelineStage,
+  Project,
   Quote,
   SavedReport,
+  Task,
   Ticket,
   TicketComment,
   User,
@@ -900,5 +903,274 @@ export const dashboardStore = {
   },
   delete(id: string): boolean {
     return dashboards.delete(id);
+  },
+};
+
+// --- Projects / Milestones / Tasks (Phase C) ---------------------------------
+
+// Seed IDs (stable, predictable for smoke specs)
+export const SEED_PROJECT_ID = "p0000000-0000-0000-0000-000000000001";
+export const SEED_MILESTONE_ID = "m0000000-0000-0000-0000-000000000001";
+export const SEED_TASK_TODO_ID = "t0000000-0000-0000-0000-000000000001";
+export const SEED_TASK_IN_PROGRESS_ID = "t0000000-0000-0000-0000-000000000002";
+export const SEED_TASK_DONE_ID = "t0000000-0000-0000-0000-000000000003";
+
+// Seed deal for conversion testing (WON stage)
+export const SEED_WON_DEAL_ID = "55555555-5555-5555-5555-555555555556";
+const seedWonDeal: DealDTO = {
+  id: SEED_WON_DEAL_ID,
+  title: "WON deal for conversion",
+  stage: "WON",
+  value: 5000,
+  currency: "USD",
+  primaryContactId: "33333333-3333-3333-3333-333333333333",
+  companyId: "44444444-4444-4444-4444-444444444444",
+};
+// Add won deal to the deal store
+deals.set(SEED_WON_DEAL_ID, seedWonDeal);
+
+const seedProject: Project = {
+  id: SEED_PROJECT_ID,
+  tenantId: SMOKE_USER.tenantId,
+  code: "PRJ-2026-001",
+  name: "Website Redesign",
+  status: "ACTIVE",
+  description: "Full redesign of the public-facing website.",
+  startDate: "2026-05-01",
+  targetEndDate: "2026-08-31",
+  autoFinalizeMilestoneInvoices: false,
+  createdAt: "2026-05-01T00:00:00Z",
+  updatedAt: "2026-05-01T00:00:00Z",
+};
+
+const seedMilestone: Milestone = {
+  id: SEED_MILESTONE_ID,
+  tenantId: SMOKE_USER.tenantId,
+  projectId: SEED_PROJECT_ID,
+  name: "Design phase complete",
+  status: "PENDING",
+  triggersInvoiceOnComplete: true,
+  invoiceLineItems: [
+    {
+      description: "Design work",
+      quantity: 1,
+      unitPrice: 1500,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 1500,
+    },
+  ],
+  orderIndex: 0,
+  createdAt: "2026-05-01T00:00:00Z",
+  updatedAt: "2026-05-01T00:00:00Z",
+};
+
+const seedTasks: Task[] = [
+  {
+    id: SEED_TASK_TODO_ID,
+    tenantId: SMOKE_USER.tenantId,
+    projectId: SEED_PROJECT_ID,
+    title: "Gather requirements",
+    status: "TODO",
+    priority: "HIGH",
+    orderIndex: 0,
+    createdAt: "2026-05-01T00:00:00Z",
+    updatedAt: "2026-05-01T00:00:00Z",
+  },
+  {
+    id: SEED_TASK_IN_PROGRESS_ID,
+    tenantId: SMOKE_USER.tenantId,
+    projectId: SEED_PROJECT_ID,
+    title: "Create wireframes",
+    status: "IN_PROGRESS",
+    priority: "MEDIUM",
+    orderIndex: 0,
+    createdAt: "2026-05-01T00:00:00Z",
+    updatedAt: "2026-05-01T00:00:00Z",
+  },
+  {
+    id: SEED_TASK_DONE_ID,
+    tenantId: SMOKE_USER.tenantId,
+    projectId: SEED_PROJECT_ID,
+    title: "Project kickoff meeting",
+    status: "DONE",
+    priority: "LOW",
+    orderIndex: 0,
+    createdAt: "2026-05-01T00:00:00Z",
+    updatedAt: "2026-05-01T00:00:00Z",
+  },
+];
+
+const projects = new Map<string, Project>([[seedProject.id!, seedProject]]);
+const milestones = new Map<string, Milestone>([[seedMilestone.id!, seedMilestone]]);
+const tasks = new Map<string, Task>(seedTasks.map((t) => [t.id!, t]));
+
+export const projectStore = {
+  list(): Project[] {
+    return Array.from(projects.values());
+  },
+  get(id: string): Project | undefined {
+    return projects.get(id);
+  },
+  create(input: Project): Project {
+    const id = input.id ?? uuid();
+    const year = new Date().getFullYear();
+    const seq = projects.size + 1;
+    const code = `PRJ-${year}-${String(seq).padStart(3, "0")}`;
+    const created: Project = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      code: input.code ?? code,
+      status: "PLANNING",
+      autoFinalizeMilestoneInvoices: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    projects.set(id, created);
+    return created;
+  },
+  update(id: string, input: Project): Project | undefined {
+    if (!projects.has(id)) return undefined;
+    const updated: Project = { ...projects.get(id), ...input, id };
+    projects.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return projects.delete(id);
+  },
+  changeStatus(id: string, target: string): Project | undefined {
+    const existing = projects.get(id);
+    if (!existing) return undefined;
+    const updated: Project = {
+      ...existing,
+      status: target as Project["status"],
+      updatedAt: new Date().toISOString(),
+    };
+    projects.set(id, updated);
+    return updated;
+  },
+  findByDealId(dealId: string): Project | undefined {
+    return Array.from(projects.values()).find((p) => p.dealId === dealId);
+  },
+  createFromDeal(deal: DealDTO): Project {
+    const id = uuid();
+    const year = new Date().getFullYear();
+    const seq = projects.size + 1;
+    const code = `PRJ-${year}-${String(seq).padStart(3, "0")}`;
+    const created: Project = {
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      code,
+      name: `Project from: ${deal.title ?? "Untitled deal"}`,
+      status: "PLANNING",
+      dealId: deal.id,
+      primaryContactId: deal.primaryContactId,
+      companyId: deal.companyId,
+      ownerId: deal.ownerId,
+      autoFinalizeMilestoneInvoices: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    projects.set(id, created);
+    return created;
+  },
+};
+
+export const milestoneStore = {
+  listByProject(projectId: string): Milestone[] {
+    return Array.from(milestones.values())
+      .filter((m) => m.projectId === projectId)
+      .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+  },
+  get(id: string): Milestone | undefined {
+    return milestones.get(id);
+  },
+  create(projectId: string, input: Milestone): Milestone {
+    const id = uuid();
+    const created: Milestone = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      projectId,
+      status: "PENDING",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    milestones.set(id, created);
+    return created;
+  },
+  update(id: string, input: Milestone): Milestone | undefined {
+    if (!milestones.has(id)) return undefined;
+    const updated: Milestone = { ...milestones.get(id), ...input, id };
+    milestones.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return milestones.delete(id);
+  },
+  complete(id: string): Milestone | undefined {
+    const existing = milestones.get(id);
+    if (!existing) return undefined;
+    // Idempotent: already spawned → just return COMPLETED
+    const spawnedInvoiceId =
+      existing.spawnedInvoiceId ??
+      (existing.triggersInvoiceOnComplete ? uuid() : undefined);
+    const updated: Milestone = {
+      ...existing,
+      status: "COMPLETED",
+      completedAt: new Date().toISOString(),
+      spawnedInvoiceId,
+      updatedAt: new Date().toISOString(),
+    };
+    milestones.set(id, updated);
+    return updated;
+  },
+};
+
+export const taskStore2 = {
+  listByProject(projectId: string): Task[] {
+    return Array.from(tasks.values())
+      .filter((t) => t.projectId === projectId)
+      .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+  },
+  get(id: string): Task | undefined {
+    return tasks.get(id);
+  },
+  create(projectId: string, input: Task): Task {
+    const id = uuid();
+    const created: Task = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      projectId,
+      status: "TODO",
+      priority: input.priority ?? "MEDIUM",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    tasks.set(id, created);
+    return created;
+  },
+  update(id: string, input: Task): Task | undefined {
+    if (!tasks.has(id)) return undefined;
+    const updated: Task = { ...tasks.get(id), ...input, id };
+    tasks.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return tasks.delete(id);
+  },
+  changeStatus(id: string, target: string): Task | undefined {
+    const existing = tasks.get(id);
+    if (!existing) return undefined;
+    const updated: Task = {
+      ...existing,
+      status: target as Task["status"],
+      completedAt: target === "DONE" ? new Date().toISOString() : existing.completedAt,
+      updatedAt: new Date().toISOString(),
+    };
+    tasks.set(id, updated);
+    return updated;
   },
 };

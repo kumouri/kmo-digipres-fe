@@ -7,6 +7,7 @@ import {
   Building2,
   ClipboardList,
   FileText,
+  FolderKanban,
   Inbox,
   LayoutDashboard,
   LayoutGrid,
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/audit", label: "Audit Log", icon: ClipboardList },
   { to: "/reports", label: "Reports", icon: BarChart2 },
   { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
+  { to: "/projects", label: "Projects", icon: FolderKanban },
 ];
 
 export function AppShell() {

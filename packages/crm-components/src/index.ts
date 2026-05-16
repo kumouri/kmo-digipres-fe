@@ -106,3 +106,5 @@ export { ReportsList, ReportDetail, DashboardsList, DashboardDetail } from "./ad
 export { useReportsApi } from "./hooks/useReportsApi";
 export { AskAiDialog } from "./admin/ai";
 export { useAiApi } from "./hooks/useAiApi";
+export { ProjectsList, ProjectDetail } from "./admin/projects";
+export { useProjectsApi } from "./hooks/useProjectsApi";

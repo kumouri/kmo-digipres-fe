@@ -92,6 +92,12 @@ const DashboardsList = lazy(() =>
 const DashboardDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.DashboardDetail })),
 );
+const ProjectsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ProjectsList })),
+);
+const ProjectDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ProjectDetail })),
+);
 
 function LazyOutlet() {
   return (
@@ -153,6 +159,8 @@ export const router = createBrowserRouter([
               { path: "reports/:id", element: <ReportDetail /> },
               { path: "dashboards", element: <DashboardsList /> },
               { path: "dashboards/:id", element: <DashboardDetail /> },
+              { path: "projects", element: <ProjectsList /> },
+              { path: "projects/:id", element: <ProjectDetail /> },
             ],
           },
         ],

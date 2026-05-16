@@ -18,12 +18,15 @@ import type {
   KnowledgeBaseArticle,
   LoginRequest,
   LoginResponse,
+  Milestone,
   MoveStageRequest,
   Payment,
+  Project,
   Quote,
   SavedReport,
   SingleEmailCommunicationDTO,
   SummarizeBody,
+  Task,
   Ticket,
 } from "@kmosf/crm-components";
 import {
@@ -41,8 +44,11 @@ import {
   inboxStore,
   invoiceStore,
   kbStore,
+  milestoneStore,
+  projectStore,
   quoteStore,
   savedReportStore,
+  taskStore2,
   ticketStore,
 } from "./store";
 
@@ -727,5 +733,151 @@ export const handlers = [
       outputTokens: 30,
     };
     return HttpResponse.json(draft);
+  }),
+
+  // --- Projects (Phase C) ----------------------------------------------------
+
+  http.get(`${API_BASE}/projects`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(projectStore.list());
+  }),
+
+  http.get(`${API_BASE}/projects/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = projectStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/projects`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Project;
+    const created = projectStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/projects/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Project;
+    const updated = projectStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/projects/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = projectStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/projects/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "";
+    const updated = projectStore.changeStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  // Deal → Project conversion (idempotent: 201 on first create, 200 on repeat)
+  http.post(`${API_BASE}/projects/from-deal/:dealId`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const dealId = params.dealId as string;
+    const deal = dealStore.get(dealId);
+    if (!deal) return new HttpResponse(null, { status: 404 });
+    if (deal.stage !== "WON")
+      return HttpResponse.json({ message: "Deal must be WON" }, { status: 409 });
+    const existing = projectStore.findByDealId(dealId);
+    if (existing) return HttpResponse.json(existing, { status: 200 });
+    const created = projectStore.createFromDeal(deal);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Milestones (Phase C) --------------------------------------------------
+
+  http.get(`${API_BASE}/milestones/by-project/:projectId`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(
+      milestoneStore.listByProject(params.projectId as string),
+    );
+  }),
+
+  http.post(`${API_BASE}/milestones/by-project/:projectId`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Milestone;
+    const created = milestoneStore.create(params.projectId as string, body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/milestones/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = milestoneStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.put(`${API_BASE}/milestones/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Milestone;
+    const updated = milestoneStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/milestones/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = milestoneStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // Milestone transition (complete → spawns invoice if triggersInvoiceOnComplete)
+  http.post(`${API_BASE}/milestones/:id/transition`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status") ?? "";
+    if (status !== "COMPLETED")
+      return HttpResponse.json({ message: "Only COMPLETED transition supported" }, { status: 400 });
+    const updated = milestoneStore.complete(params.id as string);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  // --- Tasks (Phase C) -------------------------------------------------------
+
+  http.get(`${API_BASE}/tasks/by-project/:projectId`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(
+      taskStore2.listByProject(params.projectId as string),
+    );
+  }),
+
+  http.post(`${API_BASE}/tasks/by-project/:projectId`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Task;
+    const created = taskStore2.create(params.projectId as string, body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/tasks/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Task;
+    const updated = taskStore2.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/tasks/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = taskStore2.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/tasks/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "";
+    const updated = taskStore2.changeStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
   }),
 ];
