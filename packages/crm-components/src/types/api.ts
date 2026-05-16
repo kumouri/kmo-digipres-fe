@@ -260,3 +260,46 @@ export type AiDraft = components["schemas"]["AiDraft"];
 export type Citation = components["schemas"]["Citation"];
 export type SummarizeBody = components["schemas"]["SummarizeBody"];
 export type DraftReplyBody = components["schemas"]["DraftReplyBody"];
+
+// =============================================================================
+// Phase C — Projects / Milestones / Tasks (generated aliases + value constants)
+// =============================================================================
+
+// --- Projects ----------------------------------------------------------------
+
+export type Project = components["schemas"]["Project"];
+export type Milestone = components["schemas"]["Milestone"];
+export type Task = components["schemas"]["Task"];
+
+export type ProjectStatus = "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
+export type MilestoneStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+export const PROJECT_STATUSES: ProjectStatus[] = [
+  "PLANNING",
+  "ACTIVE",
+  "ON_HOLD",
+  "COMPLETED",
+  "CANCELLED",
+];
+
+export const MILESTONE_STATUSES: MilestoneStatus[] = [
+  "PENDING",
+  "IN_PROGRESS",
+  "COMPLETED",
+];
+
+export const TASK_STATUSES: TaskStatus[] = [
+  "TODO",
+  "IN_PROGRESS",
+  "BLOCKED",
+  "DONE",
+];
+
+export const TASK_PRIORITIES: TaskPriority[] = [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "URGENT",
+];
