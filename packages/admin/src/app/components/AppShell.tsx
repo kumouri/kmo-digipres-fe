@@ -6,12 +6,14 @@ import {
   BookOpen,
   Building2,
   ClipboardList,
+  Clock,
   FileText,
   FolderKanban,
   Inbox,
   LayoutDashboard,
   LayoutGrid,
   Receipt,
+  ReceiptText,
   Settings2,
   Target,
   TicketIcon,
@@ -19,7 +21,8 @@ import {
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
-import { cn, AskAiDialog } from "@kmosf/crm-components";
+import { cn, AskAiDialog, TimerWidget } from "@kmosf/crm-components";
+import { useAuth } from "../auth/useAuth";
 
 interface NavItem {
   to: string;
@@ -43,9 +46,12 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/reports", label: "Reports", icon: BarChart2 },
   { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
   { to: "/projects", label: "Projects", icon: FolderKanban },
+  { to: "/timesheet", label: "Timesheet", icon: Clock },
+  { to: "/expenses", label: "Expenses", icon: ReceiptText },
 ];
 
 export function AppShell() {
+  const { user } = useAuth();
   return (
     <div className="flex min-h-screen bg-muted/40">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
@@ -79,6 +85,7 @@ export function AppShell() {
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
           <div className="text-sm text-muted-foreground">Admin</div>
           <div className="flex items-center gap-2">
+            {user?.id && <TimerWidget userId={user.id} />}
             <AskAiDialog />
             <UserMenu />
           </div>

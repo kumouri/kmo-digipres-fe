@@ -12,6 +12,7 @@ import type {
   ContactDTO,
   Dashboard,
   DealDTO,
+  Expense,
   FieldDefinition,
   FieldDiff,
   InboxMessage,
@@ -25,10 +26,14 @@ import type {
   Quote,
   SavedReport,
   Task,
+  TimeEntry,
   Ticket,
   TicketComment,
   User,
 } from "@kmosf/crm-components";
+import type { components } from "@kmosf/crm-components";
+
+type Attachment = components["schemas"]["Attachment"];
 
 export const SMOKE_USER: User = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -1172,5 +1177,436 @@ export const taskStore2 = {
     };
     tasks.set(id, updated);
     return updated;
+  },
+};
+
+// --- Time Entries / Expenses (Phase D) ----------------------------------------
+
+// Stable seed IDs
+export const SEED_TIME_ENTRY_UNBILLED_ID = "te000000-0000-0000-0000-000000000001";
+export const SEED_TIME_ENTRY_RUNNING_PENDING_ID = ""; // no running timer in seed
+// Deterministic Mon→Tue split fixture IDs
+export const SEED_SPLIT_ENTRY_MON_ID = "te000000-0000-0000-0000-000000000002";
+export const SEED_SPLIT_ENTRY_TUE_ID = "te000000-0000-0000-0000-000000000003";
+export const SEED_SPLIT_GROUP_ID = "sg000000-0000-0000-0000-000000000001";
+export const SEED_EXPENSE_PENDING_ID = "ex000000-0000-0000-0000-000000000001";
+
+// Seed time entries: one unbilled billable entry + a deterministic Mon→Tue split pair
+const MON_22 = "2026-05-11T22:00:00Z"; // Mon 22:00 UTC (also local for UTC zone)
+const MON_MIDNIGHT = "2026-05-12T00:00:00Z"; // Tue 00:00 UTC boundary
+const TUE_02 = "2026-05-12T02:00:00Z"; // Tue 02:00 UTC
+
+const seedTimeEntries: TimeEntry[] = [
+  {
+    id: SEED_TIME_ENTRY_UNBILLED_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_USER.id,
+    projectId: SEED_PROJECT_ID,
+    description: "Initial design work",
+    startedAt: "2026-05-12T09:00:00Z",
+    endedAt: "2026-05-12T10:30:00Z",
+    durationSeconds: 5400,
+    source: "MANUAL",
+    billable: true,
+    billingStatus: "UNBILLED",
+    rateAmount: 100,
+    createdAt: "2026-05-12T10:30:00Z",
+    updatedAt: "2026-05-12T10:30:00Z",
+  },
+  // Mon→Tue split pair (shared splitGroupId)
+  {
+    id: SEED_SPLIT_ENTRY_MON_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_USER.id,
+    projectId: SEED_PROJECT_ID,
+    description: "Late night session",
+    startedAt: MON_22,
+    endedAt: MON_MIDNIGHT,
+    durationSeconds: 7200,
+    source: "TIMER",
+    billable: true,
+    billingStatus: "UNBILLED",
+    rateAmount: 100,
+    splitGroupId: SEED_SPLIT_GROUP_ID,
+    createdAt: MON_MIDNIGHT,
+    updatedAt: MON_MIDNIGHT,
+  },
+  {
+    id: SEED_SPLIT_ENTRY_TUE_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_USER.id,
+    projectId: SEED_PROJECT_ID,
+    description: "Late night session",
+    startedAt: MON_MIDNIGHT,
+    endedAt: TUE_02,
+    durationSeconds: 7200,
+    source: "TIMER",
+    billable: true,
+    billingStatus: "UNBILLED",
+    rateAmount: 100,
+    splitGroupId: SEED_SPLIT_GROUP_ID,
+    createdAt: TUE_02,
+    updatedAt: TUE_02,
+  },
+];
+
+const timeEntries = new Map<string, TimeEntry>(
+  seedTimeEntries.map((e) => [e.id!, e]),
+);
+
+// Running timer slot: null = no timer running
+let runningTimerEntry: TimeEntry | null = null;
+
+export const timeEntryStore = {
+  list(): TimeEntry[] {
+    return Array.from(timeEntries.values());
+  },
+  listByUser(userId: string): TimeEntry[] {
+    return Array.from(timeEntries.values()).filter((e) => e.userId === userId);
+  },
+  listWeekly(userId: string, from: string, to: string): TimeEntry[] {
+    const fromMs = new Date(from).getTime();
+    const toMs = new Date(to).getTime();
+    return Array.from(timeEntries.values()).filter((e) => {
+      if (e.userId !== userId) return false;
+      const started = new Date(e.startedAt ?? "").getTime();
+      return started >= fromMs && started < toMs;
+    });
+  },
+  get(id: string): TimeEntry | undefined {
+    return timeEntries.get(id);
+  },
+  create(input: TimeEntry): TimeEntry {
+    const id = input.id ?? uuid();
+    const created: TimeEntry = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      userId: input.userId ?? SMOKE_USER.id,
+      source: input.source ?? "MANUAL",
+      billable: input.billable ?? true,
+      billingStatus: "UNBILLED",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    timeEntries.set(id, created);
+    return created;
+  },
+  update(id: string, input: TimeEntry): TimeEntry | undefined {
+    if (!timeEntries.has(id)) return undefined;
+    const updated: TimeEntry = { ...timeEntries.get(id), ...input, id };
+    timeEntries.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return timeEntries.delete(id);
+  },
+  getRunningTimer(): TimeEntry | null {
+    return runningTimerEntry;
+  },
+  startTimer(input: TimeEntry): TimeEntry | { error: string; code: number } {
+    if (runningTimerEntry !== null) {
+      return { error: "A timer is already running for this user", code: 3505 };
+    }
+    const id = uuid();
+    const entry: TimeEntry = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      userId: input.userId ?? SMOKE_USER.id,
+      source: "TIMER",
+      billable: input.billable ?? true,
+      billingStatus: "UNBILLED",
+      endedAt: undefined,
+      durationSeconds: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    runningTimerEntry = entry;
+    timeEntries.set(id, entry);
+    return entry;
+  },
+  stopTimer(
+    userId: string,
+    endedAt?: string,
+    _zoneId?: string,
+  ): TimeEntry[] | { error: string; code: number } {
+    if (runningTimerEntry === null) {
+      return { error: "No timer running to stop", code: 3506 };
+    }
+    const stopped = { ...runningTimerEntry };
+    const endInstant = endedAt ? new Date(endedAt) : new Date();
+    const startInstant = new Date(stopped.startedAt ?? endInstant.toISOString());
+
+    // Check if the session crosses a UTC-midnight boundary (deterministic split fixture)
+    const startDay = new Date(startInstant);
+    startDay.setUTCHours(0, 0, 0, 0);
+    const endDay = new Date(endInstant);
+    endDay.setUTCHours(0, 0, 0, 0);
+
+    runningTimerEntry = null;
+
+    if (startDay.getTime() === endDay.getTime()) {
+      // Same day — no split
+      const dur = Math.floor(
+        (endInstant.getTime() - startInstant.getTime()) / 1000,
+      );
+      const closed: TimeEntry = {
+        ...stopped,
+        endedAt: endInstant.toISOString(),
+        durationSeconds: dur,
+        updatedAt: new Date().toISOString(),
+      };
+      timeEntries.set(stopped.id!, closed);
+      return [closed];
+    } else {
+      // Spans midnight — produce split pair (Mon→Tue fixture)
+      const splitGroupId = uuid();
+      const midnight = new Date(endDay.toISOString()); // start of end-day = UTC midnight
+
+      const segA: TimeEntry = {
+        ...stopped,
+        endedAt: midnight.toISOString(),
+        durationSeconds: Math.floor(
+          (midnight.getTime() - startInstant.getTime()) / 1000,
+        ),
+        splitGroupId,
+        updatedAt: new Date().toISOString(),
+      };
+      timeEntries.set(stopped.id!, segA);
+
+      const segBId = uuid();
+      const segB: TimeEntry = {
+        ...stopped,
+        id: segBId,
+        startedAt: midnight.toISOString(),
+        endedAt: endInstant.toISOString(),
+        durationSeconds: Math.floor(
+          (endInstant.getTime() - midnight.getTime()) / 1000,
+        ),
+        splitGroupId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      timeEntries.set(segBId, segB);
+      return [segA, segB];
+    }
+
+    void userId; // used by real BE; MSW ignores
+  },
+  createInvoiceFromTime(projectId?: string): Invoice | { error: string; code: number } {
+    const candidates = Array.from(timeEntries.values()).filter(
+      (e) =>
+        e.billable &&
+        e.billingStatus === "UNBILLED" &&
+        e.endedAt != null &&
+        (!projectId || e.projectId === projectId),
+    );
+    if (candidates.length === 0) {
+      return { error: "No unbilled time entries to invoice", code: 3520 };
+    }
+    const invoiceId = uuid();
+    const totalHours = candidates.reduce(
+      (sum, e) => sum + (e.durationSeconds ?? 0) / 3600,
+      0,
+    );
+    const unitPrice = candidates[0].rateAmount ?? 100;
+    const invoice: Invoice = {
+      id: invoiceId,
+      tenantId: SMOKE_USER.tenantId,
+      status: "DRAFT",
+      projectId: projectId ?? candidates[0].projectId,
+      currency: "USD",
+      lineItems: [
+        {
+          description: "Time entries",
+          quantity: Math.round(totalHours * 100) / 100,
+          unitPrice,
+          discountPercent: 0,
+          taxPercent: 0,
+          lineTotal: Math.round(totalHours * unitPrice * 100) / 100,
+        },
+      ],
+      total: Math.round(totalHours * unitPrice * 100) / 100,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    // Mark entries as INVOICED
+    for (const entry of candidates) {
+      const marked: TimeEntry = {
+        ...entry,
+        billingStatus: "INVOICED",
+        invoicedInvoiceId: invoiceId,
+        updatedAt: new Date().toISOString(),
+      };
+      timeEntries.set(entry.id!, marked);
+    }
+    return invoice;
+  },
+};
+
+// --- Expense store -----------------------------------------------------------
+
+const seedExpense: Expense = {
+  id: SEED_EXPENSE_PENDING_ID,
+  tenantId: SMOKE_USER.tenantId,
+  userId: SMOKE_USER.id,
+  projectId: SEED_PROJECT_ID,
+  description: "Client lunch",
+  category: "MEALS",
+  amount: 85,
+  currency: "USD",
+  incurredOn: "2026-05-12",
+  markupPercent: 15,
+  billable: true,
+  approvalStatus: "PENDING",
+  billingStatus: "UNBILLED",
+  createdAt: "2026-05-12T12:00:00Z",
+  updatedAt: "2026-05-12T12:00:00Z",
+};
+
+const expenses = new Map<string, Expense>([[seedExpense.id!, seedExpense]]);
+
+export const expenseStore = {
+  list(): Expense[] {
+    return Array.from(expenses.values());
+  },
+  get(id: string): Expense | undefined {
+    return expenses.get(id);
+  },
+  create(input: Expense): Expense {
+    const id = input.id ?? uuid();
+    const created: Expense = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      userId: input.userId ?? SMOKE_USER.id,
+      billable: input.billable ?? true,
+      approvalStatus: "PENDING",
+      billingStatus: "UNBILLED",
+      currency: input.currency ?? "USD",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    expenses.set(id, created);
+    return created;
+  },
+  update(id: string, input: Expense): Expense | undefined {
+    if (!expenses.has(id)) return undefined;
+    const updated: Expense = { ...expenses.get(id), ...input, id };
+    expenses.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return expenses.delete(id);
+  },
+  approve(id: string): Expense | { error: string; code: number } {
+    const existing = expenses.get(id);
+    if (!existing) return { error: "Expense not found", code: 3511 };
+    if (existing.billingStatus === "INVOICED") {
+      return { error: "Cannot decide an INVOICED expense", code: 3517 };
+    }
+    const updated: Expense = {
+      ...existing,
+      approvalStatus: "APPROVED",
+      approvedByUserId: SMOKE_USER.id,
+      decidedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    expenses.set(id, updated);
+    return updated;
+  },
+  reject(id: string, reason: string): Expense | { error: string; code: number } {
+    const existing = expenses.get(id);
+    if (!existing) return { error: "Expense not found", code: 3511 };
+    if (existing.billingStatus === "INVOICED") {
+      return { error: "Cannot decide an INVOICED expense", code: 3517 };
+    }
+    if (!reason || reason.trim() === "") {
+      return { error: "Rejection reason required", code: 3516 };
+    }
+    const updated: Expense = {
+      ...existing,
+      approvalStatus: "REJECTED",
+      approvedByUserId: SMOKE_USER.id,
+      decidedAt: new Date().toISOString(),
+      rejectionReason: reason,
+      updatedAt: new Date().toISOString(),
+    };
+    expenses.set(id, updated);
+    return updated;
+  },
+  createInvoiceFromExpenses(projectId?: string): Invoice | { error: string; code: number } {
+    const candidates = Array.from(expenses.values()).filter(
+      (e) =>
+        e.approvalStatus === "APPROVED" &&
+        e.billable &&
+        e.billingStatus === "UNBILLED" &&
+        (!projectId || e.projectId === projectId),
+    );
+    if (candidates.length === 0) {
+      return { error: "No eligible approved expenses to invoice", code: 3530 };
+    }
+    const invoiceId = uuid();
+    const lineItems = candidates.map((e) => {
+      const markup = e.markupPercent ?? 0;
+      const unitPrice =
+        Math.round((e.amount ?? 0) * (1 + markup / 100) * 100) / 100;
+      return {
+        description: `Expense — ${e.description ?? ""}`,
+        quantity: 1,
+        unitPrice,
+        discountPercent: 0,
+        taxPercent: 0,
+        lineTotal: unitPrice,
+      };
+    });
+    const total = lineItems.reduce((sum, l) => sum + (l.lineTotal ?? 0), 0);
+    const invoice: Invoice = {
+      id: invoiceId,
+      tenantId: SMOKE_USER.tenantId,
+      status: "DRAFT",
+      projectId: projectId ?? candidates[0].projectId,
+      currency: "USD",
+      lineItems,
+      total,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    for (const expense of candidates) {
+      const marked: Expense = {
+        ...expense,
+        billingStatus: "INVOICED",
+        invoicedInvoiceId: invoiceId,
+        updatedAt: new Date().toISOString(),
+      };
+      expenses.set(expense.id!, marked);
+    }
+    return invoice;
+  },
+};
+
+// --- Attachment store (reused for receipts) -----------------------------------
+
+const attachments = new Map<string, Attachment>();
+
+export const attachmentStore = {
+  listFor(subjectType: string, subjectId: string): Attachment[] {
+    return Array.from(attachments.values()).filter(
+      (a) => a.subjectType === subjectType && a.subjectId === subjectId,
+    );
+  },
+  register(input: Attachment): Attachment {
+    const id = input.id ?? uuid();
+    const created: Attachment = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      uploadedByUserId: SMOKE_USER.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    attachments.set(id, created);
+    return created;
   },
 };

@@ -18,6 +18,30 @@ When writing API calls or understanding FE–BE contracts, read `.claude/backend
 When writing components, queries, forms, or handling errors, read `.claude/conventions.md`.
 For what is explicitly out of scope for the current init plan, read `.claude/scope-boundaries.md`.
 
+## Phase D: Time & Expenses (SHIPPED)
+
+Phase D adds the time-tracking and expense-management vertical:
+
+| Area | Route | API surface |
+|---|---|---|
+| Timesheet | `/timesheet` | GET /time-entries/weekly?userId=&from=&to=; POST /time-entries; PUT/DELETE /time-entries/:id; POST /time-entries/invoice-from-time |
+| Timer widget | Shell header (all routes) | GET /time-entries/timer/running?userId=; POST /time-entries/timer/start; POST /time-entries/timer/stop |
+| Expenses | `/expenses`, `/expenses/:id` | CRUD /expenses; POST /expenses/:id/approve; POST /expenses/:id/reject; POST /expenses/invoice-from-expenses |
+| Receipt upload | ExpenseDetail | POST /attachments/presign → PUT presigned URL → POST /attachments; GET /attachments?subjectType=EXPENSE&subjectId= |
+
+**New value constants** in `types/api.ts`:
+- `TIME_ENTRY_SOURCES`: `["TIMER","MANUAL"]`
+- `BILLING_STATUSES`: `["UNBILLED","INVOICED"]`
+- `EXPENSE_APPROVAL_STATUSES`: `["PENDING","APPROVED","REJECTED"]`
+
+**Split session rendering**: Time entries that span midnight share a `splitGroupId`. `TimesheetPage` groups them as one logical row (`data-testid="split-group"`) with per-day segments (`data-testid="split-segment"`).
+
+**TimerWidget**: Mounted in the `AppShell` header; persists across route changes. Live elapsed display via client-side `setInterval`; polling the running timer every 30 s. Start/stop invalidates `["timer","running"]` and `["time-entries"]` query keys.
+
+**Receipt upload flow**: FE orchestrates presign → browser PUT to presigned URL → POST /attachments register. No server-side proxy.
+
+**Smoke test count after Phase D**: 66 Phase-C specs + 11 new `time-and-expenses.spec.ts` = 77 total.
+
 ## Phase C: Projects / Milestones / Tasks (SHIPPED)
 
 Phase C adds the project-delivery vertical on top of the Phase B baseline:
