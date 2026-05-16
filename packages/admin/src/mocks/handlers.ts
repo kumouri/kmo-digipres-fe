@@ -6,9 +6,11 @@ import type {
   CompanyDTO,
   ContactDTO,
   DealDTO,
+  Invoice,
   LoginRequest,
   LoginResponse,
   MoveStageRequest,
+  Payment,
   Quote,
   SingleEmailCommunicationDTO,
 } from "@kmosf/crm-components";
@@ -21,6 +23,7 @@ import {
   companyStore,
   contactStore,
   dealStore,
+  invoiceStore,
   quoteStore,
 } from "./store";
 
@@ -277,6 +280,62 @@ export const handlers = [
       status: 200,
       headers: { "Content-Type": "application/pdf" },
     });
+  }),
+
+  // --- Invoices -------------------------------------------------------------
+  http.get(`${API_BASE}/invoices`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(invoiceStore.list());
+  }),
+
+  http.get(`${API_BASE}/invoices/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = invoiceStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/invoices`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Invoice;
+    const created = invoiceStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.post(`${API_BASE}/invoices/from-quote/:quoteId`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const quote = quoteStore.get(params.quoteId as string);
+    if (!quote) return new HttpResponse(null, { status: 404 });
+    const created = invoiceStore.createFromQuote(quote);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.delete(`${API_BASE}/invoices/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = invoiceStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/invoices/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "SENT";
+    const updated = invoiceStore.changeStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/invoices/:id/payments`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(invoiceStore.listPayments(params.id as string));
+  }),
+
+  http.post(`${API_BASE}/invoices/:id/payments`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Payment;
+    const created = invoiceStore.recordPayment(params.id as string, body);
+    if (!created) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(created, { status: 201 });
   }),
 
   // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant

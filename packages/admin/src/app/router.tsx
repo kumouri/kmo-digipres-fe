@@ -47,6 +47,12 @@ const QuotesList = lazy(() =>
 const QuoteDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.QuoteDetail })),
 );
+const InvoicesList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InvoicesList })),
+);
+const InvoiceDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InvoiceDetail })),
+);
 
 function LazyOutlet() {
   return (
@@ -93,6 +99,8 @@ export const router = createBrowserRouter([
               { path: "activities/:id", element: <ActivityDetail /> },
               { path: "quotes", element: <QuotesList /> },
               { path: "quotes/:id", element: <QuoteDetail /> },
+              { path: "invoices", element: <InvoicesList /> },
+              { path: "invoices/:id", element: <InvoiceDetail /> },
             ],
           },
         ],

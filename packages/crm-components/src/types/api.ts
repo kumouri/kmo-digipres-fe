@@ -214,7 +214,7 @@ export type QuoteStatus = "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPIRED"
 
 export type Invoice = components["schemas"]["Invoice"];
 export type Payment = components["schemas"]["Payment"];
-export type InvoiceStatus = "DRAFT" | "SENT" | "PARTIAL" | "PAID" | "VOID" | "OVERDUE";
+export type InvoiceStatus = "DRAFT" | "SENT" | "PARTIALLY_PAID" | "PAID" | "VOIDED" | "OVERDUE";
 
 // --- Tickets ----------------------------------------------------------------
 

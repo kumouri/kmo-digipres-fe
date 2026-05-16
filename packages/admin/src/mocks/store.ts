@@ -10,6 +10,8 @@ import type {
   CompanyDTO,
   ContactDTO,
   DealDTO,
+  Invoice,
+  Payment,
   PipelineStage,
   Quote,
   User,
@@ -303,6 +305,125 @@ export const quoteStore = {
     };
     quotes.set(id, updated);
     return updated;
+  },
+};
+
+// --- Invoices ---------------------------------------------------------------
+
+const seedInvoice: Invoice = {
+  id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  tenantId: SMOKE_USER.tenantId,
+  invoiceNumber: "INV-0001",
+  status: "SENT",
+  currency: "USD",
+  lineItems: [
+    {
+      description: "Website Design Package",
+      quantity: 1,
+      unitPrice: 2500,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 2500,
+    },
+  ],
+  subtotal: 2500,
+  discountTotal: 0,
+  taxTotal: 0,
+  total: 2500,
+  balance: 2500,
+};
+
+const invoices = new Map<string, Invoice>([[seedInvoice.id!, seedInvoice]]);
+const paymentsByInvoice = new Map<string, Payment[]>([
+  [seedInvoice.id!, []],
+]);
+
+export const invoiceStore = {
+  list(): Invoice[] {
+    return Array.from(invoices.values());
+  },
+  get(id: string): Invoice | undefined {
+    return invoices.get(id);
+  },
+  create(input: Invoice): Invoice {
+    const id = input.id ?? uuid();
+    const created: Invoice = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      invoiceNumber: `INV-${String(invoices.size + 1).padStart(4, "0")}`,
+      status: "DRAFT",
+      balance: input.total ?? 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    invoices.set(id, created);
+    paymentsByInvoice.set(id, []);
+    return created;
+  },
+  createFromQuote(quote: Quote): Invoice {
+    const id = uuid();
+    const created: Invoice = {
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      quoteId: quote.id,
+      invoiceNumber: `INV-${String(invoices.size + 1).padStart(4, "0")}`,
+      status: "DRAFT",
+      currency: quote.currency ?? "USD",
+      lineItems: quote.lineItems ?? [],
+      subtotal: quote.subtotal ?? 0,
+      discountTotal: quote.discountTotal ?? 0,
+      taxTotal: quote.taxTotal ?? 0,
+      total: quote.total ?? 0,
+      balance: quote.total ?? 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    invoices.set(id, created);
+    paymentsByInvoice.set(id, []);
+    return created;
+  },
+  delete(id: string): boolean {
+    paymentsByInvoice.delete(id);
+    return invoices.delete(id);
+  },
+  changeStatus(id: string, target: string): Invoice | undefined {
+    const existing = invoices.get(id);
+    if (!existing) return undefined;
+    const updated: Invoice = {
+      ...existing,
+      status: target as Invoice["status"],
+      statusChangedAt: new Date().toISOString(),
+    };
+    invoices.set(id, updated);
+    return updated;
+  },
+  listPayments(invoiceId: string): Payment[] {
+    return paymentsByInvoice.get(invoiceId) ?? [];
+  },
+  recordPayment(invoiceId: string, payment: Payment): Payment | undefined {
+    const invoice = invoices.get(invoiceId);
+    if (!invoice) return undefined;
+    const id = uuid();
+    const created: Payment = {
+      ...payment,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      invoiceId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const existing = paymentsByInvoice.get(invoiceId) ?? [];
+    paymentsByInvoice.set(invoiceId, [...existing, created]);
+    // Update balance
+    const newBalance = (invoice.balance ?? invoice.total ?? 0) - (payment.amount ?? 0);
+    const updated: Invoice = {
+      ...invoice,
+      balance: Math.max(0, newBalance),
+      status: newBalance <= 0 ? "PAID" : "PARTIALLY_PAID",
+    };
+    invoices.set(invoiceId, updated);
+    return created;
   },
 };
 

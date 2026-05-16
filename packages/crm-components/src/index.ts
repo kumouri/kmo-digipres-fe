@@ -90,3 +90,5 @@ export {
 } from "./admin/activities";
 export { QuotesList, QuoteDetail } from "./admin/quotes";
 export { useQuotesApi } from "./hooks/useQuotesApi";
+export { InvoicesList, InvoiceDetail } from "./admin/invoices";
+export { useInvoicesApi } from "./hooks/useInvoicesApi";

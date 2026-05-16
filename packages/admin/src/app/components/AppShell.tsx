@@ -5,6 +5,7 @@ import {
   Building2,
   FileText,
   LayoutDashboard,
+  Receipt,
   Target,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/deals", label: "Deals", icon: Target },
   { to: "/activities", label: "Activities", icon: Activity },
   { to: "/quotes", label: "Quotes", icon: FileText },
+  { to: "/invoices", label: "Invoices", icon: Receipt },
 ];
 
 export function AppShell() {
