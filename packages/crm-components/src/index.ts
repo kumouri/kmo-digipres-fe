@@ -96,3 +96,5 @@ export { TicketsList, TicketDetail } from "./admin/tickets";
 export { useTicketsApi } from "./hooks/useTicketsApi";
 export { KnowledgeBaseList, KnowledgeBaseDetail } from "./admin/knowledge-base";
 export { useKnowledgeBaseApi } from "./hooks/useKnowledgeBaseApi";
+export { InboxList, InboxDetail } from "./admin/inbox";
+export { useInboxApi } from "./hooks/useInboxApi";

@@ -5,6 +5,7 @@ import {
   BookOpen,
   Building2,
   FileText,
+  Inbox,
   LayoutDashboard,
   Receipt,
   Target,
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/tickets", label: "Tickets", icon: TicketIcon },
   { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
+  { to: "/inbox", label: "Inbox", icon: Inbox },
 ];
 
 export function AppShell() {

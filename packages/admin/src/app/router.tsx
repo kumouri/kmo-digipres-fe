@@ -65,6 +65,12 @@ const KnowledgeBaseList = lazy(() =>
 const KnowledgeBaseDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.KnowledgeBaseDetail })),
 );
+const InboxList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InboxList })),
+);
+const InboxDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.InboxDetail })),
+);
 
 function LazyOutlet() {
   return (
@@ -117,6 +123,8 @@ export const router = createBrowserRouter([
               { path: "tickets/:id", element: <TicketDetail /> },
               { path: "knowledge-base", element: <KnowledgeBaseList /> },
               { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
+              { path: "inbox", element: <InboxList /> },
+              { path: "inbox/:id", element: <InboxDetail /> },
             ],
           },
         ],

@@ -25,6 +25,7 @@ import {
   companyStore,
   contactStore,
   dealStore,
+  inboxStore,
   invoiceStore,
   kbStore,
   quoteStore,
@@ -443,6 +444,39 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const body = (await request.json()) as { query?: string };
     return HttpResponse.json(kbStore.search(body.query ?? ""));
+  }),
+
+  // --- Inbox ----------------------------------------------------------------
+  http.get(`${API_BASE}/inbox/threads`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(inboxStore.listThreads());
+  }),
+
+  http.get(`${API_BASE}/inbox/threads/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = inboxStore.getThread(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/inbox/threads/:id/claim`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const updated = inboxStore.claimThread(params.id as string);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/inbox/threads/:id/messages`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(inboxStore.listMessages(params.id as string));
+  }),
+
+  http.post(`${API_BASE}/inbox/threads/:id/messages`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { body: string };
+    const created = inboxStore.replyToThread(params.id as string, body.body ?? "");
+    if (!created) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(created, { status: 201 });
   }),
 
   // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant

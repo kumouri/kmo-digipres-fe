@@ -10,6 +10,8 @@ import type {
   CompanyDTO,
   ContactDTO,
   DealDTO,
+  InboxMessage,
+  InboxThread,
   Invoice,
   KnowledgeBaseArticle,
   Payment,
@@ -575,6 +577,93 @@ export const kbStore = {
         a.body?.toLowerCase().includes(q) ||
         (a.tags ?? []).some((t) => t.toLowerCase().includes(q)),
     );
+  },
+};
+
+// --- Inbox ------------------------------------------------------------------
+
+const SEED_THREAD_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+
+const seedThread: InboxThread = {
+  id: SEED_THREAD_ID,
+  tenantId: SMOKE_USER.tenantId,
+  fromAddress: "client@example.test",
+  subjectNormalized: "Question about the proposal",
+  firstMessageAt: new Date().toISOString(),
+  lastMessageAt: new Date().toISOString(),
+  messageCount: 1,
+  status: "UNCLAIMED",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const seedMessage: InboxMessage = {
+  id: uuid(),
+  tenantId: SMOKE_USER.tenantId,
+  threadId: SEED_THREAD_ID,
+  messageId: "msg-001",
+  from: "client@example.test",
+  to: ["support@kmosf.example"],
+  subject: "Question about the proposal",
+  textBody: "Hi, I had some questions about the proposal you sent over.",
+  receivedAt: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const inboxThreads = new Map<string, InboxThread>([[seedThread.id!, seedThread]]);
+const inboxMessages = new Map<string, InboxMessage[]>([
+  [SEED_THREAD_ID, [seedMessage]],
+]);
+
+export const inboxStore = {
+  listThreads(): InboxThread[] {
+    return Array.from(inboxThreads.values());
+  },
+  getThread(id: string): InboxThread | undefined {
+    return inboxThreads.get(id);
+  },
+  claimThread(id: string): InboxThread | undefined {
+    const existing = inboxThreads.get(id);
+    if (!existing) return undefined;
+    const updated: InboxThread = {
+      ...existing,
+      status: "CLAIMED",
+      claimedByUserId: SMOKE_USER.id,
+      updatedAt: new Date().toISOString(),
+    };
+    inboxThreads.set(id, updated);
+    return updated;
+  },
+  listMessages(threadId: string): InboxMessage[] {
+    return inboxMessages.get(threadId) ?? [];
+  },
+  replyToThread(threadId: string, body: string): InboxMessage | undefined {
+    const thread = inboxThreads.get(threadId);
+    if (!thread) return undefined;
+    const msg: InboxMessage = {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      threadId,
+      messageId: `reply-${Date.now()}`,
+      from: SMOKE_USER.email,
+      to: [thread.fromAddress ?? ""],
+      subject: `Re: ${thread.subjectNormalized ?? ""}`,
+      textBody: body,
+      receivedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const existing = inboxMessages.get(threadId) ?? [];
+    inboxMessages.set(threadId, [...existing, msg]);
+    const updatedThread: InboxThread = {
+      ...thread,
+      messageCount: (thread.messageCount ?? 1) + 1,
+      lastMessageAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    inboxThreads.set(threadId, updatedThread);
+    return msg;
   },
 };
 
