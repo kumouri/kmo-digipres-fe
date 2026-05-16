@@ -100,11 +100,33 @@ test("dragging a task card to another column moves the task", async ({ page }) =
   const todoColumn = page.getByTestId("kanban-column-TODO");
   await expect(todoColumn.getByTestId("task-card")).toHaveCount(1);
 
-  // Drag the card from TODO to IN_PROGRESS
-  const taskCard = todoColumn.getByTestId("task-card").first();
   const inProgressColumn = page.getByTestId("kanban-column-IN_PROGRESS");
 
-  await taskCard.dragTo(inProgressColumn);
+  // @dnd-kit's PointerSensor has a 5px activation constraint. Playwright's
+  // high-level dragTo() emits a single pointermove which sometimes isn't
+  // enough to activate the sensor. Drive the mouse manually with explicit
+  // steps — same pattern as the deals-pipeline drag test in smoke.spec.ts.
+  const card = todoColumn.getByTestId("task-card").first();
+  const sourceBox = await card.boundingBox();
+  const targetBox = await inProgressColumn.boundingBox();
+  if (!sourceBox || !targetBox) throw new Error("missing bounding box");
+
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2,
+    sourceBox.y + sourceBox.height / 2,
+  );
+  await page.mouse.down();
+  // Small wiggle past the 5px activation threshold.
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2 + 10,
+    sourceBox.y + sourceBox.height / 2,
+  );
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height / 2,
+    { steps: 10 },
+  );
+  await page.mouse.up();
 
   // After drag, IN_PROGRESS should have 2 tasks (1 seed + 1 dragged)
   await expect(inProgressColumn.getByTestId("task-card")).toHaveCount(2);
