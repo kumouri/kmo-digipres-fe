@@ -13,6 +13,7 @@ import type {
   Payment,
   Quote,
   SingleEmailCommunicationDTO,
+  Ticket,
 } from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
@@ -25,6 +26,7 @@ import {
   dealStore,
   invoiceStore,
   quoteStore,
+  ticketStore,
 } from "./store";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
@@ -334,6 +336,62 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const body = (await request.json()) as Payment;
     const created = invoiceStore.recordPayment(params.id as string, body);
+    if (!created) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Tickets ---------------------------------------------------------------
+  http.get(`${API_BASE}/tickets`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(ticketStore.list());
+  }),
+
+  http.get(`${API_BASE}/tickets/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = ticketStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/tickets`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Ticket;
+    const created = ticketStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/tickets/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Ticket;
+    const updated = ticketStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/tickets/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = ticketStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/tickets/:id/transition`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "OPEN";
+    const updated = ticketStore.transition(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/tickets/:id/comments`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(ticketStore.listComments(params.id as string));
+  }),
+
+  http.post(`${API_BASE}/tickets/:id/comments`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { body: string };
+    const created = ticketStore.addComment(params.id as string, body.body ?? "");
     if (!created) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(created, { status: 201 });
   }),

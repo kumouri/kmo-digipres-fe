@@ -14,6 +14,8 @@ import type {
   Payment,
   PipelineStage,
   Quote,
+  Ticket,
+  TicketComment,
   User,
 } from "@kmosf/crm-components";
 
@@ -424,6 +426,85 @@ export const invoiceStore = {
     };
     invoices.set(invoiceId, updated);
     return created;
+  },
+};
+
+// --- Tickets ----------------------------------------------------------------
+
+const seedTicket: Ticket = {
+  id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+  tenantId: SMOKE_USER.tenantId,
+  subject: "Website contact form not working",
+  body: "The contact form on the homepage returns a 500 error.",
+  status: "OPEN",
+  priority: "HIGH",
+  slaResponseDue: new Date(Date.now() + 2 * 3600_000).toISOString(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const tickets = new Map<string, Ticket>([[seedTicket.id!, seedTicket]]);
+const commentsByTicket = new Map<string, TicketComment[]>([[seedTicket.id!, []]]);
+
+export const ticketStore = {
+  list(): Ticket[] {
+    return Array.from(tickets.values());
+  },
+  get(id: string): Ticket | undefined {
+    return tickets.get(id);
+  },
+  create(input: Ticket): Ticket {
+    const id = uuid();
+    const created: Ticket = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      status: "NEW",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    tickets.set(id, created);
+    commentsByTicket.set(id, []);
+    return created;
+  },
+  update(id: string, input: Ticket): Ticket | undefined {
+    if (!tickets.has(id)) return undefined;
+    const updated: Ticket = { ...tickets.get(id), ...input, id };
+    tickets.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    commentsByTicket.delete(id);
+    return tickets.delete(id);
+  },
+  transition(id: string, target: string): Ticket | undefined {
+    const existing = tickets.get(id);
+    if (!existing) return undefined;
+    const updated: Ticket = {
+      ...existing,
+      status: target as Ticket["status"],
+      resolvedAt: target === "RESOLVED" ? new Date().toISOString() : existing.resolvedAt,
+      updatedAt: new Date().toISOString(),
+    };
+    tickets.set(id, updated);
+    return updated;
+  },
+  listComments(ticketId: string): TicketComment[] {
+    return commentsByTicket.get(ticketId) ?? [];
+  },
+  addComment(ticketId: string, body: string): TicketComment | undefined {
+    if (!tickets.has(ticketId)) return undefined;
+    const comment: TicketComment = {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      ticketId,
+      authorUserId: SMOKE_USER.id,
+      body,
+      createdAt: new Date().toISOString(),
+    };
+    const existing = commentsByTicket.get(ticketId) ?? [];
+    commentsByTicket.set(ticketId, [...existing, comment]);
+    return comment;
   },
 };
 
