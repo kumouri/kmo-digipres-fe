@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: "http://localhost:5273",
+    baseURL: "http://localhost:5173",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -19,8 +19,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -w @kmosf/crm-admin -- --port 5273 --strictPort",
-    port: 5273,
+    command: "npm run dev -w @kmosf/crm-admin -- --port 5173 --strictPort",
+    port: 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
