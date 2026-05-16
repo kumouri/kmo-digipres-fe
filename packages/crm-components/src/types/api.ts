@@ -303,3 +303,26 @@ export const TASK_PRIORITIES: TaskPriority[] = [
   "HIGH",
   "URGENT",
 ];
+
+// =============================================================================
+// Phase D — Time & Expenses (generated aliases + value constants)
+// =============================================================================
+
+// --- Time Entries ------------------------------------------------------------
+
+export type TimeEntry = components["schemas"]["TimeEntry"];
+export type Expense = components["schemas"]["Expense"];
+
+export type TimeEntrySource = "TIMER" | "MANUAL";
+export type BillingStatus = "UNBILLED" | "INVOICED";
+export type ExpenseApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export const TIME_ENTRY_SOURCES: TimeEntrySource[] = ["TIMER", "MANUAL"];
+
+export const BILLING_STATUSES: BillingStatus[] = ["UNBILLED", "INVOICED"];
+
+export const EXPENSE_APPROVAL_STATUSES: ExpenseApprovalStatus[] = [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+];

@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tickets/{id}": {
+    "/time-entries/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -36,7 +36,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tasks/{id}": {
+    "/tickets/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/sequences/{id}": {
+    "/tasks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -63,6 +63,22 @@ export interface paths {
         put: operations["update_3"];
         post?: never;
         delete: operations["delete_3"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sequences/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_4"];
+        put: operations["update_4"];
+        post?: never;
+        delete: operations["delete_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -107,23 +123,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
-        put: operations["update_4"];
-        post?: never;
-        delete: operations["delete_4"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_6"];
+        get: operations["get_5"];
         put: operations["update_5"];
         post?: never;
         delete: operations["delete_5"];
@@ -132,7 +132,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/products/{id}": {
+    "/projects/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -148,7 +148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/price-lists/{id}": {
+    "/products/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -159,6 +159,22 @@ export interface paths {
         put: operations["update_7"];
         post?: never;
         delete: operations["delete_7"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/price-lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_9"];
+        put: operations["update_8"];
+        post?: never;
+        delete: operations["delete_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -187,22 +203,6 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_9"];
-        put: operations["update_8"];
-        post?: never;
-        delete: operations["delete_8"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/meetings/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
         get: operations["get_10"];
         put: operations["update_9"];
         post?: never;
@@ -212,7 +212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/landing-pages/{id}": {
+    "/meetings/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -228,7 +228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/knowledge-base/articles/{id}": {
+    "/landing-pages/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -244,6 +244,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/knowledge-base/articles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_13"];
+        put: operations["update_12"];
+        post?: never;
+        delete: operations["delete_12"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/integrations/connections/{id}": {
         parameters: {
             query?: never;
@@ -251,23 +267,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_14"];
-        put: operations["update_12"];
-        post?: never;
-        delete: operations["delete_13"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/forms/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_16"];
+        get: operations["get_15"];
         put: operations["update_13"];
         post?: never;
         delete: operations["delete_14"];
@@ -276,7 +276,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/email-templates/{id}": {
+    "/forms/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -292,7 +292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/deals/{id}": {
+    "/expenses/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -308,7 +308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/contacts/{id}": {
+    "/email-templates/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +324,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/companies/{id}": {
+    "/deals/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -340,7 +340,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/booking-links/{id}": {
+    "/contacts/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -356,7 +356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/automation/rules/{id}": {
+    "/companies/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -372,7 +372,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/sla-policies/{id}": {
+    "/booking-links/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -382,7 +382,39 @@ export interface paths {
         get: operations["get_23"];
         put: operations["update_20"];
         post?: never;
+        delete: operations["delete_21"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_24"];
+        put: operations["update_21"];
+        post?: never;
         delete: operations["delete_22"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/sla-policies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_25"];
+        put: operations["update_22"];
+        post?: never;
+        delete: operations["delete_24"];
         options?: never;
         head?: never;
         patch?: never;
@@ -411,7 +443,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_24"];
+        get: operations["get_26"];
         put: operations["put"];
         post?: never;
         delete?: never;
@@ -427,10 +459,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_25"];
-        put: operations["update_21"];
+        get: operations["get_27"];
+        put: operations["update_23"];
         post?: never;
-        delete: operations["delete_23"];
+        delete: operations["delete_25"];
         options?: never;
         head?: never;
         patch?: never;
@@ -443,10 +475,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_26"];
-        put: operations["update_22"];
+        get: operations["get_28"];
+        put: operations["update_24"];
         post?: never;
-        delete: operations["delete_24"];
+        delete: operations["delete_26"];
         options?: never;
         head?: never;
         patch?: never;
@@ -484,6 +516,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/time-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/time-entries/timer/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["stopTimer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/time-entries/timer/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startTimer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/time-entries/invoice-from-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["invoiceFromTime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets": {
         parameters: {
             query?: never;
@@ -493,7 +589,7 @@ export interface paths {
         };
         get: operations["list_1"];
         put?: never;
-        post: operations["create_1"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -541,7 +637,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -573,7 +669,7 @@ export interface paths {
         };
         get: operations["listByProject"];
         put?: never;
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -605,7 +701,7 @@ export interface paths {
         };
         get: operations["list_2"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -701,7 +797,7 @@ export interface paths {
         };
         get: operations["list_3"];
         put?: never;
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -781,7 +877,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -877,7 +973,7 @@ export interface paths {
         };
         get: operations["list_4"];
         put?: never;
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -925,7 +1021,7 @@ export interface paths {
         };
         get: operations["list_5"];
         put?: never;
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -941,7 +1037,7 @@ export interface paths {
         };
         get: operations["list_6"];
         put?: never;
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1101,7 +1197,7 @@ export interface paths {
         };
         get: operations["listByProject_1"];
         put?: never;
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1117,7 +1213,7 @@ export interface paths {
         };
         get: operations["list_7"];
         put?: never;
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1133,7 +1229,7 @@ export interface paths {
         };
         get: operations["list_8"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1165,7 +1261,7 @@ export interface paths {
         };
         get: operations["list_9"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1197,7 +1293,7 @@ export interface paths {
         };
         get: operations["list_10"];
         put?: never;
-        post: operations["create_14"];
+        post: operations["create_15"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1325,7 +1421,71 @@ export interface paths {
         };
         get: operations["list_12"];
         put?: never;
-        post: operations["create_15"];
+        post: operations["create_16"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_17"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/invoice-from-expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["invoiceFromExpenses"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1341,7 +1501,7 @@ export interface paths {
         };
         get: operations["list_13"];
         put?: never;
-        post: operations["create_16"];
+        post: operations["create_18"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1357,7 +1517,7 @@ export interface paths {
         };
         get: operations["list_14"];
         put?: never;
-        post: operations["create_17"];
+        post: operations["create_19"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1389,7 +1549,7 @@ export interface paths {
         };
         get: operations["list_15"];
         put?: never;
-        post: operations["create_18"];
+        post: operations["create_20"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1421,7 +1581,7 @@ export interface paths {
         };
         get: operations["list_17"];
         put?: never;
-        post: operations["create_19"];
+        post: operations["create_21"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1485,7 +1645,7 @@ export interface paths {
         };
         get: operations["list_18"];
         put?: never;
-        post: operations["create_20"];
+        post: operations["create_22"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1501,7 +1661,7 @@ export interface paths {
         };
         get: operations["list_19"];
         put?: never;
-        post: operations["create_21"];
+        post: operations["create_23"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1629,7 +1789,7 @@ export interface paths {
         };
         get: operations["list_22"];
         put?: never;
-        post: operations["create_22"];
+        post: operations["create_24"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1645,7 +1805,7 @@ export interface paths {
         };
         get: operations["list_24"];
         put?: never;
-        post: operations["create_23"];
+        post: operations["create_25"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1725,7 +1885,7 @@ export interface paths {
         };
         get: operations["list_26"];
         put?: never;
-        post: operations["create_24"];
+        post: operations["create_26"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1773,7 +1933,55 @@ export interface paths {
         };
         get: operations["list_27"];
         put?: never;
-        post: operations["create_25"];
+        post: operations["create_27"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/time-entries/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listWeekly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/time-entries/timer/running": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getRunningTimer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/time-entries/by-user/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listByUser"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1851,7 +2059,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1947,10 +2155,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_13"];
+        get: operations["get_14"];
         put?: never;
         post?: never;
-        delete: operations["delete_12"];
+        delete: operations["delete_13"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2011,7 +2219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_15"];
+        get: operations["get_16"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2028,6 +2236,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listSubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/by-user/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listByUser_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/by-approval-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listByApprovalStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2270,7 +2510,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["delete_21"];
+        delete: operations["delete_23"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2318,6 +2558,42 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        TimeEntry: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            /** Format: uuid */
+            userId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            taskId?: string;
+            description?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: int64 */
+            durationSeconds?: number;
+            /** @enum {string} */
+            source?: "TIMER" | "MANUAL";
+            billable?: boolean;
+            /** @enum {string} */
+            billingStatus?: "UNBILLED" | "INVOICED";
+            /** Format: uuid */
+            invoicedInvoiceId?: string;
+            rateAmount?: number;
+            /** Format: uuid */
+            splitGroupId?: string;
+            /** Format: int64 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            auditEntityType?: string;
         };
         Ticket: {
             /** Format: uuid */
@@ -2797,6 +3073,46 @@ export interface components {
             addToSequenceId?: string;
             redirectUrl?: string;
         };
+        Expense: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            /** Format: uuid */
+            userId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            taskId?: string;
+            description?: string;
+            category?: string;
+            amount?: number;
+            currency?: string;
+            /** Format: date */
+            incurredOn?: string;
+            markupPercent?: number;
+            billable?: boolean;
+            /** @enum {string} */
+            approvalStatus?: "PENDING" | "APPROVED" | "REJECTED";
+            /** Format: uuid */
+            approvedByUserId?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            rejectionReason?: string;
+            /** @enum {string} */
+            billingStatus?: "UNBILLED" | "INVOICED";
+            /** Format: uuid */
+            invoicedInvoiceId?: string;
+            /** Format: uuid */
+            receiptAttachmentId?: string;
+            /** Format: int64 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            auditEntityType?: string;
+        };
         EmailTemplate: {
             /** Format: uuid */
             id?: string;
@@ -3044,6 +3360,66 @@ export interface components {
             customFields?: {
                 [key: string]: Record<string, never>;
             };
+        };
+        InvoiceFromTimeRequest: {
+            /** Format: uuid */
+            projectId?: string;
+            timeEntryIds?: string[];
+            /** Format: uuid */
+            contactId?: string;
+            /** Format: uuid */
+            companyId?: string;
+            /** Format: uuid */
+            dealId?: string;
+            defaultRateAmount?: number;
+        };
+        Invoice: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            invoiceNumber?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "SENT" | "PARTIALLY_PAID" | "PAID" | "VOIDED" | "OVERDUE";
+            /** Format: uuid */
+            quoteId?: string;
+            /** Format: uuid */
+            dealId?: string;
+            /** Format: uuid */
+            contactId?: string;
+            /** Format: uuid */
+            companyId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            milestoneId?: string;
+            currency?: string;
+            lineItems?: components["schemas"]["LineItem"][];
+            subtotal?: number;
+            discountTotal?: number;
+            taxTotal?: number;
+            total?: number;
+            balance?: number;
+            /** Format: date */
+            issuedAt?: string;
+            /** Format: date */
+            dueAt?: string;
+            /** Format: date-time */
+            statusChangedAt?: string;
+            customFields?: {
+                [key: string]: Record<string, never>;
+            };
+            externalRefs?: {
+                [key: string]: string;
+            };
+            /** Format: int64 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            auditEntityType?: string;
+            entityType?: string;
         };
         TicketComment: {
             /** Format: uuid */
@@ -3328,54 +3704,6 @@ export interface components {
             displayName?: string;
             roles?: string[];
         };
-        Invoice: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            tenantId?: string;
-            invoiceNumber?: string;
-            /** @enum {string} */
-            status?: "DRAFT" | "SENT" | "PARTIALLY_PAID" | "PAID" | "VOIDED" | "OVERDUE";
-            /** Format: uuid */
-            quoteId?: string;
-            /** Format: uuid */
-            dealId?: string;
-            /** Format: uuid */
-            contactId?: string;
-            /** Format: uuid */
-            companyId?: string;
-            /** Format: uuid */
-            projectId?: string;
-            /** Format: uuid */
-            milestoneId?: string;
-            currency?: string;
-            lineItems?: components["schemas"]["LineItem"][];
-            subtotal?: number;
-            discountTotal?: number;
-            taxTotal?: number;
-            total?: number;
-            balance?: number;
-            /** Format: date */
-            issuedAt?: string;
-            /** Format: date */
-            dueAt?: string;
-            /** Format: date-time */
-            statusChangedAt?: string;
-            customFields?: {
-                [key: string]: Record<string, never>;
-            };
-            externalRefs?: {
-                [key: string]: string;
-            };
-            /** Format: int64 */
-            version?: number;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-            auditEntityType?: string;
-            entityType?: string;
-        };
         Payment: {
             /** Format: uuid */
             id?: string;
@@ -3462,6 +3790,18 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        InvoiceFromExpensesRequest: {
+            /** Format: uuid */
+            projectId?: string;
+            expenseIds?: string[];
+            /** Format: uuid */
+            contactId?: string;
+            /** Format: uuid */
+            companyId?: string;
+            /** Format: uuid */
+            dealId?: string;
+            defaultMarkupPercent?: number;
         };
         MoveStageRequest: {
             /** @enum {string} */
@@ -3906,7 +4246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Ticket"];
+                    "*/*": components["schemas"]["TimeEntry"];
                 };
             };
         };
@@ -3914,7 +4254,9 @@ export interface operations {
     update_1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Zone-Id"?: string;
+            };
             path: {
                 id: string;
             };
@@ -3922,7 +4264,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Ticket"];
+                "application/json": components["schemas"]["TimeEntry"];
             };
         };
         responses: {
@@ -3932,7 +4274,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Ticket"];
+                    "*/*": components["schemas"]["TimeEntry"];
                 };
             };
         };
@@ -3974,7 +4316,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Task"];
+                    "*/*": components["schemas"]["Ticket"];
                 };
             };
         };
@@ -3990,7 +4332,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Task"];
+                "application/json": components["schemas"]["Ticket"];
             };
         };
         responses: {
@@ -4000,7 +4342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Task"];
+                    "*/*": components["schemas"]["Ticket"];
                 };
             };
         };
@@ -4042,12 +4384,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Sequence"];
+                    "*/*": components["schemas"]["Task"];
                 };
             };
         };
     };
     update_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Task"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    delete_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Sequence"];
+                };
+            };
+        };
+    };
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4073,7 +4483,7 @@ export interface operations {
             };
         };
     };
-    delete_3: {
+    delete_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4229,7 +4639,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4251,7 +4661,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4277,74 +4687,6 @@ export interface operations {
             };
         };
     };
-    delete_4: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["Project"];
-                };
-            };
-        };
-    };
-    update_5: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Project"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["Project"];
-                };
-            };
-        };
-    };
     delete_5: {
         parameters: {
             query?: never;
@@ -4356,8 +4698,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4382,7 +4724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Product"];
+                    "*/*": components["schemas"]["Project"];
                 };
             };
         };
@@ -4398,7 +4740,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Product"];
+                "application/json": components["schemas"]["Project"];
             };
         };
         responses: {
@@ -4408,7 +4750,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Product"];
+                    "*/*": components["schemas"]["Project"];
                 };
             };
         };
@@ -4450,12 +4792,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PriceList"];
+                    "*/*": components["schemas"]["Product"];
                 };
             };
         };
     };
     update_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Product"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Product"];
+                };
+            };
+        };
+    };
+    delete_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_9: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PriceList"];
+                };
+            };
+        };
+    };
+    update_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -4481,7 +4891,7 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -4545,7 +4955,7 @@ export interface operations {
             };
         };
     };
-    get_9: {
+    get_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -4567,7 +4977,7 @@ export interface operations {
             };
         };
     };
-    update_8: {
+    update_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -4589,74 +4999,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Milestone"];
-                };
-            };
-        };
-    };
-    delete_8: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_10: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["Meeting"];
-                };
-            };
-        };
-    };
-    update_9: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Meeting"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["Meeting"];
                 };
             };
         };
@@ -4698,7 +5040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["LandingPage"];
+                    "*/*": components["schemas"]["Meeting"];
                 };
             };
         };
@@ -4714,7 +5056,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LandingPage"];
+                "application/json": components["schemas"]["Meeting"];
             };
         };
         responses: {
@@ -4724,7 +5066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["LandingPage"];
+                    "*/*": components["schemas"]["Meeting"];
                 };
             };
         };
@@ -4766,12 +5108,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["KnowledgeBaseArticle"];
+                    "*/*": components["schemas"]["LandingPage"];
                 };
             };
         };
     };
     update_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LandingPage"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LandingPage"];
+                };
+            };
+        };
+    };
+    delete_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_13: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KnowledgeBaseArticle"];
+                };
+            };
+        };
+    };
+    update_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -4797,7 +5207,7 @@ export interface operations {
             };
         };
     };
-    delete_11: {
+    delete_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -4817,7 +5227,7 @@ export interface operations {
             };
         };
     };
-    get_14: {
+    get_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -4839,7 +5249,7 @@ export interface operations {
             };
         };
     };
-    update_12: {
+    update_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -4861,74 +5271,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IntegrationConnection"];
-                };
-            };
-        };
-    };
-    delete_13: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_16: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormDefinition"];
-                };
-            };
-        };
-    };
-    update_13: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FormDefinition"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormDefinition"];
                 };
             };
         };
@@ -4970,7 +5312,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["EmailTemplate"];
+                    "*/*": components["schemas"]["FormDefinition"];
                 };
             };
         };
@@ -4986,7 +5328,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EmailTemplate"];
+                "application/json": components["schemas"]["FormDefinition"];
             };
         };
         responses: {
@@ -4996,7 +5338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["EmailTemplate"];
+                    "*/*": components["schemas"]["FormDefinition"];
                 };
             };
         };
@@ -5038,7 +5380,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DealDTO"];
+                    "*/*": components["schemas"]["Expense"];
                 };
             };
         };
@@ -5054,7 +5396,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DealDTO"];
+                "application/json": components["schemas"]["Expense"];
             };
         };
         responses: {
@@ -5064,7 +5406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DealDTO"];
+                    "*/*": components["schemas"]["Expense"];
                 };
             };
         };
@@ -5106,7 +5448,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ContactDTO"];
+                    "*/*": components["schemas"]["EmailTemplate"];
                 };
             };
         };
@@ -5122,7 +5464,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ContactDTO"];
+                "application/json": components["schemas"]["EmailTemplate"];
             };
         };
         responses: {
@@ -5132,7 +5474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ContactDTO"];
+                    "*/*": components["schemas"]["EmailTemplate"];
                 };
             };
         };
@@ -5174,7 +5516,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CompanyDTO"];
+                    "*/*": components["schemas"]["DealDTO"];
                 };
             };
         };
@@ -5190,7 +5532,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CompanyDTO"];
+                "application/json": components["schemas"]["DealDTO"];
             };
         };
         responses: {
@@ -5200,7 +5542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CompanyDTO"];
+                    "*/*": components["schemas"]["DealDTO"];
                 };
             };
         };
@@ -5242,7 +5584,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["BookingLink"];
+                    "*/*": components["schemas"]["ContactDTO"];
                 };
             };
         };
@@ -5258,7 +5600,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BookingLink"];
+                "application/json": components["schemas"]["ContactDTO"];
             };
         };
         responses: {
@@ -5268,7 +5610,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["BookingLink"];
+                    "*/*": components["schemas"]["ContactDTO"];
                 };
             };
         };
@@ -5310,7 +5652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["WorkflowRule"];
+                    "*/*": components["schemas"]["CompanyDTO"];
                 };
             };
         };
@@ -5326,7 +5668,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["WorkflowRule"];
+                "application/json": components["schemas"]["CompanyDTO"];
             };
         };
         responses: {
@@ -5336,7 +5678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["WorkflowRule"];
+                    "*/*": components["schemas"]["CompanyDTO"];
                 };
             };
         };
@@ -5378,12 +5720,148 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SlaPolicy"];
+                    "*/*": components["schemas"]["BookingLink"];
                 };
             };
         };
     };
     update_20: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookingLink"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookingLink"];
+                };
+            };
+        };
+    };
+    delete_21: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_24: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WorkflowRule"];
+                };
+            };
+        };
+    };
+    update_21: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkflowRule"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WorkflowRule"];
+                };
+            };
+        };
+    };
+    delete_22: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_25: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SlaPolicy"];
+                };
+            };
+        };
+    };
+    update_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -5409,7 +5887,7 @@ export interface operations {
             };
         };
     };
-    delete_22: {
+    delete_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -5455,7 +5933,7 @@ export interface operations {
             };
         };
     };
-    get_24: {
+    get_26: {
         parameters: {
             query?: never;
             header?: never;
@@ -5499,7 +5977,7 @@ export interface operations {
             };
         };
     };
-    get_25: {
+    get_27: {
         parameters: {
             query?: never;
             header?: never;
@@ -5521,7 +5999,7 @@ export interface operations {
             };
         };
     };
-    update_21: {
+    update_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -5547,7 +6025,7 @@ export interface operations {
             };
         };
     };
-    delete_23: {
+    delete_25: {
         parameters: {
             query?: never;
             header?: never;
@@ -5567,7 +6045,7 @@ export interface operations {
             };
         };
     };
-    get_26: {
+    get_28: {
         parameters: {
             query?: never;
             header?: never;
@@ -5589,7 +6067,7 @@ export interface operations {
             };
         };
     };
-    update_22: {
+    update_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -5615,7 +6093,7 @@ export interface operations {
             };
         };
     };
-    delete_24: {
+    delete_26: {
         parameters: {
             query?: never;
             header?: never;
@@ -5699,6 +6177,104 @@ export interface operations {
             };
         };
     };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Zone-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeEntry"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"];
+                };
+            };
+        };
+    };
+    stopTimer: {
+        parameters: {
+            query: {
+                userId: string;
+                endedAt?: string;
+                zoneId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"][];
+                };
+            };
+        };
+    };
+    startTimer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeEntry"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"];
+                };
+            };
+        };
+    };
+    invoiceFromTime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceFromTimeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
     list_1: {
         parameters: {
             query?: never;
@@ -5719,7 +6295,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5815,7 +6391,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: {
@@ -5887,7 +6463,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -5983,7 +6559,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -6189,7 +6765,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6309,7 +6885,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6485,7 +7061,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -6575,7 +7151,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -6619,7 +7195,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -6887,7 +7463,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -6933,7 +7509,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -6977,7 +7553,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -7047,7 +7623,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -7113,7 +7689,7 @@ export interface operations {
             };
         };
     };
-    create_14: {
+    create_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -7394,7 +7970,7 @@ export interface operations {
             };
         };
     };
-    create_15: {
+    create_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -7414,6 +7990,100 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FormDefinition"];
+                };
+            };
+        };
+    };
+    create_17: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expense"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"];
+                };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query: {
+                reason: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"];
+                };
+            };
+        };
+    };
+    approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"];
+                };
+            };
+        };
+    };
+    invoiceFromExpenses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceFromExpensesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Invoice"];
                 };
             };
         };
@@ -7438,7 +8108,7 @@ export interface operations {
             };
         };
     };
-    create_16: {
+    create_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -7482,7 +8152,7 @@ export interface operations {
             };
         };
     };
-    create_17: {
+    create_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -7552,7 +8222,7 @@ export interface operations {
             };
         };
     };
-    create_18: {
+    create_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -7644,7 +8314,7 @@ export interface operations {
             };
         };
     };
-    create_19: {
+    create_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -7760,7 +8430,7 @@ export interface operations {
             };
         };
     };
-    create_20: {
+    create_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -7804,7 +8474,7 @@ export interface operations {
             };
         };
     };
-    create_21: {
+    create_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -8033,7 +8703,7 @@ export interface operations {
             };
         };
     };
-    create_22: {
+    create_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -8077,7 +8747,7 @@ export interface operations {
             };
         };
     };
-    create_23: {
+    create_25: {
         parameters: {
             query?: never;
             header?: never;
@@ -8209,7 +8879,7 @@ export interface operations {
             };
         };
     };
-    create_24: {
+    create_26: {
         parameters: {
             query?: never;
             header?: never;
@@ -8297,7 +8967,7 @@ export interface operations {
             };
         };
     };
-    create_25: {
+    create_27: {
         parameters: {
             query?: never;
             header?: never;
@@ -8317,6 +8987,74 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ActivityDTO"];
+                };
+            };
+        };
+    };
+    listWeekly: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                userId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"][];
+                };
+            };
+        };
+    };
+    getRunningTimer: {
+        parameters: {
+            query: {
+                userId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"];
+                };
+            };
+        };
+    };
+    listByUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"][];
                 };
             };
         };
@@ -8409,7 +9147,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -8539,7 +9277,7 @@ export interface operations {
             };
         };
     };
-    get_13: {
+    get_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -8561,7 +9299,7 @@ export interface operations {
             };
         };
     };
-    delete_12: {
+    delete_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -8645,7 +9383,7 @@ export interface operations {
             };
         };
     };
-    get_15: {
+    get_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -8685,6 +9423,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FormSubmission"][];
+                };
+            };
+        };
+    };
+    listByUser_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"][];
+                };
+            };
+        };
+    };
+    listByApprovalStatus: {
+        parameters: {
+            query: {
+                status: "PENDING" | "APPROVED" | "REJECTED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"][];
                 };
             };
         };
@@ -8996,7 +9778,7 @@ export interface operations {
             };
         };
     };
-    delete_21: {
+    delete_23: {
         parameters: {
             query?: never;
             header?: never;
