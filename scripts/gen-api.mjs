@@ -3,12 +3,15 @@
  * gen-api.mjs — codegen script for kmo-digipres-fe
  *
  * Usage:
- *   node scripts/gen-api.mjs          # generate (copies spec + runs openapi-typescript)
- *   node scripts/gen-api.mjs --check  # exits non-zero if committed output is stale
+ *   node scripts/gen-api.mjs          # generate: copy spec from BE sibling repo, then run openapi-typescript
+ *   node scripts/gen-api.mjs --check  # CI drift gate: regenerate from the vendored spec and diff vs committed output
  *
- * Source of truth: ../kmo-digipres-be/docs/api/openapi.json (sibling repo)
- * Vendored copy:   packages/crm-components/openapi/openapi.json
+ * Source of truth: ../kmo-digipres-be/docs/api/openapi.json (sibling repo; needed only for `gen:api`)
+ * Vendored copy:   packages/crm-components/openapi/openapi.json (committed; the input for `--check`)
  * Generated file:  packages/crm-components/src/types/openapi.ts
+ *
+ * --check must NOT depend on the BE sibling repo: CI clones only this repo. It
+ * proves openapi.ts is consistent with the committed vendored spec.
  */
 
 import { execSync } from "node:child_process";
@@ -32,23 +35,25 @@ const CHECK_MODE = process.argv.includes("--check");
 mkdirSync(VENDORED_DIR, { recursive: true });
 
 if (CHECK_MODE) {
-  // In check mode: regenerate to a temp file and diff vs committed
+  // In check mode: regenerate from the committed vendored spec and diff vs
+  // the committed output. No BE sibling repo — CI clones only this repo.
   if (!existsSync(GENERATED_FILE)) {
     console.error("ERROR: Generated file does not exist:", GENERATED_FILE);
+    process.exit(1);
+  }
+  if (!existsSync(VENDORED_SPEC)) {
+    console.error("ERROR: Vendored spec does not exist:", VENDORED_SPEC);
+    console.error("Run `npm run gen:api` (requires the BE sibling repo) and commit it.");
     process.exit(1);
   }
 
   const tmpDir = resolve(tmpdir(), `gen-api-check-${randomBytes(6).toString("hex")}`);
   mkdirSync(tmpDir, { recursive: true });
-  const tmpSpec = resolve(tmpDir, "openapi.json");
   const tmpOut = resolve(tmpDir, "openapi.ts");
 
-  // Copy current spec to temp
-  copyFileSync(SOURCE_SPEC, tmpSpec);
-
-  // Generate to temp file
+  // Generate to temp file from the vendored spec
   execSync(
-    `node node_modules/openapi-typescript/bin/cli.js "${tmpSpec}" -o "${tmpOut}"`,
+    `node node_modules/openapi-typescript/bin/cli.js "${VENDORED_SPEC}" -o "${tmpOut}"`,
     { stdio: "inherit", cwd: root }
   );
 
