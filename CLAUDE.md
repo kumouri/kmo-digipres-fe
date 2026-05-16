@@ -18,6 +18,27 @@ When writing API calls or understanding FE–BE contracts, read `.claude/backend
 When writing components, queries, forms, or handling errors, read `.claude/conventions.md`.
 For what is explicitly out of scope for the current init plan, read `.claude/scope-boundaries.md`.
 
+## Phase C: Projects / Milestones / Tasks (SHIPPED)
+
+Phase C adds the project-delivery vertical on top of the Phase B baseline:
+
+| Area | Route | API surface |
+|---|---|---|
+| Projects | `/projects`, `/projects/:id` | GET/POST/PUT/DELETE /projects; POST /projects/:id/status; POST /projects/from-deal/:dealId (Deal→Project, idempotent 201/200) |
+| Milestones (sub) | Detail tabs | GET/POST /milestones/by-project/:id; GET/PUT/DELETE /milestones/:id; POST /milestones/:id/transition?status=COMPLETED (spawns DRAFT invoice if triggersInvoiceOnComplete=true) |
+| Tasks (kanban) | Detail Tasks tab | GET/POST /tasks/by-project/:id; PUT/DELETE /tasks/:id; POST /tasks/:id/status?target= |
+| Deal → Project | DealDetail (WON only) | "Convert to Project" button → POST /projects/from-deal/:dealId |
+
+**New value constants** in `types/api.ts`:
+- `PROJECT_STATUSES`: `["PLANNING","ACTIVE","ON_HOLD","COMPLETED","CANCELLED"]`
+- `MILESTONE_STATUSES`: `["PENDING","IN_PROGRESS","COMPLETED"]`
+- `TASK_STATUSES`: `["TODO","IN_PROGRESS","BLOCKED","DONE"]` — the kanban columns
+- `TASK_PRIORITIES`: `["LOW","MEDIUM","HIGH","URGENT"]`
+
+**Smoke test count after Phase C**: 60 Phase-B specs + 6 new `projects.spec.ts` = 66 total. (Environment note: port-5173 collision with another dev server on the dev machine causes all specs to fail locally; pre-existing on `main`. CI runs on a clean server; no conflict expected there.)
+
+**Type generation** (unchanged): `npm run gen:api` copies updated BE spec → vendored `openapi/openapi.json` → regenerates `types/openapi.ts`; `npm run gen:api:check` exits 0. Run after any BE spec update.
+
 ## Phase B: FE feature parity (SHIPPED)
 
 Phase B shipped the following 9 new admin areas on top of the Phase A baseline (Contacts, Companies, Deals, Activities):
