@@ -108,3 +108,4 @@ export { AskAiDialog } from "./admin/ai";
 export { useAiApi } from "./hooks/useAiApi";
 export { ProjectsList, ProjectDetail } from "./admin/projects";
 export { useProjectsApi } from "./hooks/useProjectsApi";
+export { useTimeExpensesApi } from "./hooks/useTimeExpensesApi";

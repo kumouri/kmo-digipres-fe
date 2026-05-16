@@ -13,6 +13,7 @@ import type {
   Dashboard,
   DraftReplyBody,
   DealDTO,
+  Expense,
   FieldDefinition,
   Invoice,
   KnowledgeBaseArticle,
@@ -27,19 +28,23 @@ import type {
   SingleEmailCommunicationDTO,
   SummarizeBody,
   Task,
+  TimeEntry,
   Ticket,
 } from "@kmosf/crm-components";
+import type { components } from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  attachmentStore,
   auditStore,
   bookingStore,
   companyStore,
   contactStore,
   dashboardStore,
   dealStore,
+  expenseStore,
   fieldDefStore,
   inboxStore,
   invoiceStore,
@@ -50,7 +55,13 @@ import {
   savedReportStore,
   taskStore2,
   ticketStore,
+  timeEntryStore,
 } from "./store";
+
+type Attachment = components["schemas"]["Attachment"];
+type PresignRequest = components["schemas"]["PresignRequest"];
+type InvoiceFromTimeRequest = components["schemas"]["InvoiceFromTimeRequest"];
+type InvoiceFromExpensesRequest = components["schemas"]["InvoiceFromExpensesRequest"];
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
@@ -879,5 +890,214 @@ export const handlers = [
     const updated = taskStore2.changeStatus(params.id as string, target);
     if (!updated) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(updated);
+  }),
+
+  // --- Time Entries (Phase D) ------------------------------------------------
+
+  // IMPORTANT: more-specific paths (/timer/start, /timer/stop, /timer/running,
+  // /weekly, /invoice-from-time, /by-user/:userId) must come BEFORE the
+  // wildcard /:id to avoid MSW matching the literal string as an ID.
+
+  http.post(`${API_BASE}/time-entries/timer/start`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as TimeEntry;
+    const result = timeEntryStore.startTimer(body);
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json(result, { status: 201 });
+  }),
+
+  http.post(`${API_BASE}/time-entries/timer/stop`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId") ?? SMOKE_USER.id;
+    const endedAt = url.searchParams.get("endedAt") ?? undefined;
+    const zoneId = url.searchParams.get("zoneId") ?? undefined;
+    const result = timeEntryStore.stopTimer(userId, endedAt, zoneId);
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.get(`${API_BASE}/time-entries/timer/running`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const running = timeEntryStore.getRunningTimer();
+    if (!running) return new HttpResponse(null, { status: 204 });
+    return HttpResponse.json(running);
+  }),
+
+  http.get(`${API_BASE}/time-entries/weekly`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId") ?? SMOKE_USER.id;
+    const from = url.searchParams.get("from") ?? "";
+    const to = url.searchParams.get("to") ?? "";
+    return HttpResponse.json(timeEntryStore.listWeekly(userId, from, to));
+  }),
+
+  http.post(`${API_BASE}/time-entries/invoice-from-time`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as InvoiceFromTimeRequest;
+    const result = timeEntryStore.createInvoiceFromTime(body.projectId);
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.get(`${API_BASE}/time-entries/by-user/:userId`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(
+      timeEntryStore.listByUser(params.userId as string),
+    );
+  }),
+
+  http.get(`${API_BASE}/time-entries`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(timeEntryStore.list());
+  }),
+
+  http.get(`${API_BASE}/time-entries/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = timeEntryStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/time-entries`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as TimeEntry;
+    const created = timeEntryStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/time-entries/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as TimeEntry;
+    const updated = timeEntryStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/time-entries/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = timeEntryStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Expenses (Phase D) ----------------------------------------------------
+
+  // More-specific paths before wildcard /:id
+  http.post(`${API_BASE}/expenses/invoice-from-expenses`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as InvoiceFromExpensesRequest;
+    const result = expenseStore.createInvoiceFromExpenses(body.projectId);
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/expenses/:id/approve`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = expenseStore.approve(params.id as string);
+    if ("code" in result) {
+      const status = result.code === 3517 ? 409 : 404;
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/expenses/:id/reject`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const reason = url.searchParams.get("reason") ?? "";
+    const result = expenseStore.reject(params.id as string, reason);
+    if ("code" in result) {
+      const status = result.code === 3516 ? 400 : result.code === 3517 ? 409 : 404;
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.get(`${API_BASE}/expenses`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(expenseStore.list());
+  }),
+
+  http.get(`${API_BASE}/expenses/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = expenseStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/expenses`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Expense;
+    const created = expenseStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/expenses/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Expense;
+    const updated = expenseStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/expenses/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = expenseStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Attachments (Phase D reuses existing /attachments endpoints) ----------
+  // MSW presign: return a fake presigned URL (no real S3 in mock mode)
+
+  http.post(`${API_BASE}/attachments/presign`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as PresignRequest;
+    const storageRef = `tenants/${SMOKE_USER.tenantId}/attachments/${body.subjectType}/${body.subjectId}/mock-receipt.${body.suffix ?? "pdf"}`;
+    return HttpResponse.json({
+      uploadUrl: `https://mock-s3.example/presigned/${storageRef}`,
+      storageRef,
+    });
+  }),
+
+  http.post(`${API_BASE}/attachments`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Attachment;
+    const registered = attachmentStore.register(body);
+    return HttpResponse.json(registered, { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/attachments`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const subjectType = url.searchParams.get("subjectType") ?? "";
+    const subjectId = url.searchParams.get("subjectId") ?? "";
+    return HttpResponse.json(attachmentStore.listFor(subjectType, subjectId));
   }),
 ];
