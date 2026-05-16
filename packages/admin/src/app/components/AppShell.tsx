@@ -4,6 +4,7 @@ import {
   Activity,
   BookOpen,
   Building2,
+  ClipboardList,
   FileText,
   Inbox,
   LayoutDashboard,
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/field-definitions", label: "Field Definitions", icon: Settings2 },
+  { to: "/audit", label: "Audit Log", icon: ClipboardList },
 ];
 
 export function AppShell() {

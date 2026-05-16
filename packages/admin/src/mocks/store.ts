@@ -4,6 +4,7 @@
 
 import type {
   ActivityDTO,
+  AuditEventDTO,
   BookSlotRequest,
   BookedMeeting,
   BookingPublicView,
@@ -11,6 +12,7 @@ import type {
   ContactDTO,
   DealDTO,
   FieldDefinition,
+  FieldDiff,
   InboxMessage,
   InboxThread,
   Invoice,
@@ -753,5 +755,40 @@ export const activityStore = {
   },
   delete(id: string): boolean {
     return activities.delete(id);
+  },
+};
+
+// --- Audit Events -----------------------------------------------------------
+
+const SMOKE_CONTACT_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"; // same as quoteStore seed contact ref
+
+const seedAuditEvent: AuditEventDTO = {
+  id: "a0000000-a000-a000-a000-a00000000001",
+  actorUserId: SMOKE_USER.id,
+  entityType: "CONTACT",
+  entityId: SMOKE_CONTACT_ID,
+  op: "UPDATE",
+  fieldDiffs: [
+    { field: "firstName", before: "John" as unknown, after: "Jonathan" as unknown } as FieldDiff,
+  ],
+  at: "2026-05-15T10:00:00Z",
+  requestId: "req-001",
+};
+
+const auditEvents: AuditEventDTO[] = [seedAuditEvent];
+
+export const auditStore = {
+  listForEntity(entityType: string, entityId: string): AuditEventDTO[] {
+    return auditEvents
+      .filter((e) => e.entityType === entityType && e.entityId === entityId)
+      .sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
+  },
+  listByActor(userId: string): AuditEventDTO[] {
+    return auditEvents
+      .filter((e) => e.actorUserId === userId)
+      .sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
+  },
+  add(event: AuditEventDTO): void {
+    auditEvents.push(event);
   },
 };

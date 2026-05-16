@@ -100,3 +100,5 @@ export { InboxList, InboxDetail } from "./admin/inbox";
 export { useInboxApi } from "./hooks/useInboxApi";
 export { FieldDefinitionsList, FieldDefinitionDetail } from "./admin/field-definitions";
 export { useFieldDefinitionsApi } from "./hooks/useFieldDefinitionsApi";
+export { AuditList } from "./admin/audit";
+export { useAuditApi } from "./hooks/useAuditApi";

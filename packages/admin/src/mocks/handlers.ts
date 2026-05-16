@@ -17,11 +17,13 @@ import type {
   SingleEmailCommunicationDTO,
   Ticket,
 } from "@kmosf/crm-components";
+import type { AuditEventDTO } from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  auditStore,
   bookingStore,
   companyStore,
   contactStore,
@@ -573,5 +575,22 @@ export const handlers = [
       });
     }
     return HttpResponse.json(true);
+  }),
+
+  // --- Audit ----------------------------------------------------------------
+  http.get(`${API_BASE}/audit`, ({ request }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const url = new URL(request.url);
+    const entityType = url.searchParams.get("entityType") ?? "";
+    const entityId = url.searchParams.get("entityId") ?? "";
+    const events: AuditEventDTO[] = auditStore.listForEntity(entityType, entityId);
+    return HttpResponse.json(events);
+  }),
+
+  http.get(`${API_BASE}/audit/by-actor/:userId`, ({ request, params }) => {
+    if (!requireAuth(request)) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const { userId } = params as { userId: string };
+    const events: AuditEventDTO[] = auditStore.listByActor(userId);
+    return HttpResponse.json(events);
   }),
 ];

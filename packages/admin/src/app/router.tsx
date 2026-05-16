@@ -77,6 +77,9 @@ const FieldDefinitionsList = lazy(() =>
 const FieldDefinitionDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.FieldDefinitionDetail })),
 );
+const AuditList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.AuditList })),
+);
 
 function LazyOutlet() {
   return (
@@ -133,6 +136,7 @@ export const router = createBrowserRouter([
               { path: "inbox/:id", element: <InboxDetail /> },
               { path: "field-definitions", element: <FieldDefinitionsList /> },
               { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
+              { path: "audit", element: <AuditList /> },
             ],
           },
         ],
