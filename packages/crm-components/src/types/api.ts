@@ -1,5 +1,24 @@
-// Mirrors backend DTOs in repos/kmo-digipres-be/src/main/java/com/kumouri/kmodigipresbe/model/.
-// When the backend's DTOs change, update this file. Keep field names identical.
+/**
+ * api.ts — generated-type alias shim
+ *
+ * Types for the 4 existing resource areas (Contacts, Companies, Deals,
+ * Activities) are intentionally narrow hand-written interfaces that the
+ * existing call sites compile cleanly against. The generated `openapi.ts`
+ * makes all fields optional (OpenAPI 3.0 semantics), which would break ~15
+ * existing files. The shim exposes the same narrow shapes plus re-exports the
+ * new Phase B types directly from the generated file.
+ *
+ * Run `npm run gen:api` to refresh `openapi.ts` from the committed backend spec.
+ * Add new Phase B type aliases at the bottom of this file (pattern: Phase B area).
+ */
+
+import type { components } from "./openapi";
+
+// Re-export the generated module root so consumers can access raw generated
+// types when needed without knowing the internal file location.
+export type { components };
+
+// --- Auth -------------------------------------------------------------------
 
 export interface LoginRequest {
   email: string;
@@ -180,3 +199,62 @@ export interface BookedMeeting {
   start: string;
   end: string;
 }
+
+// =============================================================================
+// Phase B — new area types aliased from the generated openapi.ts
+// =============================================================================
+
+// --- Quotes -----------------------------------------------------------------
+
+export type Quote = components["schemas"]["Quote"];
+export type LineItem = components["schemas"]["LineItem"];
+export type QuoteStatus = "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+
+// --- Invoices ---------------------------------------------------------------
+
+export type Invoice = components["schemas"]["Invoice"];
+export type Payment = components["schemas"]["Payment"];
+export type InvoiceStatus = "DRAFT" | "SENT" | "PARTIAL" | "PAID" | "VOID" | "OVERDUE";
+
+// --- Tickets ----------------------------------------------------------------
+
+export type Ticket = components["schemas"]["Ticket"];
+export type TicketComment = components["schemas"]["TicketComment"];
+export type SlaPolicy = components["schemas"]["SlaPolicy"];
+export type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+// --- Knowledge Base ---------------------------------------------------------
+
+export type KnowledgeBaseArticle = components["schemas"]["KnowledgeBaseArticle"];
+
+// --- Inbox ------------------------------------------------------------------
+
+export type InboxThread = components["schemas"]["InboxThread"];
+export type InboxMessage = components["schemas"]["InboxMessage"];
+export type InboxStatus = "OPEN" | "CLAIMED" | "CLOSED";
+
+// --- Field Definitions ------------------------------------------------------
+
+export type FieldDefinition = components["schemas"]["FieldDefinition"];
+export type FieldDefinitionType = "TEXT" | "NUMBER" | "DATE" | "BOOLEAN" | "SELECT" | "MULTI_SELECT" | "LOOKUP";
+export type FieldEntityType = "CONTACT" | "COMPANY" | "DEAL" | "TICKET";
+
+// --- Audit ------------------------------------------------------------------
+
+export type AuditEventDTO = components["schemas"]["AuditEventDTO"];
+export type FieldDiff = components["schemas"]["FieldDiff"];
+
+// --- Reports / Dashboards ---------------------------------------------------
+
+export type SavedReport = components["schemas"]["SavedReport"];
+export type Dashboard = components["schemas"]["Dashboard"];
+export type DashboardItem = components["schemas"]["DashboardItem"];
+
+// --- AI assist --------------------------------------------------------------
+
+export type AskAiRequest = components["schemas"]["AskAiRequest"];
+export type AskResult = components["schemas"]["AskResult"];
+export type AiSummary = components["schemas"]["AiSummary"];
+export type AiDraft = components["schemas"]["AiDraft"];
+export type Citation = components["schemas"]["Citation"];

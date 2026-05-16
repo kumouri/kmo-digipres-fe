@@ -17,10 +17,13 @@
     "test:smoke": "playwright test",
     "test:smoke:ui": "playwright test --ui",
     "test:smoke:install": "playwright install --with-deps chromium",
-    "test:smoke:report": "playwright show-report"
+    "test:smoke:report": "playwright show-report",
+    "gen:api": "node scripts/gen-api.mjs",
+    "gen:api:check": "node scripts/gen-api.mjs --check"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "openapi-typescript": "7.8.0",
     "typescript": "^5.6.2"
   }
 }
