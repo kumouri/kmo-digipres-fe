@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, FolderKanban, Trash2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import {
 } from "@kmosf/crm-components";
 import { Skeleton } from "@kmosf/crm-components";
 import { useDealsApi } from "../../hooks/useDealsApi";
+import { useProjectsApi } from "../../hooks/useProjectsApi";
 import { DealForm, dealToFormValues, formValuesToDeal } from "./DealForm";
 
 export function DealDetail() {
@@ -32,6 +33,7 @@ export function DealDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const dealsApi = useDealsApi();
+  const projectsApi = useProjectsApi();
 
   const dealQuery = useQuery({
     queryKey: ["deals", id],
@@ -60,6 +62,17 @@ export function DealDetail() {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Delete failed."),
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: () => projectsApi.convertFromDeal(id!),
+    onSuccess: (project) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Deal converted to project.");
+      if (project.id) navigate(`/projects/${project.id}`);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Conversion failed."),
   });
 
   if (dealQuery.isLoading) {
@@ -109,7 +122,18 @@ export function DealDetail() {
             ) : null}
           </div>
         </div>
-        <AlertDialog>
+        <div className="flex items-center gap-2">
+          {d.stage === "WON" ? (
+            <Button
+              variant="outline"
+              data-testid="convert-to-project"
+              disabled={convertMutation.isPending}
+              onClick={() => convertMutation.mutate()}
+            >
+              <FolderKanban /> Convert to Project
+            </Button>
+          ) : null}
+          <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" data-testid="delete-deal">
               <Trash2 /> Delete
@@ -135,6 +159,7 @@ export function DealDetail() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </div>
 
       <Card>
