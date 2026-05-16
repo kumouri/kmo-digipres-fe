@@ -5,6 +5,7 @@ import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { RouteFallback } from "./components/RouteFallback";
 import { DashboardPage } from "./pages/DashboardPage";
+import { useAuth } from "./auth/useAuth";
 
 // Each route below is its own dynamic-imported chunk. The Dashboard stays
 // eager because it's the post-login landing screen — splitting it would just
@@ -98,6 +99,35 @@ const ProjectsList = lazy(() =>
 const ProjectDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ProjectDetail })),
 );
+const TimesheetPageInner = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.TimesheetPage })),
+);
+const ExpensesListInner = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ExpensesList })),
+);
+const ExpenseDetailInner = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ExpenseDetail })),
+);
+
+/** Wrapper: provides userId from auth context to TimesheetPage */
+function TimesheetPageRoute() {
+  const { user } = useAuth();
+  return <TimesheetPageInner userId={user?.id ?? ""} />;
+}
+
+/** Wrapper: provides userId from auth context to ExpensesList */
+function ExpensesListRoute() {
+  const { user, roles } = useAuth();
+  void roles; // ExpensesList currently ignores isAdmin; future: pass it
+  return <ExpensesListInner userId={user?.id ?? ""} />;
+}
+
+/** Wrapper: provides isAdmin from auth context to ExpenseDetail */
+function ExpenseDetailRoute() {
+  const { roles } = useAuth();
+  const isAdmin = roles.includes("ADMIN");
+  return <ExpenseDetailInner isAdmin={isAdmin} />;
+}
 
 function LazyOutlet() {
   return (
@@ -161,6 +191,9 @@ export const router = createBrowserRouter([
               { path: "dashboards/:id", element: <DashboardDetail /> },
               { path: "projects", element: <ProjectsList /> },
               { path: "projects/:id", element: <ProjectDetail /> },
+              { path: "timesheet", element: <TimesheetPageRoute /> },
+              { path: "expenses", element: <ExpensesListRoute /> },
+              { path: "expenses/:id", element: <ExpenseDetailRoute /> },
             ],
           },
         ],

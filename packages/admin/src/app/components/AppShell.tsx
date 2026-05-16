@@ -6,12 +6,14 @@ import {
   BookOpen,
   Building2,
   ClipboardList,
+  Clock,
   FileText,
   FolderKanban,
   Inbox,
   LayoutDashboard,
   LayoutGrid,
   Receipt,
+  ReceiptText,
   Settings2,
   Target,
   TicketIcon,
@@ -43,6 +45,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/reports", label: "Reports", icon: BarChart2 },
   { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
   { to: "/projects", label: "Projects", icon: FolderKanban },
+  { to: "/timesheet", label: "Timesheet", icon: Clock },
+  { to: "/expenses", label: "Expenses", icon: ReceiptText },
 ];
 
 export function AppShell() {
