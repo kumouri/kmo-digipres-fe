@@ -88,3 +88,5 @@ export {
   activityToFormValues,
   formValuesToActivity,
 } from "./admin/activities";
+export { QuotesList, QuoteDetail } from "./admin/quotes";
+export { useQuotesApi } from "./hooks/useQuotesApi";

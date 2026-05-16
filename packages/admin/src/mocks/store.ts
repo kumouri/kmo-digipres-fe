@@ -11,6 +11,7 @@ import type {
   ContactDTO,
   DealDTO,
   PipelineStage,
+  Quote,
   User,
 } from "@kmosf/crm-components";
 
@@ -232,6 +233,76 @@ export const bookingStore = {
   },
   hasSlot(slug: string, slotStart: string): boolean {
     return !!bookingLinks.get(slug)?.availableSlots.includes(slotStart);
+  },
+};
+
+// --- Quotes -----------------------------------------------------------------
+
+const seedQuote: Quote = {
+  id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  tenantId: SMOKE_USER.tenantId,
+  quoteNumber: "Q-0001",
+  status: "DRAFT",
+  currency: "USD",
+  lineItems: [
+    {
+      description: "Website Design Package",
+      quantity: 1,
+      unitPrice: 2500,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 2500,
+    },
+  ],
+  subtotal: 2500,
+  discountTotal: 0,
+  taxTotal: 0,
+  total: 2500,
+  notes: "Seed quote for smoke tests.",
+};
+
+const quotes = new Map<string, Quote>([[seedQuote.id!, seedQuote]]);
+
+export const quoteStore = {
+  list(): Quote[] {
+    return Array.from(quotes.values());
+  },
+  get(id: string): Quote | undefined {
+    return quotes.get(id);
+  },
+  create(input: Quote): Quote {
+    const id = input.id ?? uuid();
+    const created: Quote = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      quoteNumber: `Q-${String(quotes.size + 1).padStart(4, "0")}`,
+      status: "DRAFT",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    quotes.set(id, created);
+    return created;
+  },
+  update(id: string, input: Quote): Quote | undefined {
+    if (!quotes.has(id)) return undefined;
+    const updated: Quote = { ...quotes.get(id), ...input, id };
+    quotes.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return quotes.delete(id);
+  },
+  changeStatus(id: string, target: string): Quote | undefined {
+    const existing = quotes.get(id);
+    if (!existing) return undefined;
+    const updated: Quote = {
+      ...existing,
+      status: target as Quote["status"],
+      statusChangedAt: new Date().toISOString(),
+    };
+    quotes.set(id, updated);
+    return updated;
   },
 };
 

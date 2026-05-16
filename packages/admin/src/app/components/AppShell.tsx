@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   Building2,
+  FileText,
   LayoutDashboard,
   Target,
   Users,
@@ -23,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/companies", label: "Companies", icon: Building2 },
   { to: "/deals", label: "Deals", icon: Target },
   { to: "/activities", label: "Activities", icon: Activity },
+  { to: "/quotes", label: "Quotes", icon: FileText },
 ];
 
 export function AppShell() {

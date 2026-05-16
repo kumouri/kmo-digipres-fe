@@ -9,6 +9,7 @@ import type {
   LoginRequest,
   LoginResponse,
   MoveStageRequest,
+  Quote,
   SingleEmailCommunicationDTO,
 } from "@kmosf/crm-components";
 import {
@@ -20,6 +21,7 @@ import {
   companyStore,
   contactStore,
   dealStore,
+  quoteStore,
 } from "./store";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
@@ -223,6 +225,58 @@ export const handlers = [
     const meeting = bookingStore.book(params.slug as string, body);
     if (!meeting) return new HttpResponse(null, { status: 409 });
     return HttpResponse.json(meeting, { status: 201 });
+  }),
+
+  // --- Quotes ---------------------------------------------------------------
+  http.get(`${API_BASE}/quotes`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(quoteStore.list());
+  }),
+
+  http.get(`${API_BASE}/quotes/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = quoteStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/quotes`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Quote;
+    const created = quoteStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/quotes/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Quote;
+    const updated = quoteStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/quotes/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = quoteStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/quotes/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "SENT";
+    const updated = quoteStore.changeStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  // Quote PDF — return a simple text response (no real PDF in smoke mode)
+  http.get(`${API_BASE}/quotes/:id/pdf`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return new HttpResponse("PDF_STUB", {
+      status: 200,
+      headers: { "Content-Type": "application/pdf" },
+    });
   }),
 
   // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant
