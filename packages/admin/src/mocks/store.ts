@@ -10,6 +10,7 @@ import type {
   CompanyDTO,
   ContactDTO,
   DealDTO,
+  FieldDefinition,
   InboxMessage,
   InboxThread,
   Invoice,
@@ -664,6 +665,61 @@ export const inboxStore = {
     };
     inboxThreads.set(threadId, updatedThread);
     return msg;
+  },
+};
+
+// --- Field Definitions ------------------------------------------------------
+
+const seedFieldDef: FieldDefinition = {
+  id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  tenantId: SMOKE_USER.tenantId,
+  entityType: "CONTACT",
+  key: "preferred_contact_method",
+  label: "Preferred Contact Method",
+  type: "TEXT",
+  required: false,
+  visibilityRoles: ["STAFF", "ADMIN"],
+  version: 1,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const fieldDefs = new Map<string, FieldDefinition>([[seedFieldDef.id!, seedFieldDef]]);
+
+export const fieldDefStore = {
+  list(): FieldDefinition[] {
+    return Array.from(fieldDefs.values());
+  },
+  get(id: string): FieldDefinition | undefined {
+    return fieldDefs.get(id);
+  },
+  create(input: FieldDefinition): FieldDefinition {
+    const id = uuid();
+    const created: FieldDefinition = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    fieldDefs.set(id, created);
+    return created;
+  },
+  update(id: string, input: FieldDefinition): FieldDefinition | undefined {
+    if (!fieldDefs.has(id)) return undefined;
+    const updated: FieldDefinition = {
+      ...fieldDefs.get(id),
+      ...input,
+      id,
+      version: (fieldDefs.get(id)?.version ?? 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    fieldDefs.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return fieldDefs.delete(id);
   },
 };
 

@@ -8,6 +8,7 @@ import {
   Inbox,
   LayoutDashboard,
   Receipt,
+  Settings2,
   Target,
   TicketIcon,
   Users,
@@ -33,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/tickets", label: "Tickets", icon: TicketIcon },
   { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { to: "/inbox", label: "Inbox", icon: Inbox },
+  { to: "/field-definitions", label: "Field Definitions", icon: Settings2 },
 ];
 
 export function AppShell() {

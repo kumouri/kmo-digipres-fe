@@ -71,6 +71,12 @@ const InboxList = lazy(() =>
 const InboxDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.InboxDetail })),
 );
+const FieldDefinitionsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.FieldDefinitionsList })),
+);
+const FieldDefinitionDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.FieldDefinitionDetail })),
+);
 
 function LazyOutlet() {
   return (
@@ -125,6 +131,8 @@ export const router = createBrowserRouter([
               { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
               { path: "inbox", element: <InboxList /> },
               { path: "inbox/:id", element: <InboxDetail /> },
+              { path: "field-definitions", element: <FieldDefinitionsList /> },
+              { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
             ],
           },
         ],

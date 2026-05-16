@@ -237,7 +237,7 @@ export type InboxStatus = "OPEN" | "CLAIMED" | "CLOSED";
 // --- Field Definitions ------------------------------------------------------
 
 export type FieldDefinition = components["schemas"]["FieldDefinition"];
-export type FieldDefinitionType = "TEXT" | "NUMBER" | "DATE" | "BOOLEAN" | "SELECT" | "MULTI_SELECT" | "LOOKUP";
+export type FieldDefinitionType = "TEXT" | "NUMBER" | "DATE" | "BOOL" | "ENUM" | "LOOKUP";
 export type FieldEntityType = "CONTACT" | "COMPANY" | "DEAL" | "TICKET";
 
 // --- Audit ------------------------------------------------------------------

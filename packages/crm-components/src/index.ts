@@ -98,3 +98,5 @@ export { KnowledgeBaseList, KnowledgeBaseDetail } from "./admin/knowledge-base";
 export { useKnowledgeBaseApi } from "./hooks/useKnowledgeBaseApi";
 export { InboxList, InboxDetail } from "./admin/inbox";
 export { useInboxApi } from "./hooks/useInboxApi";
+export { FieldDefinitionsList, FieldDefinitionDetail } from "./admin/field-definitions";
+export { useFieldDefinitionsApi } from "./hooks/useFieldDefinitionsApi";

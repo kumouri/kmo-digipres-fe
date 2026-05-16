@@ -6,6 +6,7 @@ import type {
   CompanyDTO,
   ContactDTO,
   DealDTO,
+  FieldDefinition,
   Invoice,
   KnowledgeBaseArticle,
   LoginRequest,
@@ -25,6 +26,7 @@ import {
   companyStore,
   contactStore,
   dealStore,
+  fieldDefStore,
   inboxStore,
   invoiceStore,
   kbStore,
@@ -477,6 +479,40 @@ export const handlers = [
     const created = inboxStore.replyToThread(params.id as string, body.body ?? "");
     if (!created) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Field Definitions ----------------------------------------------------
+  http.get(`${API_BASE}/admin/field-definitions`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(fieldDefStore.list());
+  }),
+
+  http.get(`${API_BASE}/admin/field-definitions/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = fieldDefStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/admin/field-definitions`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as FieldDefinition;
+    const created = fieldDefStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/admin/field-definitions/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as FieldDefinition;
+    const updated = fieldDefStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/admin/field-definitions/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = fieldDefStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
   }),
 
   // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant
