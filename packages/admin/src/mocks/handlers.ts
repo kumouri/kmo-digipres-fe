@@ -7,6 +7,7 @@ import type {
   ContactDTO,
   DealDTO,
   Invoice,
+  KnowledgeBaseArticle,
   LoginRequest,
   LoginResponse,
   MoveStageRequest,
@@ -25,6 +26,7 @@ import {
   contactStore,
   dealStore,
   invoiceStore,
+  kbStore,
   quoteStore,
   ticketStore,
 } from "./store";
@@ -394,6 +396,53 @@ export const handlers = [
     const created = ticketStore.addComment(params.id as string, body.body ?? "");
     if (!created) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Knowledge Base -------------------------------------------------------
+  http.get(`${API_BASE}/knowledge-base/articles`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(kbStore.list());
+  }),
+
+  http.get(`${API_BASE}/knowledge-base/articles/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = kbStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/knowledge-base/articles`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as KnowledgeBaseArticle;
+    const created = kbStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/knowledge-base/articles/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as KnowledgeBaseArticle;
+    const updated = kbStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/knowledge-base/articles/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = kbStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  http.post(`${API_BASE}/knowledge-base/articles/:id/publish`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const updated = kbStore.publish(params.id as string);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.post(`${API_BASE}/knowledge-base/search`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { query?: string };
+    return HttpResponse.json(kbStore.search(body.query ?? ""));
   }),
 
   // Mirrors PublicContactController in kmo-digipres-be: unauth, tenant

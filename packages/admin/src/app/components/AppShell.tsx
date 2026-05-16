@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
+  BookOpen,
   Building2,
   FileText,
   LayoutDashboard,
@@ -29,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/quotes", label: "Quotes", icon: FileText },
   { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/tickets", label: "Tickets", icon: TicketIcon },
+  { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
 ];
 
 export function AppShell() {

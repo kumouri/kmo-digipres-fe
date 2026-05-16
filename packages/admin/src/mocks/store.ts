@@ -11,6 +11,7 @@ import type {
   ContactDTO,
   DealDTO,
   Invoice,
+  KnowledgeBaseArticle,
   Payment,
   PipelineStage,
   Quote,
@@ -505,6 +506,75 @@ export const ticketStore = {
     const existing = commentsByTicket.get(ticketId) ?? [];
     commentsByTicket.set(ticketId, [...existing, comment]);
     return comment;
+  },
+};
+
+// --- Knowledge Base ---------------------------------------------------------
+
+const seedArticles: KnowledgeBaseArticle[] = [
+  {
+    id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    tenantId: SMOKE_USER.tenantId,
+    title: "How to reset your password",
+    body: "Visit the login page and click 'Forgot password' to get a reset link.",
+    tags: ["authentication", "account"],
+    slug: "how-to-reset-password",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+const kbArticles = new Map<string, KnowledgeBaseArticle>(
+  seedArticles.map((a) => [a.id!, a]),
+);
+
+export const kbStore = {
+  list(): KnowledgeBaseArticle[] {
+    return Array.from(kbArticles.values());
+  },
+  get(id: string): KnowledgeBaseArticle | undefined {
+    return kbArticles.get(id);
+  },
+  create(input: KnowledgeBaseArticle): KnowledgeBaseArticle {
+    const id = uuid();
+    const created: KnowledgeBaseArticle = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      slug: input.slug ?? input.title?.toLowerCase().replace(/\s+/g, "-") ?? id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    kbArticles.set(id, created);
+    return created;
+  },
+  update(id: string, input: KnowledgeBaseArticle): KnowledgeBaseArticle | undefined {
+    if (!kbArticles.has(id)) return undefined;
+    const updated: KnowledgeBaseArticle = { ...kbArticles.get(id), ...input, id };
+    kbArticles.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return kbArticles.delete(id);
+  },
+  publish(id: string): KnowledgeBaseArticle | undefined {
+    const existing = kbArticles.get(id);
+    if (!existing) return undefined;
+    const updated: KnowledgeBaseArticle = {
+      ...existing,
+      publishedAt: new Date().toISOString(),
+    };
+    kbArticles.set(id, updated);
+    return updated;
+  },
+  search(query: string): KnowledgeBaseArticle[] {
+    const q = query.toLowerCase();
+    return Array.from(kbArticles.values()).filter(
+      (a) =>
+        a.title?.toLowerCase().includes(q) ||
+        a.body?.toLowerCase().includes(q) ||
+        (a.tags ?? []).some((t) => t.toLowerCase().includes(q)),
+    );
   },
 };
 
