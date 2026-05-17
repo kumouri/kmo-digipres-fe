@@ -3,9 +3,11 @@ import { createBrowserRouter, Outlet } from "react-router";
 
 import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { RequireAdmin } from "./auth/RequireAdmin";
 import { RouteFallback } from "./components/RouteFallback";
 import { DashboardPage } from "./pages/DashboardPage";
 import { useAuth } from "./auth/useAuth";
+import { isAdmin } from "./auth/roles";
 
 // Each route below is its own dynamic-imported chunk. The Dashboard stays
 // eager because it's the post-login landing screen — splitting it would just
@@ -125,8 +127,7 @@ function ExpensesListRoute() {
 /** Wrapper: provides isAdmin from auth context to ExpenseDetail */
 function ExpenseDetailRoute() {
   const { roles } = useAuth();
-  const isAdmin = roles.includes("ADMIN");
-  return <ExpenseDetailInner isAdmin={isAdmin} />;
+  return <ExpenseDetailInner isAdmin={isAdmin(roles)} />;
 }
 
 function LazyOutlet() {
@@ -182,9 +183,14 @@ export const router = createBrowserRouter([
               { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
               { path: "inbox", element: <InboxList /> },
               { path: "inbox/:id", element: <InboxDetail /> },
-              { path: "field-definitions", element: <FieldDefinitionsList /> },
-              { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
-              { path: "audit", element: <AuditList /> },
+              {
+                element: <RequireAdmin />,
+                children: [
+                  { path: "field-definitions", element: <FieldDefinitionsList /> },
+                  { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
+                  { path: "audit", element: <AuditList /> },
+                ],
+              },
               { path: "reports", element: <ReportsList /> },
               { path: "reports/:id", element: <ReportDetail /> },
               { path: "dashboards", element: <DashboardsList /> },

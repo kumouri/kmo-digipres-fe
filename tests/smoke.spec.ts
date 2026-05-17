@@ -80,6 +80,38 @@ test("account menu shows name and email, never a raw tenant UUID", async ({ page
   ).toHaveCount(0);
 });
 
+// --- Role-gated navigation -------------------------------------------------
+
+async function loginAs(page: Page, email: string) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(SMOKE_PASSWORD);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByTestId("dashboard")).toBeVisible();
+}
+
+test("ADMIN sees the admin-only nav (Field Definitions, Audit Log)", async ({ page }) => {
+  await login(page); // SMOKE_USER carries STAFF + ADMIN
+  await expect(page.getByRole("link", { name: "Field Definitions" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Audit Log" })).toBeVisible();
+});
+
+test("STAFF-only user: admin nav hidden and admin routes redirect to dashboard", async ({ page }) => {
+  await loginAs(page, "staff@example.test");
+
+  await expect(page.getByRole("link", { name: "Field Definitions" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Audit Log" })).toHaveCount(0);
+  // Non-admin nav is unaffected.
+  await expect(page.getByRole("link", { name: "Contacts" })).toBeVisible();
+
+  // Deep-linking an admin-only route bounces back to the dashboard.
+  await page.goto("/field-definitions");
+  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page.getByTestId("dashboard")).toBeVisible();
+  await page.goto("/audit");
+  await expect(page).toHaveURL("http://localhost:5273/");
+});
+
 // --- Theme (dark mode) -----------------------------------------------------
 
 test("theme toggle switches dark mode and persists across reload", async ({ page }) => {

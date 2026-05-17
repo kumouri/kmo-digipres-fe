@@ -50,6 +50,22 @@ export const SMOKE_USER: User = {
 export const SMOKE_PASSWORD = "hunter2hunter2";
 export const SMOKE_TOKEN = "msw-mock-jwt-token";
 
+// STAFF-only user (no ADMIN role) — exercises role-gated nav and the
+// admin-route redirect in smoke. Same tenant + password as SMOKE_USER.
+export const SMOKE_STAFF_USER: User = {
+  id: "33333333-3333-3333-3333-333333333333",
+  tenantId: SMOKE_USER.tenantId,
+  email: "staff@example.test",
+  displayName: "Staff User",
+  roles: ["STAFF"],
+  status: "ACTIVE",
+  version: 0,
+  createdAt: "2026-05-14T00:00:00Z",
+  updatedAt: "2026-05-14T00:00:00Z",
+};
+
+export const SMOKE_STAFF_TOKEN = "msw-mock-jwt-token-staff";
+
 function uuid(): string {
   // Stable-enough UUID for mock state.
   return crypto.randomUUID();
