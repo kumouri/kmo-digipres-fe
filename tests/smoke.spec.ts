@@ -46,6 +46,24 @@ test("wrong password keeps the user on /login and surfaces an error", async ({ p
   await expect(page.getByText(/invalid email or password/i)).toBeVisible();
 });
 
+// --- Brand & naming (tenant-facing) ----------------------------------------
+
+test("login screen is branded KMO Solutions Foundry with no internal jargon", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByText("KMO Solutions Foundry")).toBeVisible();
+  await expect(
+    page.getByText(/Digipres|KMOSF|kmo-digipres-be|backend/i),
+  ).toHaveCount(0);
+});
+
+test("dashboard shows the brand wordmark and leaks no internal identifiers", async ({ page }) => {
+  await login(page);
+  await expect(page.getByText("KMO Solutions Foundry")).toBeVisible();
+  await expect(
+    page.getByText(/Digipres|KMOSF|GET \/auth|auth shell|Phase \d/i),
+  ).toHaveCount(0);
+});
+
 // --- Contacts ---------------------------------------------------------------
 
 test("contacts list renders the seeded contact", async ({ page }) => {

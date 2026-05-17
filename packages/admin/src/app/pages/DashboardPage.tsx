@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kmos
 import { useAuth } from "@/auth/useAuth";
 
 export function DashboardPage() {
-  const { user, roles } = useAuth();
+  const { user } = useAuth();
 
   return (
     <section data-testid="dashboard" className="flex flex-col gap-6">
@@ -11,28 +11,23 @@ export function DashboardPage() {
           Welcome{user ? `, ${user.displayName}` : ""}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Phase 2 · auth shell · Contacts, Companies, Deals, and Activities
-          come online in subsequent phases.
+          Here's an overview of your workspace.
         </p>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Signed in as</CardTitle>
-            <CardDescription>From <code>GET /auth/me</code></CardDescription>
+            <CardTitle>Your account</CardTitle>
+            <CardDescription>The details we have on file for you.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-1 text-sm">
             <div>
-              <span className="text-muted-foreground">Email:</span> {user?.email}
+              <span className="text-muted-foreground">Name:</span>{" "}
+              {user?.displayName}
             </div>
             <div>
-              <span className="text-muted-foreground">Roles:</span>{" "}
-              {roles.length ? roles.join(", ") : "—"}
-            </div>
-            <div className="truncate">
-              <span className="text-muted-foreground">Tenant:</span>{" "}
-              <code className="text-xs">{user?.tenantId}</code>
+              <span className="text-muted-foreground">Email:</span> {user?.email}
             </div>
           </CardContent>
         </Card>
