@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -12,6 +13,7 @@ import {
   Inbox,
   LayoutDashboard,
   LayoutGrid,
+  Menu,
   Receipt,
   ReceiptText,
   Settings2,
@@ -22,7 +24,15 @@ import {
 
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "./ThemeToggle";
-import { cn, AskAiDialog, TimerWidget } from "@kmosf/crm-components";
+import {
+  cn,
+  AskAiDialog,
+  TimerWidget,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@kmosf/crm-components";
 import { useAuth } from "../auth/useAuth";
 import { isAdmin } from "../auth/roles";
 
@@ -53,8 +63,41 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/expenses", label: "Expenses", icon: ReceiptText },
 ];
 
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+    isActive
+      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
+  );
+
+function NavList({
+  items,
+  onNavigate,
+}: {
+  items: NavItem[];
+  onNavigate?: () => void;
+}) {
+  return (
+    <>
+      {items.map(({ to, label, icon: Icon }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end
+          onClick={onNavigate}
+          className={navLinkClass}
+        >
+          <Icon className="size-4" /> {label}
+        </NavLink>
+      ))}
+    </>
+  );
+}
+
 export function AppShell() {
   const { user, roles, tenantName } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navItems = NAV_ITEMS.filter(
     (item) => !item.adminOnly || isAdmin(roles),
   );
@@ -77,28 +120,44 @@ export function AppShell() {
           </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-2 py-4" data-testid="sidebar-nav">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
-                )
-              }
-            >
-              <Icon className="size-4" /> {label}
-            </NavLink>
-          ))}
+          <NavList items={navItems} />
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open navigation menu"
+                  data-testid="mobile-nav-trigger"
+                  className="inline-flex size-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+                >
+                  <Menu className="size-5" />
+                </button>
+              </DialogTrigger>
+              <DialogContent
+                aria-describedby={undefined}
+                className="left-0 top-0 flex h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-1 rounded-none p-4 sm:rounded-none"
+              >
+                <DialogTitle className="flex items-center gap-2 border-b pb-3 text-sm font-medium">
+                  <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+                    K
+                  </span>
+                  KMO Solutions Foundry
+                </DialogTitle>
+                <nav
+                  className="mt-2 flex flex-col gap-1 overflow-y-auto"
+                  data-testid="mobile-nav"
+                >
+                  <NavList
+                    items={navItems}
+                    onNavigate={() => setMobileOpen(false)}
+                  />
+                </nav>
+              </DialogContent>
+            </Dialog>
             {tenantName ? (
               <span className="block truncate text-sm text-muted-foreground">
                 {tenantName}

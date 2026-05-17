@@ -115,6 +115,42 @@ test("STAFF-only user: admin nav hidden and admin routes redirect to dashboard",
   await expect(page).toHaveURL("http://localhost:5273/");
 });
 
+// --- Mobile navigation -----------------------------------------------------
+
+test.describe("mobile navigation", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("hamburger opens the nav drawer, a link navigates, drawer closes", async ({ page }) => {
+    await login(page);
+
+    // Below the md breakpoint the desktop sidebar is hidden; the
+    // hamburger is the only way to navigate.
+    await expect(page.getByTestId("sidebar-nav")).toBeHidden();
+    const trigger = page.getByTestId("mobile-nav-trigger");
+    await expect(trigger).toBeVisible();
+
+    await trigger.click();
+    const drawer = page.getByTestId("mobile-nav");
+    await expect(drawer).toBeVisible();
+
+    // It must render as a LEFT slide-over, not the shared DialogContent's
+    // centered modal — proves the tailwind-merge override held.
+    const panel = page.getByRole("dialog");
+    const box = await panel.boundingBox();
+    if (!box) throw new Error("drawer has no bounding box");
+    expect(box.x).toBeLessThanOrEqual(1); // flush to the left edge
+    expect(box.height).toBeGreaterThanOrEqual(800); // ~full viewport height
+    expect(box.width).toBeLessThan(320); // a side panel (w-72), not full-width
+
+    await drawer.getByRole("link", { name: "Contacts" }).click();
+    await expect(page).toHaveURL(/\/contacts$/);
+    await expect(page.getByTestId("contacts-page")).toBeVisible();
+
+    // Drawer auto-closes on navigation.
+    await expect(page.getByTestId("mobile-nav")).toHaveCount(0);
+  });
+});
+
 // --- Theme (dark mode) -----------------------------------------------------
 
 test("theme toggle switches dark mode and persists across reload", async ({ page }) => {
