@@ -29,6 +29,12 @@ export function DashboardPage() {
             <div>
               <span className="text-muted-foreground">Email:</span> {user?.email}
             </div>
+            {user?.tenantName ? (
+              <div>
+                <span className="text-muted-foreground">Business:</span>{" "}
+                {user.tenantName}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>

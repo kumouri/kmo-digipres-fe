@@ -54,7 +54,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function AppShell() {
-  const { user, roles } = useAuth();
+  const { user, roles, tenantName } = useAuth();
   const navItems = NAV_ITEMS.filter(
     (item) => !item.adminOnly || isAdmin(roles),
   );
@@ -62,10 +62,19 @@ export function AppShell() {
     <div className="flex min-h-screen bg-muted/40">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex h-14 items-center gap-2 border-b px-4">
-          <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
             K
           </span>
-          <span className="text-sm font-medium">KMO Solutions Foundry</span>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium leading-tight">
+              KMO Solutions Foundry
+            </span>
+            {tenantName ? (
+              <span className="truncate text-xs leading-tight text-sidebar-foreground/70">
+                {tenantName}
+              </span>
+            ) : null}
+          </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-2 py-4" data-testid="sidebar-nav">
           {navItems.map(({ to, label, icon: Icon }) => (
@@ -89,7 +98,13 @@ export function AppShell() {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-          <div />
+          <div className="min-w-0">
+            {tenantName ? (
+              <span className="block truncate text-sm text-muted-foreground">
+                {tenantName}
+              </span>
+            ) : null}
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {user?.id && <TimerWidget userId={user.id} />}
