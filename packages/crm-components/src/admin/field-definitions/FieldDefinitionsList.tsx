@@ -108,7 +108,7 @@ export function FieldDefinitionsList() {
         rows={data}
         rowKey={(r) => r.id ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No custom fields yet."
+        emptyMessage="No custom fields yet — add one to capture extra details."
         onRowClick={(r) => r.id && navigate(`/field-definitions/${r.id}`)}
       />
 

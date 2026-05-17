@@ -125,7 +125,7 @@ export function AuditList() {
           rows={data}
           rowKey={(r) => r.id ?? Math.random().toString()}
           isLoading={isLoading}
-          emptyMessage="No audit events found."
+          emptyMessage="No activity recorded yet."
         />
       )}
     </section>

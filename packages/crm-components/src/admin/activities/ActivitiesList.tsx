@@ -111,7 +111,7 @@ export function ActivitiesList() {
         rows={data}
         rowKey={(r) => r.id ?? r.summary ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No activities yet."
+        emptyMessage="No activity yet — it'll show up here as you work."
         onRowClick={(r) => r.id && navigate(`/activities/${r.id}`)}
         data-testid="activities-table"
       />

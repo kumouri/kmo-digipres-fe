@@ -94,7 +94,7 @@ export function ReportsList() {
         rows={data}
         rowKey={(r) => r.id ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No saved reports yet."
+        emptyMessage="No saved reports yet — build one to track what matters."
         onRowClick={(r) => r.id && navigate(`/reports/${r.id}`)}
       />
 

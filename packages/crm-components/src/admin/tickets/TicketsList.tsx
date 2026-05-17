@@ -114,7 +114,7 @@ export function TicketsList() {
         rows={data}
         rowKey={(r) => r.id ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No tickets yet."
+        emptyMessage="No tickets yet — they'll appear here when customers need help."
         onRowClick={(r) => r.id && navigate(`/tickets/${r.id}`)}
       />
 

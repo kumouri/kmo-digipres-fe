@@ -114,7 +114,7 @@ export function DealsList() {
             rows={data}
             rowKey={(r) => r.id ?? r.title ?? Math.random().toString()}
             isLoading={isLoading}
-            emptyMessage="No deals yet."
+            emptyMessage="No deals yet — create one to start tracking your pipeline."
             onRowClick={(r) => r.id && navigate(`/deals/${r.id}`)}
             data-testid="deals-table"
           />
