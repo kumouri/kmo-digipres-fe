@@ -86,7 +86,7 @@ export function DashboardsList() {
         rows={data}
         rowKey={(d) => d.id ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No dashboards yet."
+        emptyMessage="No dashboards yet — create one for an at-a-glance view."
         onRowClick={(d) => d.id && navigate(`/dashboards/${d.id}`)}
       />
 

@@ -108,7 +108,7 @@ export function InvoicesList() {
         rows={data}
         rowKey={(r) => r.id ?? r.invoiceNumber ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No invoices yet."
+        emptyMessage="No invoices yet — create one to bill a customer."
         onRowClick={(r) => r.id && navigate(`/invoices/${r.id}`)}
       />
     </section>

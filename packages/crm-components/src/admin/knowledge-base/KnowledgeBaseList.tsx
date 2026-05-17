@@ -120,7 +120,7 @@ export function KnowledgeBaseList() {
         rows={displayData}
         rowKey={(r) => r.id ?? r.slug ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No articles yet."
+        emptyMessage="No articles yet — write one to help your customers."
         onRowClick={(r) => r.id && navigate(`/knowledge-base/${r.id}`)}
       />
 

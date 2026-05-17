@@ -120,7 +120,7 @@ export function CompaniesList() {
         rows={data}
         rowKey={(r) => r.id ?? r.name ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No companies yet."
+        emptyMessage="No companies yet — add one to get started."
         onRowClick={(r) => r.id && navigate(`/companies/${r.id}`)}
         data-testid="companies-table"
       />

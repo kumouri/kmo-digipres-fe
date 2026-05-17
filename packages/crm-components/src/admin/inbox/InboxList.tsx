@@ -60,7 +60,7 @@ export function InboxList() {
         rows={data}
         rowKey={(r) => r.id ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No threads yet."
+        emptyMessage="No messages yet — customer conversations will land here."
         onRowClick={(r) => r.id && navigate(`/inbox/${r.id}`)}
       />
     </section>

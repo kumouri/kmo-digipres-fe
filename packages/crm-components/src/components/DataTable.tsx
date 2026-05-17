@@ -34,7 +34,7 @@ export function DataTable<T>({
   rowKey,
   onRowClick,
   isLoading,
-  emptyMessage = "No records yet.",
+  emptyMessage = "Nothing here yet.",
   ...rest
 }: DataTableProps<T>) {
   return (
