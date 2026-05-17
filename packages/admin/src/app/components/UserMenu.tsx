@@ -56,9 +56,6 @@ export function UserMenu() {
           <span className="text-xs font-normal text-muted-foreground truncate">
             {user.email}
           </span>
-          <span className="text-xs font-normal text-muted-foreground truncate">
-            Tenant: <code>{user.tenantId}</code>
-          </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
