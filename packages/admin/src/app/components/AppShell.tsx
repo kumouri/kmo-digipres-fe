@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "./ThemeToggle";
 import { cn, AskAiDialog, TimerWidget } from "@kmosf/crm-components";
 import { useAuth } from "../auth/useAuth";
 
@@ -85,6 +86,7 @@ export function AppShell() {
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
           <div />
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {user?.id && <TimerWidget userId={user.id} />}
             <AskAiDialog />
             <UserMenu />
