@@ -24,11 +24,13 @@ import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn, AskAiDialog, TimerWidget } from "@kmosf/crm-components";
 import { useAuth } from "../auth/useAuth";
+import { isAdmin } from "../auth/roles";
 
 interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -42,8 +44,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/tickets", label: "Tickets", icon: TicketIcon },
   { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { to: "/inbox", label: "Inbox", icon: Inbox },
-  { to: "/field-definitions", label: "Field Definitions", icon: Settings2 },
-  { to: "/audit", label: "Audit Log", icon: ClipboardList },
+  { to: "/field-definitions", label: "Field Definitions", icon: Settings2, adminOnly: true },
+  { to: "/audit", label: "Audit Log", icon: ClipboardList, adminOnly: true },
   { to: "/reports", label: "Reports", icon: BarChart2 },
   { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
   { to: "/projects", label: "Projects", icon: FolderKanban },
@@ -52,7 +54,10 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function AppShell() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const navItems = NAV_ITEMS.filter(
+    (item) => !item.adminOnly || isAdmin(roles),
+  );
   return (
     <div className="flex min-h-screen bg-muted/40">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
@@ -63,7 +68,7 @@ export function AppShell() {
           <span className="text-sm font-medium">KMO Solutions Foundry</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-2 py-4" data-testid="sidebar-nav">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

@@ -34,6 +34,8 @@ import type {
 import type { components } from "@kmosf/crm-components";
 import {
   SMOKE_PASSWORD,
+  SMOKE_STAFF_TOKEN,
+  SMOKE_STAFF_USER,
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
@@ -75,14 +77,20 @@ export const handlers = [
   http.post(`${API_BASE}/auth/login`, async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
     await delay(50);
-    if (body.email === SMOKE_USER.email && body.password === SMOKE_PASSWORD) {
+    const account =
+      body.email === SMOKE_USER.email
+        ? { user: SMOKE_USER, token: SMOKE_TOKEN }
+        : body.email === SMOKE_STAFF_USER.email
+          ? { user: SMOKE_STAFF_USER, token: SMOKE_STAFF_TOKEN }
+          : null;
+    if (account && body.password === SMOKE_PASSWORD) {
       const res: LoginResponse = {
-        token: SMOKE_TOKEN,
-        userId: SMOKE_USER.id,
-        tenantId: SMOKE_USER.tenantId,
-        email: SMOKE_USER.email,
-        displayName: SMOKE_USER.displayName,
-        roles: SMOKE_USER.roles,
+        token: account.token,
+        userId: account.user.id,
+        tenantId: account.user.tenantId,
+        email: account.user.email,
+        displayName: account.user.displayName,
+        roles: account.user.roles,
       };
       return HttpResponse.json(res);
     }
@@ -91,7 +99,10 @@ export const handlers = [
 
   http.get(`${API_BASE}/auth/me`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
-    return HttpResponse.json(SMOKE_USER);
+    const header = request.headers.get("authorization") ?? "";
+    const me =
+      header === `Bearer ${SMOKE_STAFF_TOKEN}` ? SMOKE_STAFF_USER : SMOKE_USER;
+    return HttpResponse.json(me);
   }),
 
   http.post(`${API_BASE}/auth/logout`, ({ request }) => {
