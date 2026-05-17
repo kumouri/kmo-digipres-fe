@@ -3868,6 +3868,7 @@ export interface components {
             userId?: string;
             /** Format: uuid */
             tenantId?: string;
+            tenantName?: string;
             email?: string;
             displayName?: string;
             roles?: string[];
@@ -4107,6 +4108,7 @@ export interface components {
             portal?: "STAFF" | "CLIENT";
             /** Format: uuid */
             contactId?: string;
+            tenantName?: string;
             /** Format: int64 */
             version?: number;
             /** Format: date-time */
