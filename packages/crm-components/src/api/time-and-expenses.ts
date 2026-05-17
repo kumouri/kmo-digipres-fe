@@ -102,8 +102,15 @@ export function getRunningTimer(
   client: CrmClient,
   userId: string,
 ): Promise<TimeEntry | null> {
+  // No running timer comes back as 204 (mock) / empty body (BE), which
+  // CrmClient resolves to `undefined`. `.catch` only handles rejections, so
+  // coerce the resolved no-content value to `null` — TanStack Query forbids
+  // `undefined` query data.
   return client
-    .api<TimeEntry>(`/time-entries/timer/running?userId=${encodeURIComponent(userId)}`)
+    .api<TimeEntry | null>(
+      `/time-entries/timer/running?userId=${encodeURIComponent(userId)}`,
+    )
+    .then((entry) => entry ?? null)
     .catch(() => null);
 }
 
