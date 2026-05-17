@@ -4,7 +4,7 @@ Guidance for Claude Code when working in `kmo-digipres-fe`.
 
 ## Repository Overview
 
-This is the **internal admin UI** for [`kmo-digipres-be`](../kmo-digipres-be/), the KMOSF CRM backend. Single-page React app served by Vite. Talks to the backend exclusively over its **`/api/v1`** REST surface (base path set in Phase A; OpenAPI published, `GET /api/v1/auth/discovery` reports the auth mode) using a JWT issued by `POST /api/v1/auth/login`.
+This is the **admin UI** for [`kmo-digipres-be`](../kmo-digipres-be/), the KMOSF CRM backend — now used by **external tenant administrators** (non-technical business owners), not just KMOSF staff (see "Tenant-admin polish" below). Single-page React app served by Vite. Talks to the backend exclusively over its **`/api/v1`** REST surface (base path set in Phase A; OpenAPI published, `GET /api/v1/auth/discovery` reports the auth mode) using a JWT issued by `POST /api/v1/auth/login`.
 
 The "digipres" / `com.kumouri` naming is historical and shared with the backend. Treat any such references as synonyms for the KMOSF CRM, not a separate product.
 
@@ -17,6 +17,18 @@ When navigating or adding packages/files, read `.claude/structure.md`.
 When writing API calls or understanding FE–BE contracts, read `.claude/backend-integration.md`.
 When writing components, queries, forms, or handling errors, read `.claude/conventions.md`.
 For what is explicitly out of scope for the current init plan, read `.claude/scope-boundaries.md`.
+
+## Tenant-admin polish (SHIPPED 2026-05-17)
+
+Six-PR program (#23–#27, #29) making the UI tenant-admin-ready. Plan: `~/.claude/plans/now-that-the-kmo-digipres-fe-functional-turtle.md`.
+
+- **Brand:** every user-visible string is "KMO Solutions Foundry" (never "KMO Digipres"/"KMOSF"/repo names); warm-operational copy per the workspace brand-voice guidelines. Login/Dashboard/AppShell/UserMenu de-jargoned.
+- **Theme:** class-based light/dark with a no-flash inline script in `packages/admin/index.html`; hand-rolled `app/components/ThemeProvider.tsx` + `ThemeToggle.tsx` (no `next-themes` — deliberate, the homepage's proven pattern). **`packages/admin/src/styles/globals.css` is a vendored copy of the canonical homepage token system (`repos/kmosf-homepage/src/styles/globals.css`)** — separate repos, no shared package; re-sync manually on brand changes (the file's header comment pins the source; same vendoring discipline as the OpenAPI spec).
+- **RBAC nav:** `app/auth/roles.ts` (`hasRole`/`isAdmin`) is the single source of truth, reused by the nav filter, the `app/auth/RequireAdmin.tsx` route guard, and the ExpenseDetail check. `NavItem.adminOnly` gates **Field Definitions + Audit Log** only (Reports/Dashboards deliberately ungated). Admin-only routes are grouped under `<RequireAdmin>` (redirects non-admins to `/`).
+- **Mobile nav:** `AppShell` has a shared `NavList` (role-filtered) + a `< md` hamburger opening a left slide-over built from the existing Radix `Dialog` primitive (no new dep). Desktop sidebar unchanged.
+- **Empty states:** list `emptyMessage`s use a consistent warm "No X yet — <action>." pattern.
+- **Mocks/tests:** `SMOKE_STAFF_USER` + token added; `/auth/me` resolves the user from the bearer token. Smoke suite is **84 specs**.
+- **Deferred fast-follow:** showing the real tenant *business name* needs a small `kmo-digipres-be` change — add `tenantName` (= `Tenant.displayName`) to `/auth/me` + `LoginResponse`, regen `docs/api/openapi.json`, then FE `npm run gen:api` + expose on `AuthContextValue` + render in `AppShell`. The interim only removed the raw-UUID leak. (Two console-hygiene fixes — timer-query, UserMenu forwardRef — shipped separately in #28.)
 
 ## Phase D: Time & Expenses (SHIPPED)
 
