@@ -64,6 +64,22 @@ test("dashboard shows the brand wordmark and leaks no internal identifiers", asy
   ).toHaveCount(0);
 });
 
+// --- Tenant identity -------------------------------------------------------
+
+test("account menu shows name and email, never a raw tenant UUID", async ({ page }) => {
+  await login(page);
+  await page.getByTestId("user-menu-trigger").click();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  await expect(menu.getByText("smoke@example.test")).toBeVisible();
+  // No raw tenant UUID anywhere on the page (the old UserMenu leak).
+  await expect(
+    page.getByText(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+    ),
+  ).toHaveCount(0);
+});
+
 // --- Theme (dark mode) -----------------------------------------------------
 
 test("theme toggle switches dark mode and persists across reload", async ({ page }) => {
