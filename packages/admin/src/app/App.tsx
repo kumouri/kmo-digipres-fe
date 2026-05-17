@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 
 import { adminClient } from "./api/client";
 import { AuthProvider } from "./auth/AuthProvider";
+import { ThemeProvider } from "./components/ThemeProvider";
 import { router } from "./router";
 
 const queryClient = new QueryClient({
@@ -20,14 +21,16 @@ const queryClient = new QueryClient({
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <CrmProvider client={adminClient}>
-        <AuthProvider>
-          <RouterProvider router={router} />
-        </AuthProvider>
-      </CrmProvider>
-      <Toaster richColors closeButton position="top-right" />
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <CrmProvider client={adminClient}>
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
+        </CrmProvider>
+        <Toaster richColors closeButton position="top-right" />
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

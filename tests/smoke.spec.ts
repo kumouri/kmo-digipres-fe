@@ -64,6 +64,27 @@ test("dashboard shows the brand wordmark and leaks no internal identifiers", asy
   ).toHaveCount(0);
 });
 
+// --- Theme (dark mode) -----------------------------------------------------
+
+test("theme toggle switches dark mode and persists across reload", async ({ page }) => {
+  await login(page);
+  const isDark = () =>
+    page.evaluate(() => document.documentElement.classList.contains("dark"));
+
+  expect(await isDark()).toBe(false);
+
+  await page.getByTestId("theme-toggle").click();
+  await expect.poll(isDark).toBe(true);
+
+  // No-flash script + localStorage should keep dark across a hard reload.
+  await page.reload();
+  await expect(page.getByTestId("dashboard")).toBeVisible();
+  expect(await isDark()).toBe(true);
+
+  await page.getByTestId("theme-toggle").click();
+  await expect.poll(isDark).toBe(false);
+});
+
 // --- Contacts ---------------------------------------------------------------
 
 test("contacts list renders the seeded contact", async ({ page }) => {

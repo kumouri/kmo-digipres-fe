@@ -5,6 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%238e00ff'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-size='18' font-weight='600' fill='white'>K</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
+
+    <!--
+      No-flash theme script. Runs synchronously before any CSS so users
+      with the dark preference never see a flash of the light theme.
+      ThemeProvider reads the result of this on mount and keeps React
+      state in sync.
+    -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (t === 'dark' || (!t && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <title>KMO Solutions Foundry</title>
   </head>
   <body>
