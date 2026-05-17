@@ -59,7 +59,7 @@ export function AppShell() {
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
             K
           </span>
-          <span className="text-sm font-medium">KMO Digipres</span>
+          <span className="text-sm font-medium">KMO Solutions Foundry</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-2 py-4" data-testid="sidebar-nav">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
@@ -83,7 +83,7 @@ export function AppShell() {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-          <div className="text-sm text-muted-foreground">Admin</div>
+          <div />
           <div className="flex items-center gap-2">
             {user?.id && <TimerWidget userId={user.id} />}
             <AskAiDialog />

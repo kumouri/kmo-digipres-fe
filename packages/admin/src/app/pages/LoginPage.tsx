@@ -77,7 +77,7 @@ export function LoginPage() {
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
           <CardDescription>
-            KMO Digipres admin · authenticate against the kmo-digipres-be backend.
+            Sign in to your KMO Solutions Foundry workspace.
           </CardDescription>
         </CardHeader>
         <CardContent>
