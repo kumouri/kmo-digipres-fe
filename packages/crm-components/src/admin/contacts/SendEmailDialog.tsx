@@ -66,7 +66,7 @@ export function SendEmailDialog({ open, onOpenChange, contact, defaultFrom }: Pr
     mutationFn: commsApi.sendSingleEmail,
     onSuccess: (sent) => {
       if (!sent) {
-        toast.error("Backend reported the message was not delivered.");
+        toast.error("We couldn't deliver this message. Please try again.");
         return;
       }
       // The backend logs an Activity to the matching contact's timeline.
@@ -87,9 +87,8 @@ export function SendEmailDialog({ open, onOpenChange, contact, defaultFrom }: Pr
         <DialogHeader>
           <DialogTitle>Send email</DialogTitle>
           <DialogDescription>
-            Routes through <code>POST /api/communication/singleEmail</code>.
-            The backend logs an outbound EMAIL activity to this contact's
-            timeline on success.
+            Send an email to this contact. We'll log it to their timeline
+            automatically.
           </DialogDescription>
         </DialogHeader>
         <form className="flex flex-col gap-3" onSubmit={onSubmit} noValidate>

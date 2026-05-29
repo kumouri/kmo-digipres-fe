@@ -22,6 +22,12 @@ import {
   type ActivityType,
   type SubjectType,
 } from "@kmosf/crm-components";
+import {
+  ACTIVITY_DIRECTION_LABELS,
+  ACTIVITY_TYPE_LABELS,
+  SUBJECT_TYPE_LABELS,
+  labelFor,
+} from "../labels";
 
 const formSchema = z.object({
   type: z.enum(["NOTE", "EMAIL", "CALL", "MEETING", "TASK"]),
@@ -116,7 +122,7 @@ export function ActivityForm({
             <SelectContent>
               {ACTIVITY_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>
-                  {t}
+                  {labelFor(ACTIVITY_TYPE_LABELS, t)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -134,7 +140,7 @@ export function ActivityForm({
             <SelectContent>
               {ACTIVITY_DIRECTIONS.map((d) => (
                 <SelectItem key={d} value={d}>
-                  {d}
+                  {labelFor(ACTIVITY_DIRECTION_LABELS, d)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -152,7 +158,7 @@ export function ActivityForm({
             <SelectContent>
               {SUBJECT_TYPES.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s}
+                  {labelFor(SUBJECT_TYPE_LABELS, s)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -164,7 +170,7 @@ export function ActivityForm({
         <Label htmlFor="activity-subject-id">Subject ID *</Label>
         <Input
           id="activity-subject-id"
-          placeholder="UUID of the contact / company / deal / work order"
+          placeholder="ID of the linked contact, company, deal, or work order"
           aria-invalid={errors.subjectId ? true : undefined}
           {...register("subjectId")}
         />

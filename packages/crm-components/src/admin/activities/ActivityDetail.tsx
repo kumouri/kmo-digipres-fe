@@ -30,6 +30,12 @@ import {
   activityToFormValues,
   formValuesToActivity,
 } from "./ActivityForm";
+import {
+  ACTIVITY_DIRECTION_LABELS,
+  ACTIVITY_TYPE_LABELS,
+  SUBJECT_TYPE_LABELS,
+  labelFor,
+} from "../labels";
 
 export function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
@@ -108,9 +114,21 @@ export function ActivityDetail() {
           </Link>
           <h1 className="text-2xl font-medium">{a.summary ?? "Activity"}</h1>
           <div className="flex flex-wrap gap-2">
-            {a.type ? <Badge variant="secondary">{a.type}</Badge> : null}
-            {a.direction ? <Badge variant="outline">{a.direction}</Badge> : null}
-            {a.subjectType ? <Badge variant="muted">{a.subjectType}</Badge> : null}
+            {a.type ? (
+              <Badge variant="secondary">
+                {labelFor(ACTIVITY_TYPE_LABELS, a.type)}
+              </Badge>
+            ) : null}
+            {a.direction ? (
+              <Badge variant="outline">
+                {labelFor(ACTIVITY_DIRECTION_LABELS, a.direction)}
+              </Badge>
+            ) : null}
+            {a.subjectType ? (
+              <Badge variant="muted">
+                {labelFor(SUBJECT_TYPE_LABELS, a.subjectType)}
+              </Badge>
+            ) : null}
             {a.occurredAt ? (
               <span className="text-xs text-muted-foreground">
                 {new Date(a.occurredAt).toLocaleString()}
@@ -128,8 +146,8 @@ export function ActivityDetail() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this activity?</AlertDialogTitle>
               <AlertDialogDescription>
-                Removes the activity from the tenant. Any contact timeline
-                referencing it will refetch and drop the row.
+                Permanently removes this activity. It'll also disappear from
+                any contact's timeline.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -149,9 +167,6 @@ export function ActivityDetail() {
       <Card>
         <CardHeader>
           <CardTitle>Edit activity</CardTitle>
-          <CardDescription>
-            Saves via <code>PUT /api/activities/{a.id}</code>.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <ActivityForm
@@ -168,9 +183,10 @@ export function ActivityDetail() {
       {a.payload && Object.keys(a.payload).length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Payload</CardTitle>
+            <CardTitle>Extra details</CardTitle>
             <CardDescription>
-              Channel-specific metadata stamped by the backend (read-only).
+              Extra information recorded automatically with this activity.
+              Read-only.
             </CardDescription>
           </CardHeader>
           <CardContent>
