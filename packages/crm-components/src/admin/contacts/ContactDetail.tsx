@@ -137,9 +137,8 @@ export function ContactDetail({ senderEmail }: ContactDetailProps = {}) {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this contact?</AlertDialogTitle>
               <AlertDialogDescription>
-                Removes the contact from the tenant. Activities logged against
-                this contact stay on the timeline view of any deals or
-                companies that reference them.
+                Permanently removes this contact. Activities you've logged
+                still show on any related deals or companies.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -167,9 +166,6 @@ export function ContactDetail({ senderEmail }: ContactDetailProps = {}) {
           <Card>
             <CardHeader>
               <CardTitle>Edit contact</CardTitle>
-              <CardDescription>
-                Saves via <code>PUT /api/contacts/{c.id}</code>.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <ContactForm
@@ -190,7 +186,7 @@ export function ContactDetail({ senderEmail }: ContactDetailProps = {}) {
                 <div className="flex flex-col gap-1.5">
                   <CardTitle>Activity timeline</CardTitle>
                   <CardDescription>
-                    <code>GET /api/contacts/{c.id}/timeline</code>.
+                    Everything logged against this contact, newest first.
                   </CardDescription>
                 </div>
                 <Button
@@ -211,8 +207,8 @@ export function ContactDetail({ senderEmail }: ContactDetailProps = {}) {
                 </div>
               ) : !timelineQuery.data?.length ? (
                 <p className="text-sm text-muted-foreground">
-                  No activities yet. Emails sent from a contact's detail page
-                  will log here automatically (phase 6).
+                  Nothing logged yet. Emails you send from this page will show
+                  up here automatically.
                 </p>
               ) : (
                 <ul
