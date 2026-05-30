@@ -10,6 +10,8 @@ import type {
   BookingPublicView,
   CompanyDTO,
   ContactDTO,
+  Contract,
+  ContractTemplate,
   Dashboard,
   DealDTO,
   Expense,
@@ -216,7 +218,6 @@ const seedActivities: ActivityDTO[] = [
     direction: "INTERNAL",
     subjectType: "CONTACT",
     subjectId: seedContact.id,
-    subjectName: seedContact.displayName,
     summary: "Initial outreach",
     body: "Seeded activity for the mock store.",
     occurredAt: "2026-05-13T15:00:00Z",
@@ -1632,5 +1633,150 @@ export const attachmentStore = {
     };
     attachments.set(id, created);
     return created;
+  },
+};
+
+// --- Contract Templates (Phase F) --------------------------------------------
+
+const seedContractTemplate: ContractTemplate = {
+  id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  tenantId: SMOKE_USER.tenantId,
+  name: "Standard SOW v1",
+  description: "Default Statement of Work template.",
+  kind: "SOW",
+  defaultTitle: "Statement of Work — {{clientName}}",
+  bodyTemplate:
+    "This Statement of Work is entered into between KMO Solutions Foundry LLC (\"Provider\") and {{clientName}} (\"Client\").\n\n## Scope\n{{scope}}\n\n## Timeline\n{{timeline}}\n\n## Fees\n{{fees}}",
+  active: true,
+};
+
+const contractTemplates = new Map<string, ContractTemplate>([
+  [seedContractTemplate.id!, seedContractTemplate],
+]);
+
+export const contractTemplateStore = {
+  list(): ContractTemplate[] {
+    return Array.from(contractTemplates.values());
+  },
+  get(id: string): ContractTemplate | undefined {
+    return contractTemplates.get(id);
+  },
+  create(input: ContractTemplate): ContractTemplate {
+    const id = input.id ?? uuid();
+    const created: ContractTemplate = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    contractTemplates.set(id, created);
+    return created;
+  },
+  update(id: string, input: ContractTemplate): ContractTemplate | undefined {
+    if (!contractTemplates.has(id)) return undefined;
+    const updated: ContractTemplate = { ...contractTemplates.get(id), ...input, id };
+    contractTemplates.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return contractTemplates.delete(id);
+  },
+};
+
+// --- Contracts (Phase F) -----------------------------------------------------
+
+const seedContract: Contract = {
+  id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  tenantId: SMOKE_USER.tenantId,
+  contractNumber: null as unknown as string, // DRAFT contracts have no number
+  title: "Website Project SOW",
+  kind: "SOW",
+  status: "DRAFT",
+  templateId: seedContractTemplate.id,
+};
+
+const contracts = new Map<string, Contract>([[seedContract.id!, seedContract]]);
+let contractCounter = 1;
+
+export const contractStore = {
+  list(): Contract[] {
+    return Array.from(contracts.values());
+  },
+  get(id: string): Contract | undefined {
+    return contracts.get(id);
+  },
+  create(input: Contract): Contract {
+    const id = input.id ?? uuid();
+    const created: Contract = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      status: "DRAFT",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    contracts.set(id, created);
+    return created;
+  },
+  update(id: string, input: Contract): Contract | undefined {
+    if (!contracts.has(id)) return undefined;
+    const updated: Contract = { ...contracts.get(id), ...input, id };
+    contracts.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return contracts.delete(id);
+  },
+  /** DRAFT → SENT via Documenso. Assigns contractNumber. Idempotent. */
+  send(id: string): Contract | undefined {
+    const existing = contracts.get(id);
+    if (!existing) return undefined;
+    if (existing.status === "SENT") return existing; // idempotent
+    if (existing.status !== "DRAFT") return undefined; // wrong state
+    contractCounter++;
+    const updated: Contract = {
+      ...existing,
+      status: "SENT",
+      contractNumber: `CTR-${new Date().getFullYear()}-${String(contractCounter).padStart(4, "0")}`,
+      sentAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    contracts.set(id, updated);
+    return updated;
+  },
+  setStatus(id: string, target: string): Contract | undefined {
+    const existing = contracts.get(id);
+    if (!existing) return undefined;
+    const updated: Contract = {
+      ...existing,
+      status: target as Contract["status"],
+      updatedAt: new Date().toISOString(),
+    };
+    contracts.set(id, updated);
+    return updated;
+  },
+  spawnFromQuote(quote: Quote): Contract {
+    // Check if one already exists for this quoteId (idempotent)
+    const existing = Array.from(contracts.values()).find(
+      (c) => c.quoteId === quote.id,
+    );
+    if (existing) return existing;
+    const id = uuid();
+    const created: Contract = {
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      title: `Contract for Quote ${quote.quoteNumber ?? quote.id}`,
+      kind: "SOW",
+      status: "DRAFT",
+      quoteId: quote.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    contracts.set(id, created);
+    return created;
+  },
+  findByQuoteId(quoteId: string): Contract | undefined {
+    return Array.from(contracts.values()).find((c) => c.quoteId === quoteId);
   },
 };

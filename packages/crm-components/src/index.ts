@@ -110,3 +110,7 @@ export { ProjectsList, ProjectDetail } from "./admin/projects";
 export { useProjectsApi } from "./hooks/useProjectsApi";
 export { TimesheetPage, ExpensesList, ExpenseDetail, TimerWidget } from "./admin/time-and-expenses";
 export { useTimeExpensesApi } from "./hooks/useTimeExpensesApi";
+export { ContractsList, ContractDetail, ContractForm, contractToFormValues, formValuesToContract, type ContractFormValues } from "./admin/contracts";
+export { useContractsApi } from "./hooks/useContractsApi";
+export { ContractTemplatesList, ContractTemplateDetail, ContractTemplateForm, templateToFormValues, formValuesToTemplate, type ContractTemplateFormValues } from "./admin/contract-templates";
+export { useContractTemplatesApi } from "./hooks/useContractTemplatesApi";
