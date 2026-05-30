@@ -41,7 +41,7 @@ test("ticket transition OPEN -> RESOLVED works", async ({ page }) => {
   await expect(page.getByTestId("ticket-detail")).toBeVisible();
 
   await page.getByTestId("ticket-transition-resolved").click();
-  await expect(page.getByTestId("ticket-status-badge")).toContainText("RESOLVED");
+  await expect(page.getByTestId("ticket-status-badge")).toContainText("Resolved");
 });
 
 // AC-B4: add comment

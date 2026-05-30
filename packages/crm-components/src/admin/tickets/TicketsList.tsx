@@ -16,6 +16,7 @@ import {
 import { DataTable, type Column } from "../../components/DataTable";
 import { useTicketsApi } from "../../hooks/useTicketsApi";
 import type { Ticket } from "../../types/api";
+import { TICKET_PRIORITY_LABELS, TICKET_STATUS_LABELS, labelFor } from "../labels";
 
 const PRIORITY_VARIANT: Record<string, "default" | "muted" | "outline"> = {
   LOW: "muted",
@@ -38,7 +39,7 @@ const columns: Column<Ticket>[] = [
     key: "status",
     header: "Status",
     cell: (t) => (
-      <Badge variant="muted">{t.status ?? "NEW"}</Badge>
+      <Badge variant="muted">{labelFor(TICKET_STATUS_LABELS, t.status, "New")}</Badge>
     ),
   },
   {
@@ -46,13 +47,13 @@ const columns: Column<Ticket>[] = [
     header: "Priority",
     cell: (t) => (
       <Badge variant={PRIORITY_VARIANT[t.priority ?? "LOW"] ?? "muted"}>
-        {t.priority ?? "LOW"}
+        {labelFor(TICKET_PRIORITY_LABELS, t.priority, "Low")}
       </Badge>
     ),
   },
   {
     key: "slaResponseDue",
-    header: "SLA Response Due",
+    header: "Response due",
     cell: (t) => {
       if (!t.slaResponseDue) return <span className="text-muted-foreground">—</span>;
       const due = new Date(t.slaResponseDue);
@@ -101,7 +102,7 @@ export function TicketsList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Tickets</h1>
           <p className="text-sm text-muted-foreground">
-            Support tickets from your clients.
+            Support requests from your clients, and where each one stands.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-ticket">

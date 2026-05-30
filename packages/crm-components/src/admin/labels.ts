@@ -73,3 +73,31 @@ export const INVOICE_STATUS_LABELS: Record<string, string> = {
   VOIDED: "Voided",
   OVERDUE: "Overdue",
 };
+
+// --- Tickets ----------------------------------------------------------------
+
+export const TICKET_STATUS_LABELS: Record<string, string> = {
+  NEW: "New",
+  OPEN: "Open",
+  PENDING: "Pending",
+  IN_PROGRESS: "In progress",
+  RESOLVED: "Resolved",
+  CLOSED: "Closed",
+};
+
+export const TICKET_PRIORITY_LABELS: Record<string, string> = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  URGENT: "Urgent",
+};
+
+// --- Inbox ------------------------------------------------------------------
+// "Open"/"Unclaimed" both mean nobody's taken it yet — show "Unassigned".
+
+export const INBOX_STATUS_LABELS: Record<string, string> = {
+  OPEN: "Unassigned",
+  UNCLAIMED: "Unassigned",
+  CLAIMED: "Assigned",
+  CLOSED: "Closed",
+};

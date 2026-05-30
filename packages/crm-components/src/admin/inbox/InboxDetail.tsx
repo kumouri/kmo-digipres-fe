@@ -9,6 +9,7 @@ import { Button } from "../../primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../primitives/card";
 import { Textarea } from "../../primitives/textarea";
 import { useInboxApi } from "../../hooks/useInboxApi";
+import { INBOX_STATUS_LABELS, labelFor } from "../labels";
 
 export function InboxDetail() {
   const { id } = useParams<{ id: string }>();
@@ -63,7 +64,9 @@ export function InboxDetail() {
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="text-2xl font-medium">{thread.subjectNormalized ?? "—"}</h1>
-        <Badge variant="muted">{thread.status ?? "UNCLAIMED"}</Badge>
+        <Badge variant="muted">
+          {labelFor(INBOX_STATUS_LABELS, thread.status, "Unassigned")}
+        </Badge>
       </header>
 
       <div className="text-sm text-muted-foreground">
