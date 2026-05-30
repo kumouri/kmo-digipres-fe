@@ -144,3 +144,33 @@ export const BILLING_STATUS_LABELS: Record<string, string> = {
   UNBILLED: "Not billed",
   INVOICED: "Invoiced",
 };
+
+// --- Records (audit / reports / field definitions) --------------------------
+// The CRM "entity types" a record can be — shown to users as plain record
+// names ("entity" is engineer jargon for a non-technical admin).
+
+export const RECORD_TYPE_LABELS: Record<string, string> = {
+  CONTACT: "Contact",
+  COMPANY: "Company",
+  DEAL: "Deal",
+  TICKET: "Ticket",
+  INVOICE: "Invoice",
+  QUOTE: "Quote",
+  KB_ARTICLE: "Knowledge base article",
+  WORK_ORDER: "Work order",
+};
+
+export const AUDIT_OP_LABELS: Record<string, string> = {
+  CREATE: "Created",
+  UPDATE: "Updated",
+  DELETE: "Deleted",
+};
+
+export const FIELD_TYPE_LABELS: Record<string, string> = {
+  TEXT: "Text",
+  NUMBER: "Number",
+  DATE: "Date",
+  BOOL: "Yes / No",
+  ENUM: "Choice",
+  LOOKUP: "Lookup",
+};

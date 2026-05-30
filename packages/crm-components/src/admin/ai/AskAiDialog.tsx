@@ -55,7 +55,7 @@ export function AskAiDialog() {
                 rows={3}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask anything about your CRM data…"
+                placeholder="Ask anything about your contacts, deals, and invoices…"
                 data-testid="ask-ai-input"
               />
             </label>

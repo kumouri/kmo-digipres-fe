@@ -8,6 +8,7 @@ import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../primitives/card";
 import { useReportsApi } from "../../hooks/useReportsApi";
+import { RECORD_TYPE_LABELS, humanize, labelFor } from "../labels";
 
 export function ReportDetail() {
   const { id } = useParams<{ id: string }>();
@@ -55,8 +56,8 @@ export function ReportDetail() {
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="text-2xl font-medium">{report.name ?? "—"}</h1>
-        <Badge variant="muted">{report.entityType ?? "—"}</Badge>
-        <Badge variant="outline">{report.chartHint ?? "TABLE"}</Badge>
+        <Badge variant="muted">{labelFor(RECORD_TYPE_LABELS, report.entityType)}</Badge>
+        <Badge variant="outline">{humanize(report.chartHint ?? "TABLE")}</Badge>
       </header>
 
       <Card>

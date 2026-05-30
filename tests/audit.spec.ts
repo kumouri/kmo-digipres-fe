@@ -31,7 +31,7 @@ test("searching by entity type and ID shows seeded audit event", async ({ page }
   await page.getByTestId("audit-search-btn").click();
 
   await expect(page.getByTestId("audit-event-op").first()).toBeVisible();
-  await expect(page.getByTestId("audit-event-op").first()).toContainText("UPDATE");
+  await expect(page.getByTestId("audit-event-op").first()).toContainText("Updated");
 });
 
 // AC-B8: op badge present
@@ -42,6 +42,6 @@ test("audit event shows entity type and op badge", async ({ page }) => {
   await page.getByTestId("audit-entity-id-input").fill(SEED_ENTITY_ID);
   await page.getByTestId("audit-search-btn").click();
 
-  await expect(page.getByTestId("audit-event-entity").first()).toContainText("CONTACT");
-  await expect(page.getByTestId("audit-event-op").first()).toContainText("UPDATE");
+  await expect(page.getByTestId("audit-event-entity").first()).toContainText("Contact");
+  await expect(page.getByTestId("audit-event-op").first()).toContainText("Updated");
 });
