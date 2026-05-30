@@ -52,3 +52,24 @@ export const SUBJECT_TYPE_LABELS: Record<string, string> = {
   DEAL: "Deal",
   WORK_ORDER: "Work order",
 };
+
+// --- Quotes -----------------------------------------------------------------
+
+export const QUOTE_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Draft",
+  SENT: "Sent",
+  ACCEPTED: "Accepted",
+  DECLINED: "Declined",
+  EXPIRED: "Expired",
+};
+
+// --- Invoices ---------------------------------------------------------------
+
+export const INVOICE_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Draft",
+  SENT: "Sent",
+  PARTIALLY_PAID: "Partially paid",
+  PAID: "Paid",
+  VOIDED: "Voided",
+  OVERDUE: "Overdue",
+};

@@ -16,6 +16,7 @@ import {
 import { DataTable, type Column } from "../../components/DataTable";
 import { useQuotesApi } from "../../hooks/useQuotesApi";
 import type { Quote } from "../../types/api";
+import { QUOTE_STATUS_LABELS, labelFor } from "../labels";
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline"> = {
   DRAFT: "muted",
@@ -40,7 +41,7 @@ const columns: Column<Quote>[] = [
     header: "Status",
     cell: (q) => (
       <Badge variant={STATUS_VARIANT[q.status ?? "DRAFT"] ?? "muted"}>
-        {q.status ?? "DRAFT"}
+        {labelFor(QUOTE_STATUS_LABELS, q.status, "Draft")}
       </Badge>
     ),
   },
@@ -91,7 +92,7 @@ export function QuotesList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Quotes</h1>
           <p className="text-sm text-muted-foreground">
-            Sales quotes and proposals for your tenant.
+            Price quotes and proposals you've sent to clients.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-quote">
@@ -113,7 +114,8 @@ export function QuotesList() {
           <DialogHeader>
             <DialogTitle>New quote</DialogTitle>
             <DialogDescription>
-              Create a new quote via <code>POST /api/v1/quotes</code>.
+              Start a new quote. You can add line items and send it once it's
+              ready.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
