@@ -216,6 +216,7 @@ const seedActivities: ActivityDTO[] = [
     direction: "INTERNAL",
     subjectType: "CONTACT",
     subjectId: seedContact.id,
+    subjectName: seedContact.displayName,
     summary: "Initial outreach",
     body: "Seeded activity for the mock store.",
     occurredAt: "2026-05-13T15:00:00Z",
