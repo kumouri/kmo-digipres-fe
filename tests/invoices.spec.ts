@@ -14,7 +14,7 @@ async function login(page: Page) {
 // AC-B3: list renders seeded invoice
 test("invoices list renders the seeded invoice", async ({ page }) => {
   await login(page);
-  await page.getByRole("link", { name: "Invoices" }).click();
+  await page.getByRole("link", { name: "Invoices", exact: true }).click();
   await expect(page).toHaveURL(/\/invoices$/);
   await expect(page.getByTestId("invoices-page")).toBeVisible();
   await expect(page.getByTestId("invoice-row-number").first()).toContainText("INV-0001");

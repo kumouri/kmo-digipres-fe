@@ -1,4 +1,4 @@
-import type { Invoice, Payment } from "../types/api";
+import type { Invoice, Payment, CheckoutResult } from "../types/api";
 import type { CrmClient } from "./client";
 
 export function listInvoices(client: CrmClient): Promise<Invoice[]> {
@@ -52,5 +52,14 @@ export function recordPayment(
   return client.api<Payment>(`/invoices/${invoiceId}/payments`, {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export function createStripeCheckout(
+  client: CrmClient,
+  invoiceId: string,
+): Promise<CheckoutResult> {
+  return client.api<CheckoutResult>(`/invoices/${invoiceId}/stripe-checkout`, {
+    method: "POST",
   });
 }

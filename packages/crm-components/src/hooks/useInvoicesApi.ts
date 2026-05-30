@@ -18,6 +18,8 @@ export function useInvoicesApi() {
       listPayments: (invoiceId: string) => invoicesApi.listPayments(client, invoiceId),
       recordPayment: (invoiceId: string, body: Payment) =>
         invoicesApi.recordPayment(client, invoiceId, body),
+      createStripeCheckout: (invoiceId: string) =>
+        invoicesApi.createStripeCheckout(client, invoiceId),
     }),
     [client],
   );
