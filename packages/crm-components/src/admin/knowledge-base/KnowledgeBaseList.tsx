@@ -94,7 +94,7 @@ export function KnowledgeBaseList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Knowledge Base</h1>
           <p className="text-sm text-muted-foreground">
-            Help articles and internal documentation.
+            Help articles for your clients and notes for your team.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-kb-article">

@@ -5,6 +5,7 @@ import { Badge } from "../../primitives/badge";
 import { DataTable, type Column } from "../../components/DataTable";
 import { useInboxApi } from "../../hooks/useInboxApi";
 import type { InboxThread } from "../../types/api";
+import { INBOX_STATUS_LABELS, labelFor } from "../labels";
 
 const columns: Column<InboxThread>[] = [
   {
@@ -26,7 +27,7 @@ const columns: Column<InboxThread>[] = [
     header: "Status",
     cell: (t) => (
       <Badge variant={t.status === "CLAIMED" ? "default" : "muted"}>
-        {t.status ?? "UNCLAIMED"}
+        {labelFor(INBOX_STATUS_LABELS, t.status, "Unassigned")}
       </Badge>
     ),
   },
@@ -51,7 +52,7 @@ export function InboxList() {
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-medium">Inbox</h1>
         <p className="text-sm text-muted-foreground">
-          Email threads received by your tenant.
+          Incoming email from your customers, ready to claim and reply.
         </p>
       </header>
 
