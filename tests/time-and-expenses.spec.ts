@@ -176,7 +176,7 @@ test("expenses list renders the seeded expense", async ({ page }) => {
     "Client lunch",
   );
   await expect(page.getByTestId("expense-approval-badge").first()).toContainText(
-    "PENDING",
+    "Pending",
   );
 });
 
@@ -224,13 +224,13 @@ test("ADMIN approve flips expense approval status to APPROVED", async ({
   // Seeded expense is PENDING; ADMIN actions should be visible
   await expect(page.getByTestId("admin-actions")).toBeVisible();
   await expect(page.getByTestId("expense-detail-approval")).toContainText(
-    "PENDING",
+    "Pending",
   );
 
   // Approve
   await page.getByTestId("approve-expense").click();
   await expect(page.getByTestId("expense-detail-approval")).toContainText(
-    "APPROVED",
+    "Approved",
   );
 });
 
@@ -246,7 +246,7 @@ test("invoice approved expenses creates DRAFT invoice with markup", async ({
   await expect(page.getByTestId("admin-actions")).toBeVisible();
   await page.getByTestId("approve-expense").click();
   await expect(page.getByTestId("expense-detail-approval")).toContainText(
-    "APPROVED",
+    "Approved",
     { timeout: 5000 },
   );
   // Toast confirmation
