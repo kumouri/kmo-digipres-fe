@@ -37,7 +37,7 @@ test("quote status transition DRAFT -> SENT works", async ({ page }) => {
   await expect(page.getByTestId("quote-detail")).toBeVisible();
 
   await page.getByTestId("quote-status-sent").click();
-  await expect(page.getByText("SENT")).toBeVisible();
+  await expect(page.getByText("Sent", { exact: true })).toBeVisible();
 });
 
 // AC-B2: PDF link is present

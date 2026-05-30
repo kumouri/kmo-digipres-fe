@@ -92,7 +92,8 @@ export function ContactsList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Contacts</h1>
           <p className="text-sm text-muted-foreground">
-            People and organizations across your tenant.
+            Everyone you do business with — customers, leads, and the
+            companies they belong to.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-contact">
@@ -115,7 +116,7 @@ export function ContactsList() {
           <DialogHeader>
             <DialogTitle>New contact</DialogTitle>
             <DialogDescription>
-              Persisted via <code>POST /api/v1/contacts</code>.
+              Add someone you do business with. You can fill in the rest later.
             </DialogDescription>
           </DialogHeader>
           <ContactForm

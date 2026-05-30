@@ -20,19 +20,29 @@ import {
   ActivityForm,
   formValuesToActivity,
 } from "./ActivityForm";
+import {
+  ACTIVITY_DIRECTION_LABELS,
+  ACTIVITY_TYPE_LABELS,
+  SUBJECT_TYPE_LABELS,
+  labelFor,
+} from "../labels";
 
 const columns: Column<ActivityDTO>[] = [
   {
     key: "type",
     header: "Type",
-    cell: (a) => <Badge variant="secondary">{a.type ?? "—"}</Badge>,
+    cell: (a) => (
+      <Badge variant="secondary">{labelFor(ACTIVITY_TYPE_LABELS, a.type)}</Badge>
+    ),
   },
   {
     key: "direction",
     header: "Direction",
     cell: (a) =>
       a.direction ? (
-        <Badge variant="outline">{a.direction}</Badge>
+        <Badge variant="outline">
+          {labelFor(ACTIVITY_DIRECTION_LABELS, a.direction)}
+        </Badge>
       ) : (
         <span className="text-muted-foreground">—</span>
       ),
@@ -51,7 +61,7 @@ const columns: Column<ActivityDTO>[] = [
     header: "Subject",
     cell: (a) => (
       <span className="text-xs text-muted-foreground">
-        {a.subjectType ?? "?"} / {a.subjectId ?? "—"}
+        {labelFor(SUBJECT_TYPE_LABELS, a.subjectType, "?")} / {a.subjectId ?? "—"}
       </span>
     ),
   },
@@ -98,7 +108,8 @@ export function ActivitiesList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Activities</h1>
           <p className="text-sm text-muted-foreground">
-            Notes, calls, emails, meetings, and tasks across the tenant.
+            Notes, calls, emails, meetings, and tasks — your running history
+            with each contact.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-activity">
@@ -121,7 +132,7 @@ export function ActivitiesList() {
           <DialogHeader>
             <DialogTitle>Log activity</DialogTitle>
             <DialogDescription>
-              Persisted via <code>POST /api/activities</code>.
+              Log a note, call, email, or meeting. You can edit it anytime.
             </DialogDescription>
           </DialogHeader>
           <ActivityForm

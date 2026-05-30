@@ -73,7 +73,7 @@ export function DashboardsList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Dashboards</h1>
           <p className="text-sm text-muted-foreground">
-            Compose saved reports into a single view.
+            Group your saved reports onto one screen.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-dashboard-btn">

@@ -75,7 +75,7 @@ export function ContractDetail() {
             ? `Contract ${contract.contractNumber}`
             : (contract.title ?? contract.id?.slice(0, 8) ?? "Contract")}
         </h1>
-        <Badge variant={STATUS_VARIANT[status] ?? "muted"}>{status}</Badge>
+        <Badge variant={STATUS_VARIANT[status] ?? "muted"} data-testid="contract-status">{status}</Badge>
       </header>
 
       <Card>

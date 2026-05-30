@@ -14,6 +14,7 @@ import {
 } from "../../primitives/dialog";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
 import type { TimeEntry } from "../../types/api";
+import { BILLING_STATUS_LABELS, labelFor } from "../labels";
 
 interface Props {
   userId: string;
@@ -155,6 +156,10 @@ export function TimesheetPage({ userId }: Props) {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Timesheet</h1>
           <p className="text-sm text-muted-foreground">
+            Log the hours you work each week — start a timer or enter time by
+            hand.
+          </p>
+          <p className="text-xs text-muted-foreground">
             {fmtDate(weekDays[0])} — {fmtDate(weekDays[6])}
           </p>
         </div>
@@ -222,7 +227,7 @@ export function TimesheetPage({ userId }: Props) {
                 </span>
                 <div className="flex items-center gap-2">
                   <Badge variant={session.billingStatus === "INVOICED" ? "secondary" : "outline"}>
-                    {session.billingStatus}
+                    {labelFor(BILLING_STATUS_LABELS, session.billingStatus, "Not billed")}
                   </Badge>
                   <span className="text-sm font-mono" data-testid="session-duration">
                     {fmtDuration(session.totalSeconds)}
@@ -257,7 +262,7 @@ export function TimesheetPage({ userId }: Props) {
           <DialogHeader>
             <DialogTitle>Log time</DialogTitle>
             <DialogDescription>
-              Manually log a time entry (entry-based primary — D9).
+              Add a time entry by hand — enter when you started and finished.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
@@ -272,7 +277,7 @@ export function TimesheetPage({ userId }: Props) {
               />
             </label>
             <label className="text-sm font-medium">
-              Start (ISO datetime)
+              Start time
               <input
                 className="mt-1 block w-full rounded border px-2 py-1 text-sm font-mono"
                 value={newStart}
@@ -282,7 +287,7 @@ export function TimesheetPage({ userId }: Props) {
               />
             </label>
             <label className="text-sm font-medium">
-              End (ISO datetime)
+              End time
               <input
                 className="mt-1 block w-full rounded border px-2 py-1 text-sm font-mono"
                 value={newEnd}
@@ -326,8 +331,8 @@ export function TimesheetPage({ userId }: Props) {
           <DialogHeader>
             <DialogTitle>Invoice unbilled time</DialogTitle>
             <DialogDescription>
-              Creates a DRAFT invoice via <code>POST /time-entries/invoice-from-time</code>.
-              The invoice is not sent automatically.
+              Creates a draft invoice from this week's unbilled time. It won't
+              be sent automatically.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">

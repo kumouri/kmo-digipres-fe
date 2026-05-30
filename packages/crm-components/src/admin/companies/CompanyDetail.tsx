@@ -19,7 +19,6 @@ import { Button } from "@kmosf/crm-components";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@kmosf/crm-components";
@@ -122,8 +121,9 @@ export function CompanyDetail() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this company?</AlertDialogTitle>
               <AlertDialogDescription>
-                Contacts and deals that reference this company will keep their
-                company ID — re-assign them before deleting if you care.
+                Contacts and deals linked to this company will stay, but they'll
+                no longer show a company. You can re-assign them first if you'd
+                like.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -143,9 +143,6 @@ export function CompanyDetail() {
       <Card>
         <CardHeader>
           <CardTitle>Edit company</CardTitle>
-          <CardDescription>
-            Saves via <code>PUT /api/companies/{c.id}</code>.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <CompanyForm

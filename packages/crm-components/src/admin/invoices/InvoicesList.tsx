@@ -7,6 +7,7 @@ import { Button } from "../../primitives/button";
 import { DataTable, type Column } from "../../components/DataTable";
 import { useInvoicesApi } from "../../hooks/useInvoicesApi";
 import type { Invoice } from "../../types/api";
+import { INVOICE_STATUS_LABELS, labelFor } from "../labels";
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline"> = {
   DRAFT: "muted",
@@ -32,7 +33,7 @@ const columns: Column<Invoice>[] = [
     header: "Status",
     cell: (inv) => (
       <Badge variant={STATUS_VARIANT[inv.status ?? "DRAFT"] ?? "muted"}>
-        {inv.status ?? "DRAFT"}
+        {labelFor(INVOICE_STATUS_LABELS, inv.status, "Draft")}
       </Badge>
     ),
   },
@@ -89,7 +90,7 @@ export function InvoicesList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Invoices</h1>
           <p className="text-sm text-muted-foreground">
-            Invoices issued to clients from your tenant.
+            Bills you've sent to clients, and what's been paid.
           </p>
         </div>
         <Button

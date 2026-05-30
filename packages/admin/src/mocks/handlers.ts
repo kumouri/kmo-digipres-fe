@@ -92,6 +92,7 @@ export const handlers = [
         token: account.token,
         userId: account.user.id,
         tenantId: account.user.tenantId,
+        tenantName: account.user.tenantName,
         email: account.user.email,
         displayName: account.user.displayName,
         roles: account.user.roles,

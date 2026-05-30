@@ -68,6 +68,9 @@ test("dashboard shows the brand wordmark and leaks no internal identifiers", asy
 
 test("account menu shows name and email, never a raw tenant UUID", async ({ page }) => {
   await login(page);
+  // The tenant's human business name (mock: "Bella Vita") is shown in the
+  // shell instead of the raw tenant UUID.
+  await expect(page.getByText("Bella Vita").first()).toBeVisible();
   await page.getByTestId("user-menu-trigger").click();
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();

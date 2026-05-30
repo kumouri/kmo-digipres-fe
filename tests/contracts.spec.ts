@@ -76,7 +76,7 @@ test("sending a contract transitions it to SENT", async ({ page }) => {
   await page.getByTestId("contract-row-number").first().click();
   await expect(page.getByTestId("contract-send-btn")).toBeVisible();
   await page.getByTestId("contract-send-btn").click();
-  await expect(page.getByText("SENT")).toBeVisible();
+  await expect(page.getByTestId("contract-status")).toHaveText("SENT");
 });
 
 test("voiding a DRAFT contract transitions it to VOIDED", async ({ page }) => {
@@ -88,7 +88,7 @@ test("voiding a DRAFT contract transitions it to VOIDED", async ({ page }) => {
   await expect(page.getByTestId("contract-detail")).toBeVisible();
   await expect(page.getByTestId("contract-void-btn")).toBeVisible();
   await page.getByTestId("contract-void-btn").click();
-  await expect(page.getByText("VOIDED")).toBeVisible();
+  await expect(page.getByTestId("contract-status")).toHaveText("VOIDED");
 });
 
 test("creating a contract navigates to its detail", async ({ page }) => {

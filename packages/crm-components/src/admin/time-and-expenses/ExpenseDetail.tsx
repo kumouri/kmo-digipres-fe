@@ -7,6 +7,7 @@ import { CheckCircle, Upload, XCircle } from "lucide-react";
 import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
+import { BILLING_STATUS_LABELS, EXPENSE_APPROVAL_LABELS, labelFor } from "../labels";
 
 interface Props {
   isAdmin?: boolean;
@@ -156,14 +157,14 @@ export function ExpenseDetail({ isAdmin = false }: Props) {
             }
             data-testid="expense-detail-approval"
           >
-            {expense.approvalStatus ?? "PENDING"}
+            {labelFor(EXPENSE_APPROVAL_LABELS, expense.approvalStatus, "Pending")}
           </Badge>
           <Badge
             variant={
               expense.billingStatus === "INVOICED" ? "secondary" : "outline"
             }
           >
-            {expense.billingStatus ?? "UNBILLED"}
+            {labelFor(BILLING_STATUS_LABELS, expense.billingStatus, "Not billed")}
           </Badge>
         </div>
       </header>

@@ -37,11 +37,17 @@ import type { components } from "@kmosf/crm-components";
 
 type Attachment = components["schemas"]["Attachment"];
 
+// The mock tenant's human business name. Mirrors the BE contract: surfaced on
+// LoginResponse + /auth/me as `tenantName` (from Tenant.displayName) so the
+// shell shows a real business name instead of a raw tenant UUID.
+export const SMOKE_TENANT_NAME = "Bella Vita";
+
 export const SMOKE_USER: User = {
   id: "11111111-1111-1111-1111-111111111111",
   tenantId: "22222222-2222-2222-2222-222222222222",
   email: "smoke@example.test",
   displayName: "Smoke User",
+  tenantName: SMOKE_TENANT_NAME,
   roles: ["STAFF", "ADMIN"],
   status: "ACTIVE",
   version: 0,
@@ -59,6 +65,7 @@ export const SMOKE_STAFF_USER: User = {
   tenantId: SMOKE_USER.tenantId,
   email: "staff@example.test",
   displayName: "Staff User",
+  tenantName: SMOKE_TENANT_NAME,
   roles: ["STAFF"],
   status: "ACTIVE",
   version: 0,

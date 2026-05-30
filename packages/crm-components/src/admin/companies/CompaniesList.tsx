@@ -107,7 +107,7 @@ export function CompaniesList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Companies</h1>
           <p className="text-sm text-muted-foreground">
-            Organizations attached to contacts and deals.
+            The businesses your contacts and deals belong to.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-company">
@@ -130,7 +130,8 @@ export function CompaniesList() {
           <DialogHeader>
             <DialogTitle>New company</DialogTitle>
             <DialogDescription>
-              Persisted via <code>POST /api/companies</code>.
+              Add a business you work with. You can add details and contacts
+              later.
             </DialogDescription>
           </DialogHeader>
           <CompanyForm

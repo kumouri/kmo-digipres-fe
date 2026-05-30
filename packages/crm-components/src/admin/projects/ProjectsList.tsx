@@ -16,6 +16,7 @@ import {
 import { DataTable, type Column } from "../../components/DataTable";
 import { useProjectsApi } from "../../hooks/useProjectsApi";
 import type { Project } from "../../types/api";
+import { PROJECT_STATUS_LABELS, labelFor } from "../labels";
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline" | "secondary" | "destructive"> = {
   PLANNING: "muted",
@@ -47,7 +48,7 @@ const columns: Column<Project>[] = [
     header: "Status",
     cell: (p) => (
       <Badge variant={STATUS_VARIANT[p.status ?? "PLANNING"] ?? "muted"}>
-        {p.status ?? "PLANNING"}
+        {labelFor(PROJECT_STATUS_LABELS, p.status, "Planning")}
       </Badge>
     ),
   },
@@ -95,7 +96,7 @@ export function ProjectsList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Projects</h1>
           <p className="text-sm text-muted-foreground">
-            Delivery projects for your tenant.
+            The work you're delivering for clients, with milestones and tasks.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-project">
@@ -117,7 +118,8 @@ export function ProjectsList() {
           <DialogHeader>
             <DialogTitle>New project</DialogTitle>
             <DialogDescription>
-              Create a new project via <code>POST /api/v1/projects</code>.
+              Start a new project. You can add milestones and tasks once it's
+              created.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">

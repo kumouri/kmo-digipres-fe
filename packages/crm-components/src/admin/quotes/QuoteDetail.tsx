@@ -8,6 +8,7 @@ import { Button } from "../../primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../primitives/card";
 import { useQuotesApi } from "../../hooks/useQuotesApi";
 import type { QuoteStatus } from "../../types/api";
+import { QUOTE_STATUS_LABELS, labelFor } from "../labels";
 
 const VALID_TRANSITIONS: Record<string, QuoteStatus[]> = {
   DRAFT: ["SENT"],
@@ -55,7 +56,9 @@ export function QuoteDetail() {
         <h1 className="text-2xl font-medium">
           Quote {quote.quoteNumber ?? quote.id?.slice(0, 8)}
         </h1>
-        <Badge variant="muted">{quote.status ?? "DRAFT"}</Badge>
+        <Badge variant="muted">
+          {labelFor(QUOTE_STATUS_LABELS, quote.status, "Draft")}
+        </Badge>
       </header>
 
       <Card>
@@ -128,7 +131,7 @@ export function QuoteDetail() {
             disabled={statusMutation.isPending}
             data-testid={`quote-status-${target.toLowerCase()}`}
           >
-            Mark {target}
+            Mark as {labelFor(QUOTE_STATUS_LABELS, target).toLowerCase()}
           </Button>
         ))}
 

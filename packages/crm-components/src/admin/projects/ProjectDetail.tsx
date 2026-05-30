@@ -32,6 +32,7 @@ import {
 import { useProjectsApi } from "../../hooks/useProjectsApi";
 import { TaskKanban } from "./TaskKanban";
 import type { Milestone } from "../../types/api";
+import { MILESTONE_STATUS_LABELS, PROJECT_STATUS_LABELS, labelFor } from "../labels";
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline" | "secondary" | "destructive"> = {
   PLANNING: "muted",
@@ -137,7 +138,7 @@ export function ProjectDetail() {
           <div className="flex flex-wrap gap-2">
             {p.status ? (
               <Badge variant={STATUS_VARIANT[p.status] ?? "muted"}>
-                {p.status}
+                {labelFor(PROJECT_STATUS_LABELS, p.status)}
               </Badge>
             ) : null}
           </div>
@@ -152,7 +153,8 @@ export function ProjectDetail() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this project?</AlertDialogTitle>
               <AlertDialogDescription>
-                The project and its milestones/tasks will be removed.
+                Permanently removes this project, along with its milestones and
+                tasks.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -195,7 +197,7 @@ export function ProjectDetail() {
                 <dt className="font-medium text-muted-foreground">Status</dt>
                 <dd>
                   <Badge variant={STATUS_VARIANT[p.status ?? "PLANNING"] ?? "muted"}>
-                    {p.status ?? "PLANNING"}
+                    {labelFor(PROJECT_STATUS_LABELS, p.status, "Planning")}
                   </Badge>
                 </dd>
                 <dt className="font-medium text-muted-foreground">Description</dt>
@@ -242,7 +244,7 @@ export function ProjectDetail() {
                               MILESTONE_STATUS_VARIANT[m.status ?? "PENDING"] ?? "muted"
                             }
                           >
-                            {m.status ?? "PENDING"}
+                            {labelFor(MILESTONE_STATUS_LABELS, m.status, "Pending")}
                           </Badge>
                           {m.triggersInvoiceOnComplete && (
                             <Badge variant="outline">Triggers invoice</Badge>

@@ -23,6 +23,7 @@ export interface AuthContextValue {
   status: AuthStatus;
   user: User | null;
   tenantId: string | null;
+  tenantName: string | null;
   roles: string[];
   isAuthenticated: boolean;
   login: (body: LoginRequest) => Promise<void>;
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       user,
       tenantId: user?.tenantId ?? null,
+      tenantName: user?.tenantName ?? null,
       roles: user?.roles ?? [],
       isAuthenticated: status === "authenticated",
       login: doLogin,

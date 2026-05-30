@@ -15,6 +15,7 @@ import {
 import { DataTable, type Column } from "../../components/DataTable";
 import { useFieldDefinitionsApi } from "../../hooks/useFieldDefinitionsApi";
 import type { FieldDefinition } from "../../types/api";
+import { FIELD_TYPE_LABELS, RECORD_TYPE_LABELS, labelFor } from "../labels";
 
 const ENTITY_TYPES = ["CONTACT", "COMPANY", "DEAL", "TICKET"] as const;
 const FIELD_TYPES = ["TEXT", "NUMBER", "DATE", "BOOL", "ENUM", "LOOKUP"] as const;
@@ -31,13 +32,13 @@ const columns: Column<FieldDefinition>[] = [
   },
   {
     key: "entityType",
-    header: "Entity",
-    cell: (fd) => <Badge variant="muted">{fd.entityType ?? "—"}</Badge>,
+    header: "Record",
+    cell: (fd) => <Badge variant="muted">{labelFor(RECORD_TYPE_LABELS, fd.entityType)}</Badge>,
   },
   {
     key: "type",
     header: "Type",
-    cell: (fd) => fd.type ?? "—",
+    cell: (fd) => labelFor(FIELD_TYPE_LABELS, fd.type),
   },
   {
     key: "key",
@@ -95,7 +96,7 @@ export function FieldDefinitionsList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Field Definitions</h1>
           <p className="text-sm text-muted-foreground">
-            Custom fields extending CRM entities.
+            Add your own fields to contacts, companies, deals, and tickets.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-field-def">
@@ -137,7 +138,7 @@ export function FieldDefinitionsList() {
               />
             </label>
             <label className="text-sm font-medium">
-              Entity
+              Record
               <select
                 className="mt-1 block w-full rounded border px-2 py-1 text-sm"
                 value={newEntityType}
@@ -148,7 +149,7 @@ export function FieldDefinitionsList() {
               >
                 {ENTITY_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {labelFor(RECORD_TYPE_LABELS, t)}
                   </option>
                 ))}
               </select>
@@ -165,7 +166,7 @@ export function FieldDefinitionsList() {
               >
                 {FIELD_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {labelFor(FIELD_TYPE_LABELS, t)}
                   </option>
                 ))}
               </select>

@@ -15,6 +15,7 @@ import {
 } from "../../primitives/dialog";
 import { useInvoicesApi } from "../../hooks/useInvoicesApi";
 import type { InvoiceStatus, Payment } from "../../types/api";
+import { INVOICE_STATUS_LABELS, humanize, labelFor } from "../labels";
 
 const VALID_TRANSITIONS: Record<string, InvoiceStatus[]> = {
   DRAFT: ["SENT"],
@@ -86,7 +87,9 @@ export function InvoiceDetail() {
         <h1 className="text-2xl font-medium">
           Invoice {invoice.invoiceNumber ?? invoice.id?.slice(0, 8)}
         </h1>
-        <Badge variant="muted">{invoice.status ?? "DRAFT"}</Badge>
+        <Badge variant="muted">
+          {labelFor(INVOICE_STATUS_LABELS, invoice.status, "Draft")}
+        </Badge>
       </header>
 
       <Card>
@@ -131,7 +134,7 @@ export function InvoiceDetail() {
                     <td className="py-1 text-right">
                       {p.currency ?? "USD"} {p.amount?.toFixed(2) ?? "0.00"}
                     </td>
-                    <td className="py-1">{p.method ?? "—"}</td>
+                    <td className="py-1">{p.method ? humanize(p.method) : "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -149,7 +152,7 @@ export function InvoiceDetail() {
             disabled={statusMutation.isPending}
             data-testid={`invoice-status-${target.toLowerCase()}`}
           >
-            Mark {target}
+            Mark as {labelFor(INVOICE_STATUS_LABELS, target).toLowerCase()}
           </Button>
         ))}
 

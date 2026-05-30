@@ -16,6 +16,7 @@ import {
 import { DataTable, type Column } from "../../components/DataTable";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
 import type { Expense } from "../../types/api";
+import { BILLING_STATUS_LABELS, EXPENSE_APPROVAL_LABELS, labelFor } from "../labels";
 
 const APPROVAL_VARIANT: Record<
   string,
@@ -76,7 +77,7 @@ const columns: Column<Expense>[] = [
         }
         data-testid="expense-approval-badge"
       >
-        {e.approvalStatus ?? "PENDING"}
+        {labelFor(EXPENSE_APPROVAL_LABELS, e.approvalStatus, "Pending")}
       </Badge>
     ),
   },
@@ -87,7 +88,7 @@ const columns: Column<Expense>[] = [
       <Badge
         variant={BILLING_VARIANT[e.billingStatus ?? "UNBILLED"] ?? "outline"}
       >
-        {e.billingStatus ?? "UNBILLED"}
+        {labelFor(BILLING_STATUS_LABELS, e.billingStatus, "Not billed")}
       </Badge>
     ),
   },
@@ -158,7 +159,7 @@ export function ExpensesList({ userId }: Props) {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Expenses</h1>
           <p className="text-sm text-muted-foreground">
-            Submit and track reimbursable expenses.
+            Submit expenses and follow them through approval and billing.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -196,8 +197,8 @@ export function ExpensesList({ userId }: Props) {
           <DialogHeader>
             <DialogTitle>Submit expense</DialogTitle>
             <DialogDescription>
-              Submit a reimbursable expense via{" "}
-              <code>POST /api/v1/expenses</code>.
+              Submit an expense for approval. You can attach a receipt on the
+              next screen.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
@@ -217,7 +218,7 @@ export function ExpensesList({ userId }: Props) {
                 className="mt-1 block w-full rounded border px-2 py-1 text-sm"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="MEALS, TRAVEL, SOFTWARE…"
+                placeholder="Meals, travel, software…"
                 data-testid="expense-category-input"
               />
             </label>
@@ -279,8 +280,8 @@ export function ExpensesList({ userId }: Props) {
           <DialogHeader>
             <DialogTitle>Invoice approved expenses</DialogTitle>
             <DialogDescription>
-              Creates a DRAFT invoice with markup via{" "}
-              <code>POST /expenses/invoice-from-expenses</code>.
+              Bundle your approved expenses into a new draft invoice, with
+              markup applied.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">

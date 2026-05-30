@@ -6,6 +6,7 @@ import { Button } from "../../primitives/button";
 import { DataTable, type Column } from "../../components/DataTable";
 import { useAuditApi } from "../../hooks/useAuditApi";
 import type { AuditEventDTO } from "../../types/api";
+import { AUDIT_OP_LABELS, RECORD_TYPE_LABELS, labelFor } from "../labels";
 
 const ENTITY_TYPES = ["CONTACT", "COMPANY", "DEAL", "TICKET", "INVOICE", "QUOTE", "KB_ARTICLE"] as const;
 
@@ -27,32 +28,32 @@ const columns: Column<AuditEventDTO>[] = [
   },
   {
     key: "op",
-    header: "Op",
+    header: "Action",
     cell: (e) => (
       <Badge variant={OP_VARIANT[e.op ?? ""] ?? "outline"} data-testid="audit-event-op">
-        {e.op ?? "—"}
+        {labelFor(AUDIT_OP_LABELS, e.op)}
       </Badge>
     ),
   },
   {
     key: "entityType",
-    header: "Entity",
+    header: "Record",
     cell: (e) => (
       <span data-testid="audit-event-entity">
-        {e.entityType ?? "—"}
+        {labelFor(RECORD_TYPE_LABELS, e.entityType)}
       </span>
     ),
   },
   {
     key: "entityId",
-    header: "Entity ID",
+    header: "Record ID",
     cell: (e) => (
       <code className="text-xs text-muted-foreground">{e.entityId ?? "—"}</code>
     ),
   },
   {
     key: "actorUserId",
-    header: "Actor",
+    header: "Changed by",
     cell: (e) => (
       <code className="text-xs text-muted-foreground">{e.actorUserId ?? "—"}</code>
     ),
@@ -83,14 +84,14 @@ export function AuditList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Audit Log</h1>
           <p className="text-sm text-muted-foreground">
-            Track changes to CRM entities.
+            A record of who changed what, and when.
           </p>
         </div>
       </header>
 
       <div className="flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Entity type
+          Record type
           <select
             className="rounded border px-2 py-1 text-sm"
             value={entityType}
@@ -99,16 +100,16 @@ export function AuditList() {
           >
             {ENTITY_TYPES.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {labelFor(RECORD_TYPE_LABELS, t)}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Entity ID
+          Record ID
           <input
             className="rounded border px-2 py-1 text-sm"
-            placeholder="UUID"
+            placeholder="Record ID"
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
             data-testid="audit-entity-id-input"

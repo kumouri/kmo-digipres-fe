@@ -9,6 +9,7 @@ import { Button } from "../../primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../primitives/card";
 import { Textarea } from "../../primitives/textarea";
 import { useTicketsApi } from "../../hooks/useTicketsApi";
+import { TICKET_PRIORITY_LABELS, TICKET_STATUS_LABELS, labelFor } from "../labels";
 
 type TicketStatus = "NEW" | "OPEN" | "PENDING" | "RESOLVED" | "CLOSED";
 
@@ -77,12 +78,14 @@ export function TicketDetail() {
         </Button>
         <h1 className="text-2xl font-medium">{ticket.subject ?? "—"}</h1>
         <Badge variant="muted" data-testid="ticket-status-badge">
-          {ticket.status ?? "NEW"}
+          {labelFor(TICKET_STATUS_LABELS, ticket.status, "New")}
         </Badge>
-        <Badge variant="outline">{ticket.priority ?? "MEDIUM"}</Badge>
+        <Badge variant="outline">
+          {labelFor(TICKET_PRIORITY_LABELS, ticket.priority, "Medium")}
+        </Badge>
         {slaOverdue && (
           <Badge variant="default" data-testid="sla-breach-badge">
-            SLA Breached
+            Response overdue
           </Badge>
         )}
       </header>
@@ -95,7 +98,7 @@ export function TicketDetail() {
 
       {ticket.slaResponseDue && (
         <div className="text-sm" data-testid="sla-info">
-          <span className="text-muted-foreground">SLA Response Due:</span>{" "}
+          <span className="text-muted-foreground">Response due:</span>{" "}
           {ticket.slaResponseDue}
         </div>
       )}
@@ -109,7 +112,7 @@ export function TicketDetail() {
             disabled={transitionMutation.isPending}
             data-testid={`ticket-transition-${target.toLowerCase()}`}
           >
-            → {target}
+            Mark as {labelFor(TICKET_STATUS_LABELS, target).toLowerCase()}
           </Button>
         ))}
       </div>

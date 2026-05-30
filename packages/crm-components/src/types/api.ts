@@ -29,6 +29,9 @@ export interface LoginResponse {
   token: string;
   userId: string;
   tenantId: string;
+  // Human business name (BE Tenant.displayName). Optional: a token whose
+  // tenant has no displayName comes back without it.
+  tenantName?: string;
   email: string;
   displayName: string;
   roles: string[];
@@ -39,6 +42,10 @@ export type UserStatus = "ACTIVE" | "DISABLED";
 export interface User {
   id: string;
   tenantId: string;
+  // Human business name of the owning tenant (BE Tenant.displayName,
+  // non-persisted projection on /auth/me). Optional: absent when the
+  // tenant has no displayName.
+  tenantName?: string;
   email: string;
   displayName: string;
   roles: string[];
