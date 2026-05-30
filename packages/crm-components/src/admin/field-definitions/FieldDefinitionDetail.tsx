@@ -8,6 +8,7 @@ import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../primitives/card";
 import { useFieldDefinitionsApi } from "../../hooks/useFieldDefinitionsApi";
+import { FIELD_TYPE_LABELS, RECORD_TYPE_LABELS, labelFor } from "../labels";
 
 export function FieldDefinitionDetail() {
   const { id } = useParams<{ id: string }>();
@@ -46,8 +47,8 @@ export function FieldDefinitionDetail() {
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="text-2xl font-medium">{field.label ?? "—"}</h1>
-        <Badge variant="muted">{field.entityType ?? "—"}</Badge>
-        <Badge variant="outline">{field.type ?? "—"}</Badge>
+        <Badge variant="muted">{labelFor(RECORD_TYPE_LABELS, field.entityType)}</Badge>
+        <Badge variant="outline">{labelFor(FIELD_TYPE_LABELS, field.type)}</Badge>
       </header>
 
       <Card>

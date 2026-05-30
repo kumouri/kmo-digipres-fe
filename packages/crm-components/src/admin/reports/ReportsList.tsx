@@ -15,6 +15,7 @@ import {
 import { DataTable, type Column } from "../../components/DataTable";
 import { useReportsApi } from "../../hooks/useReportsApi";
 import type { SavedReport } from "../../types/api";
+import { RECORD_TYPE_LABELS, humanize, labelFor } from "../labels";
 
 const CHART_HINTS = ["TABLE", "BAR", "LINE", "PIE"] as const;
 const ENTITY_TYPES = ["CONTACT", "COMPANY", "DEAL", "TICKET", "INVOICE", "QUOTE"] as const;
@@ -31,13 +32,13 @@ const columns: Column<SavedReport>[] = [
   },
   {
     key: "entityType",
-    header: "Entity",
-    cell: (r) => <Badge variant="muted">{r.entityType ?? "—"}</Badge>,
+    header: "Record",
+    cell: (r) => <Badge variant="muted">{labelFor(RECORD_TYPE_LABELS, r.entityType)}</Badge>,
   },
   {
     key: "chartHint",
     header: "Chart",
-    cell: (r) => <Badge variant="outline">{r.chartHint ?? "TABLE"}</Badge>,
+    cell: (r) => <Badge variant="outline">{humanize(r.chartHint ?? "TABLE")}</Badge>,
   },
   {
     key: "description",
@@ -81,7 +82,7 @@ export function ReportsList() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium">Saved Reports</h1>
           <p className="text-sm text-muted-foreground">
-            Reusable queries and visualizations.
+            Saved views of your data you can re-run anytime.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="new-report-btn">
@@ -114,7 +115,7 @@ export function ReportsList() {
               />
             </label>
             <label className="text-sm font-medium">
-              Entity type
+              Record type
               <select
                 className="mt-1 block w-full rounded border px-2 py-1 text-sm"
                 value={newEntityType}
@@ -123,7 +124,7 @@ export function ReportsList() {
               >
                 {ENTITY_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {labelFor(RECORD_TYPE_LABELS, t)}
                   </option>
                 ))}
               </select>
@@ -138,7 +139,7 @@ export function ReportsList() {
               >
                 {CHART_HINTS.map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {humanize(t)}
                   </option>
                 ))}
               </select>
