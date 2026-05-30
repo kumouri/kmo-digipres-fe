@@ -17,6 +17,7 @@ import {
   Menu,
   Receipt,
   ReceiptText,
+  RefreshCw,
   Settings2,
   Target,
   TicketIcon,
@@ -64,6 +65,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/expenses", label: "Expenses", icon: ReceiptText },
   { to: "/contracts", label: "Contracts", icon: FileSignature },
   { to: "/contract-templates", label: "Contract Templates", icon: FileText, adminOnly: true },
+  { to: "/recurring-invoices", label: "Recurring Invoices", icon: RefreshCw },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>

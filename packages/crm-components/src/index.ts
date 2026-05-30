@@ -114,3 +114,12 @@ export { ContractsList, ContractDetail, ContractForm, contractToFormValues, form
 export { useContractsApi } from "./hooks/useContractsApi";
 export { ContractTemplatesList, ContractTemplateDetail, ContractTemplateForm, templateToFormValues, formValuesToTemplate, type ContractTemplateFormValues } from "./admin/contract-templates";
 export { useContractTemplatesApi } from "./hooks/useContractTemplatesApi";
+export {
+  RecurringInvoicesList,
+  RecurringInvoiceDetail,
+  RecurringInvoiceForm,
+  recurringInvoiceToFormValues,
+  formValuesToRecurringInvoice,
+  type RecurringInvoiceFormValues,
+} from "./admin/recurring-invoices";
+export { useRecurringInvoicesApi } from "./hooks/useRecurringInvoicesApi";

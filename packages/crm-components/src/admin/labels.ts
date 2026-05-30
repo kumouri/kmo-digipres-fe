@@ -174,3 +174,20 @@ export const FIELD_TYPE_LABELS: Record<string, string> = {
   ENUM: "Choice",
   LOOKUP: "Lookup",
 };
+
+// --- Recurring Invoices ------------------------------------------------------
+
+export const RECURRING_INVOICE_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Active",
+  PAUSED: "Paused",
+  ENDED: "Ended",
+};
+
+export const PAYMENT_TERMS_LABELS: Record<string, string> = {
+  DUE_ON_RECEIPT: "Due on receipt",
+  NET_7: "Net 7",
+  NET_15: "Net 15",
+  NET_30: "Net 30",
+  NET_45: "Net 45",
+  NET_60: "Net 60",
+};

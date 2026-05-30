@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Link2 } from "lucide-react";
 
 import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "../../primitives/dialog";
 import { useInvoicesApi } from "../../hooks/useInvoicesApi";
-import type { InvoiceStatus, Payment } from "../../types/api";
+import type { CheckoutResult, InvoiceStatus, Payment } from "../../types/api";
 import { INVOICE_STATUS_LABELS, humanize, labelFor } from "../labels";
 
 const VALID_TRANSITIONS: Record<string, InvoiceStatus[]> = {
@@ -33,6 +33,7 @@ export function InvoiceDetail() {
   const invoicesApi = useInvoicesApi();
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [payAmount, setPayAmount] = useState("");
+  const [checkoutResult, setCheckoutResult] = useState<CheckoutResult | null>(null);
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ["invoices", id],
@@ -55,6 +56,17 @@ export function InvoiceDetail() {
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Status change failed.");
+    },
+  });
+
+  const stripeMutation = useMutation({
+    mutationFn: () => invoicesApi.createStripeCheckout(id!),
+    onSuccess: (result) => {
+      setCheckoutResult(result);
+      toast.success("Payment link generated.");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to generate payment link.");
     },
   });
 
@@ -164,7 +176,49 @@ export function InvoiceDetail() {
             Record payment
           </Button>
         )}
+
+        {["SENT", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status ?? "") && (
+          <Button
+            variant="outline"
+            onClick={() => stripeMutation.mutate()}
+            disabled={stripeMutation.isPending}
+            data-testid="invoice-stripe-checkout-btn"
+          >
+            <Link2 className="size-4" /> Generate payment link
+          </Button>
+        )}
       </div>
+
+      {checkoutResult?.url && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment link</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 text-sm">
+            <p className="text-muted-foreground">
+              Share this Stripe-hosted link with your client to collect payment.
+            </p>
+            <div className="flex items-center gap-2">
+              <code
+                className="flex-1 rounded bg-muted px-2 py-1 text-xs break-all"
+                data-testid="invoice-checkout-url"
+              >
+                {checkoutResult.url}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void navigator.clipboard.writeText(checkoutResult.url ?? "");
+                  toast.success("Link copied to clipboard.");
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
         <DialogContent>

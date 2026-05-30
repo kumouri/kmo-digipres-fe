@@ -26,6 +26,7 @@ import type {
   PipelineStage,
   Project,
   Quote,
+  RecurringInvoice,
   SavedReport,
   Task,
   TimeEntry,
@@ -1778,5 +1779,100 @@ export const contractStore = {
   },
   findByQuoteId(quoteId: string): Contract | undefined {
     return Array.from(contracts.values()).find((c) => c.quoteId === quoteId);
+  },
+};
+
+// --- Recurring Invoices (Phase E) --------------------------------------------
+
+export const SEED_RECURRING_INVOICE_ID = "ri000000-0000-0000-0000-000000000001";
+
+const seedRecurringInvoice: RecurringInvoice = {
+  id: SEED_RECURRING_INVOICE_ID,
+  tenantId: SMOKE_USER.tenantId,
+  templateName: "Monthly retainer",
+  rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+  currency: "USD",
+  status: "ACTIVE",
+  autoFinalize: false,
+  nextRunAt: "2026-06-01T00:00:00Z",
+  occurrenceCount: 3,
+  lineItems: [
+    {
+      description: "Monthly retainer fee",
+      quantity: 1,
+      unitPrice: 750,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 750,
+    },
+  ],
+  createdAt: "2026-03-01T00:00:00Z",
+  updatedAt: "2026-05-01T00:00:00Z",
+};
+
+const recurringInvoices = new Map<string, RecurringInvoice>([
+  [seedRecurringInvoice.id!, seedRecurringInvoice],
+]);
+
+export const recurringInvoiceStore = {
+  list(): RecurringInvoice[] {
+    return Array.from(recurringInvoices.values());
+  },
+  get(id: string): RecurringInvoice | undefined {
+    return recurringInvoices.get(id);
+  },
+  create(input: RecurringInvoice): RecurringInvoice {
+    const id = input.id ?? uuid();
+    const created: RecurringInvoice = {
+      ...input,
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      status: "ACTIVE",
+      occurrenceCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    recurringInvoices.set(id, created);
+    return created;
+  },
+  update(id: string, input: RecurringInvoice): RecurringInvoice | undefined {
+    if (!recurringInvoices.has(id)) return undefined;
+    const updated: RecurringInvoice = { ...recurringInvoices.get(id), ...input, id };
+    recurringInvoices.set(id, updated);
+    return updated;
+  },
+  delete(id: string): boolean {
+    return recurringInvoices.delete(id);
+  },
+  setStatus(id: string, status: string): RecurringInvoice | undefined {
+    const existing = recurringInvoices.get(id);
+    if (!existing) return undefined;
+    const updated: RecurringInvoice = {
+      ...existing,
+      status: status as RecurringInvoice["status"],
+      updatedAt: new Date().toISOString(),
+    };
+    recurringInvoices.set(id, updated);
+    return updated;
+  },
+  spawnNow(id: string, invoiceStore: { create: (inv: Invoice) => Invoice }): RecurringInvoice | undefined {
+    const existing = recurringInvoices.get(id);
+    if (!existing) return undefined;
+    // Spawn a DRAFT invoice (or SENT if autoFinalize)
+    const spawned = invoiceStore.create({
+      tenantId: SMOKE_USER.tenantId,
+      currency: existing.currency ?? "USD",
+      status: existing.autoFinalize ? "SENT" : "DRAFT",
+      lineItems: existing.lineItems ?? [],
+    } as Invoice);
+    const updated: RecurringInvoice = {
+      ...existing,
+      lastRunAt: new Date().toISOString(),
+      lastSpawnedInvoiceId: spawned.id,
+      occurrenceCount: (existing.occurrenceCount ?? 0) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    recurringInvoices.set(id, updated);
+    return updated;
   },
 };

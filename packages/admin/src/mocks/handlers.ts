@@ -26,6 +26,7 @@ import type {
   Payment,
   Project,
   Quote,
+  RecurringInvoice,
   SavedReport,
   SingleEmailCommunicationDTO,
   SummarizeBody,
@@ -58,6 +59,7 @@ import {
   milestoneStore,
   projectStore,
   quoteStore,
+  recurringInvoiceStore,
   savedReportStore,
   taskStore2,
   ticketStore,
@@ -1221,5 +1223,71 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const ok = contractStore.delete(params.id as string);
     return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Recurring Invoices (Phase E) -----------------------------------------
+  // NOTE: more-specific paths (status, spawn-now) before the wildcard /:id
+
+  http.post(`${API_BASE}/recurring-invoices/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status") ?? "";
+    const updated = recurringInvoiceStore.setStatus(params.id as string, status);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.post(`${API_BASE}/recurring-invoices/:id/spawn-now`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const updated = recurringInvoiceStore.spawnNow(params.id as string, invoiceStore);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/recurring-invoices`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(recurringInvoiceStore.list());
+  }),
+
+  http.get(`${API_BASE}/recurring-invoices/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = recurringInvoiceStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/recurring-invoices`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as RecurringInvoice;
+    const created = recurringInvoiceStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/recurring-invoices/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as RecurringInvoice;
+    const updated = recurringInvoiceStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/recurring-invoices/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = recurringInvoiceStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Stripe Checkout (Phase E) — additive endpoint on invoices -------------
+  http.post(`${API_BASE}/invoices/:id/stripe-checkout`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const invoiceId = params.id as string;
+    const found = invoiceStore.get(invoiceId);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    // Return a mock Stripe checkout URL
+    return HttpResponse.json({
+      url: `https://checkout.stripe.com/c/pay/mock_session_${invoiceId}`,
+      mode: "CHECKOUT_SESSION",
+      invoiceId,
+    });
   }),
 ];

@@ -122,6 +122,12 @@ const ContractTemplatesList = lazy(() =>
 const ContractTemplateDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ContractTemplateDetail })),
 );
+const RecurringInvoicesList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.RecurringInvoicesList })),
+);
+const RecurringInvoiceDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.RecurringInvoiceDetail })),
+);
 
 /** Wrapper: provides userId from auth context to TimesheetPage */
 function TimesheetPageRoute() {
@@ -221,6 +227,8 @@ export const router = createBrowserRouter([
                   { path: "contract-templates/:id", element: <ContractTemplateDetail /> },
                 ],
               },
+              { path: "recurring-invoices", element: <RecurringInvoicesList /> },
+              { path: "recurring-invoices/:id", element: <RecurringInvoiceDetail /> },
             ],
           },
         ],

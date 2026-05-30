@@ -348,3 +348,36 @@ export type ContractKind = "SOW" | "MSA" | "NDA" | "GENERIC";
 
 export const CONTRACT_STATUSES: ContractStatus[] = ["DRAFT", "SENT", "SIGNED", "VOIDED"];
 export const CONTRACT_KINDS: ContractKind[] = ["SOW", "MSA", "NDA", "GENERIC"];
+
+// =============================================================================
+// Phase E — Recurring Invoices + Stripe Checkout (generated aliases + value constants)
+// =============================================================================
+
+// --- Recurring Invoices ------------------------------------------------------
+
+export type RecurringInvoice = components["schemas"]["RecurringInvoice"];
+export type CheckoutResult = components["schemas"]["CheckoutResult"];
+
+export type RecurringInvoiceStatus = "ACTIVE" | "PAUSED" | "ENDED";
+export type PaymentTerms =
+  | "DUE_ON_RECEIPT"
+  | "NET_7"
+  | "NET_15"
+  | "NET_30"
+  | "NET_45"
+  | "NET_60";
+
+export const RECURRING_INVOICE_STATUSES: RecurringInvoiceStatus[] = [
+  "ACTIVE",
+  "PAUSED",
+  "ENDED",
+];
+
+export const PAYMENT_TERMS: PaymentTerms[] = [
+  "DUE_ON_RECEIPT",
+  "NET_7",
+  "NET_15",
+  "NET_30",
+  "NET_45",
+  "NET_60",
+];
