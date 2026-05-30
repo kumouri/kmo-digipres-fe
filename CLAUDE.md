@@ -30,6 +30,15 @@ Six-PR program (#23–#27, #29) making the UI tenant-admin-ready. Plan: `~/.clau
 - **Mocks/tests:** `SMOKE_STAFF_USER` + token added; `/auth/me` resolves the user from the bearer token. Smoke suite is **84 specs**.
 - **Deferred fast-follow:** showing the real tenant *business name* needs a small `kmo-digipres-be` change — add `tenantName` (= `Tenant.displayName`) to `/auth/me` + `LoginResponse`, regen `docs/api/openapi.json`, then FE `npm run gen:api` + expose on `AuthContextValue` + render in `AppShell`. The interim only removed the raw-UUID leak. (Two console-hygiene fixes — timer-query, UserMenu forwardRef — shipped separately in #28.)
 
+## Admin copy & jargon pass (SHIPPED 2026-05-29)
+
+Follow-on to the tenant-admin polish — the deferred **Phase-5a content/voice work**: made every admin surface read like a finished product for a non-technical tenant admin (brand-voice §3.2 warm-operational). Owner-collaborative; voice patterns approved by the owner before implementation. Six domain-scoped PRs, merge-commits, all CI-green: **#32** Core CRM (Contacts/Companies/Activities) · **#33** Billing (Quotes/Invoices) · **#34** Service hub (Tickets/KB/Inbox) · **#35** Projects/Tasks · **#36** Time & Expenses · **#37** Insights & admin (Reports/Dashboards/Field-Defs/Audit/Ask-AI).
+
+- **What changed (user-visible JSX copy only):** dropped "tenant"/"your tenant"/"CRM data" from section helper sentences; replaced developer-note dialog descriptions ("Persisted via `POST /api/…`", "Saves via `PUT …`") with warm one-liners; **"entity" / "CRM entities" → "record"**; de-jargoned "SLA"/"Op"/"Payload"/"(D9)"/"(ISO datetime)" and similar leaks; added the missing Timesheet helper.
+- **Status/enum labels — shared display-only map:** `packages/crm-components/src/admin/labels.ts` (`humanize()` + `labelFor()` + per-domain `Record`s). Renders friendly labels for raw enums (`QUALIFIED`→"Qualified", `UNBILLED`→"Not billed", inbox `OPEN`→"Unassigned", `TODO`→"To do", `BOOL`→"Yes / No"). Status-transition buttons read "Mark as <label>". **Display-only — never changes enum values, the API contract, query params, or `data-testid`s.** When a new backend enum surfaces, extend this map rather than printing `RAW_CAPS`.
+- **Out of scope (left intact):** empty-state `emptyMessage`s (already standardized); `com.kumouri`/`digipres` identifiers; code comments; `data-testid`s. Smoke stayed **84 specs** (a handful of assertions that keyed on humanized status text were updated in lockstep — e.g. `toContainText("UPDATE")` → `"Updated"`).
+- **Known follow-up (data, not copy):** the Activities "Subject" column still shows a raw `subjectId` UUID after the (now-humanized) record type — resolving it to the linked record's name needs a lookup, deferred.
+
 ## Phase D: Time & Expenses (SHIPPED)
 
 Phase D adds the time-tracking and expense-management vertical:
