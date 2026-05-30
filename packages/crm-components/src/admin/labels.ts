@@ -131,3 +131,16 @@ export const TASK_PRIORITY_LABELS: Record<string, string> = {
   HIGH: "High",
   URGENT: "Urgent",
 };
+
+// --- Time & Expenses --------------------------------------------------------
+
+export const EXPENSE_APPROVAL_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+export const BILLING_STATUS_LABELS: Record<string, string> = {
+  UNBILLED: "Not billed",
+  INVOICED: "Invoiced",
+};
