@@ -101,3 +101,33 @@ export const INBOX_STATUS_LABELS: Record<string, string> = {
   CLAIMED: "Assigned",
   CLOSED: "Closed",
 };
+
+// --- Projects / Milestones / Tasks ------------------------------------------
+
+export const PROJECT_STATUS_LABELS: Record<string, string> = {
+  PLANNING: "Planning",
+  ACTIVE: "Active",
+  ON_HOLD: "On hold",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+export const MILESTONE_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  IN_PROGRESS: "In progress",
+  COMPLETED: "Completed",
+};
+
+export const TASK_STATUS_LABELS: Record<string, string> = {
+  TODO: "To do",
+  IN_PROGRESS: "In progress",
+  BLOCKED: "Blocked",
+  DONE: "Done",
+};
+
+export const TASK_PRIORITY_LABELS: Record<string, string> = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  URGENT: "Urgent",
+};

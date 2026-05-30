@@ -16,6 +16,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useProjectsApi } from "../../hooks/useProjectsApi";
 import { Badge } from "../../primitives/badge";
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../types/api";
+import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS, labelFor } from "../labels";
 
 const STATUS_VARIANT: Record<TaskStatus, "default" | "secondary" | "muted" | "destructive"> = {
   TODO: "muted",
@@ -123,7 +124,7 @@ function DroppableColumn({ status, count, children }: DroppableColumnProps) {
       data-testid={`kanban-column-${status}`}
     >
       <header className="flex items-center justify-between">
-        <Badge variant={STATUS_VARIANT[status]}>{status}</Badge>
+        <Badge variant={STATUS_VARIANT[status]}>{labelFor(TASK_STATUS_LABELS, status)}</Badge>
         <span className="text-xs text-muted-foreground">{count}</span>
       </header>
       <div className="flex flex-col gap-2">{children}</div>
@@ -158,7 +159,9 @@ function DraggableTaskCard({ task }: TaskCardProps) {
     >
       <span className="text-sm font-medium">{task.title ?? "Untitled task"}</span>
       {task.priority ? (
-        <span className="text-xs text-muted-foreground">{task.priority}</span>
+        <span className="text-xs text-muted-foreground">
+          {labelFor(TASK_PRIORITY_LABELS, task.priority)}
+        </span>
       ) : null}
     </div>
   );
