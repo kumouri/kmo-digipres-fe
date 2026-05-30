@@ -10,6 +10,8 @@ import type {
   BookSlotRequest,
   CompanyDTO,
   ContactDTO,
+  Contract,
+  ContractTemplate,
   Dashboard,
   DraftReplyBody,
   DealDTO,
@@ -44,6 +46,8 @@ import {
   bookingStore,
   companyStore,
   contactStore,
+  contractStore,
+  contractTemplateStore,
   dashboardStore,
   dealStore,
   expenseStore,
@@ -1110,5 +1114,111 @@ export const handlers = [
     const subjectType = url.searchParams.get("subjectType") ?? "";
     const subjectId = url.searchParams.get("subjectId") ?? "";
     return HttpResponse.json(attachmentStore.listFor(subjectType, subjectId));
+  }),
+
+  // --- Contract Templates (Phase F) -----------------------------------------
+
+  http.get(`${API_BASE}/contract-templates`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(contractTemplateStore.list());
+  }),
+
+  http.get(`${API_BASE}/contract-templates/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = contractTemplateStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/contract-templates`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as ContractTemplate;
+    const created = contractTemplateStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/contract-templates/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as ContractTemplate;
+    const updated = contractTemplateStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/contract-templates/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = contractTemplateStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Contracts (Phase F) --------------------------------------------------
+  // NOTE: more-specific paths (send, status, pdf, spawn) come before the wildcard /:id
+
+  http.post(`${API_BASE}/contracts/:id/send`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = contractStore.send(params.id as string);
+    if (!result) return new HttpResponse(null, { status: 409 });
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/contracts/:id/status`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const target = url.searchParams.get("target") ?? "";
+    const updated = contractStore.setStatus(params.id as string, target);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.get(`${API_BASE}/contracts/:id/pdf`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return new HttpResponse("PDF_STUB", {
+      status: 200,
+      headers: { "Content-Type": "application/pdf" },
+    });
+  }),
+
+  // spawn-contract from a quote (idempotent)
+  http.post(`${API_BASE}/contracts/quotes/:quoteId/spawn-contract`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const quote = quoteStore.get(params.quoteId as string);
+    if (!quote) return new HttpResponse(null, { status: 404 });
+    const existing = contractStore.findByQuoteId(params.quoteId as string);
+    if (existing) return HttpResponse.json(existing, { status: 200 });
+    const created = contractStore.spawnFromQuote(quote);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/contracts`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(contractStore.list());
+  }),
+
+  http.get(`${API_BASE}/contracts/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = contractStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
+  http.post(`${API_BASE}/contracts`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Contract;
+    const created = contractStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/contracts/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Contract;
+    const updated = contractStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/contracts/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = contractStore.delete(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
   }),
 ];

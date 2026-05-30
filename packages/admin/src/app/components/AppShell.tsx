@@ -8,6 +8,7 @@ import {
   Building2,
   ClipboardList,
   Clock,
+  FileSignature,
   FileText,
   FolderKanban,
   Inbox,
@@ -61,6 +62,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/projects", label: "Projects", icon: FolderKanban },
   { to: "/timesheet", label: "Timesheet", icon: Clock },
   { to: "/expenses", label: "Expenses", icon: ReceiptText },
+  { to: "/contracts", label: "Contracts", icon: FileSignature },
+  { to: "/contract-templates", label: "Contract Templates", icon: FileText, adminOnly: true },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>

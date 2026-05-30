@@ -110,6 +110,18 @@ const ExpensesListInner = lazy(() =>
 const ExpenseDetailInner = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ExpenseDetail })),
 );
+const ContractsList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ContractsList })),
+);
+const ContractDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ContractDetail })),
+);
+const ContractTemplatesList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ContractTemplatesList })),
+);
+const ContractTemplateDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ContractTemplateDetail })),
+);
 
 /** Wrapper: provides userId from auth context to TimesheetPage */
 function TimesheetPageRoute() {
@@ -200,6 +212,15 @@ export const router = createBrowserRouter([
               { path: "timesheet", element: <TimesheetPageRoute /> },
               { path: "expenses", element: <ExpensesListRoute /> },
               { path: "expenses/:id", element: <ExpenseDetailRoute /> },
+              { path: "contracts", element: <ContractsList /> },
+              { path: "contracts/:id", element: <ContractDetail /> },
+              {
+                element: <RequireAdmin />,
+                children: [
+                  { path: "contract-templates", element: <ContractTemplatesList /> },
+                  { path: "contract-templates/:id", element: <ContractTemplateDetail /> },
+                ],
+              },
             ],
           },
         ],

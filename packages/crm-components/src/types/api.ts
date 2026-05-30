@@ -326,3 +326,18 @@ export const EXPENSE_APPROVAL_STATUSES: ExpenseApprovalStatus[] = [
   "APPROVED",
   "REJECTED",
 ];
+
+// =============================================================================
+// Phase F — Contracts / ContractTemplates (generated aliases + value constants)
+// =============================================================================
+
+// --- Contracts ---------------------------------------------------------------
+
+export type Contract = components["schemas"]["Contract"];
+export type ContractTemplate = components["schemas"]["ContractTemplate"];
+
+export type ContractStatus = "DRAFT" | "SENT" | "SIGNED" | "VOIDED";
+export type ContractKind = "SOW" | "MSA" | "NDA" | "GENERIC";
+
+export const CONTRACT_STATUSES: ContractStatus[] = ["DRAFT", "SENT", "SIGNED", "VOIDED"];
+export const CONTRACT_KINDS: ContractKind[] = ["SOW", "MSA", "NDA", "GENERIC"];
