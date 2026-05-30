@@ -39,6 +39,31 @@ Follow-on to the tenant-admin polish — the deferred **Phase-5a content/voice w
 - **Out of scope (left intact):** empty-state `emptyMessage`s (already standardized); `com.kumouri`/`digipres` identifiers; code comments; `data-testid`s. Smoke stayed **84 specs** (a handful of assertions that keyed on humanized status text were updated in lockstep — e.g. `toContainText("UPDATE")` → `"Updated"`).
 - **Known follow-up (data, not copy):** the Activities "Subject" column still shows a raw `subjectId` UUID after the (now-humanized) record type — resolving it to the linked record's name needs a lookup, deferred.
 
+## Phase F: Contracts (SHIPPED 2026-05-30)
+
+Admin UI for the backend contracts vertical (BE Phase F). PR **#40**; smoke 84→101.
+
+| Area | Route | API surface |
+|---|---|---|
+| Contracts | `/contracts`, `/contracts/:id` | GET/POST/PUT/DELETE /contracts; POST /contracts/:id/send (DRAFT→SENT via Documenso, idempotent); POST /contracts/:id/status (e.g. VOID); GET /contracts/:id/pdf; POST /contracts/quotes/:quoteId/spawn-contract |
+| Contract Templates (admin-only, `<RequireAdmin>`) | `/contract-templates`, `/contract-templates/:id` | CRUD /contract-templates — Mustache `bodyTemplate` (plain textarea editor); `kind` MSA/SOW/NDA/OTHER; one active per (tenant, kind) |
+
+- **New value constants** in `types/api.ts`: `CONTRACT_STATUSES` `["DRAFT","SENT","SIGNED","VOIDED"]`, `CONTRACT_KINDS` `["MSA","SOW","NDA","OTHER"]`.
+- Lifecycle DRAFT→SENT→SIGNED (SIGNED only via the Documenso webhook, immutable in UI); DRAFT|SENT→VOIDED. Status badge carries `data-testid="contract-status"` (assert via `toHaveText`, not `getByText` — avoids strict-mode collision with "Sent at:" + the success toast).
+- **Also healed a pre-existing `main` type-drift** the spec re-sync surfaced: `ActivityDTO` no longer carries `subjectName`; `ActivitiesList.tsx` + the mock store now use `subjectId` (resolves the type half of the "Subject column shows raw id" follow-up; the human-name lookup is still deferred).
+
+## Phase E: Recurring Invoices + Stripe Checkout (SHIPPED 2026-05-30)
+
+Admin UI for the backend recurring-billing + Stripe money-rails vertical (BE Phase E). PR **#41**; smoke 101→116.
+
+| Area | Route | API surface |
+|---|---|---|
+| Recurring Invoices | `/recurring-invoices`, `/recurring-invoices/:id` | GET/POST/PUT/DELETE /recurring-invoices; POST /recurring-invoices/:id/status (pause/resume/end); POST /recurring-invoices/:id/spawn-now |
+| Stripe Checkout | "Generate payment link" on `InvoiceDetail` | POST /invoices/:id/stripe-checkout → copyable Checkout URL |
+
+- **New value constants** in `types/api.ts`: `RECURRING_INVOICE_STATUSES`, `PAYMENT_TERMS`; labels in `admin/labels.ts`.
+- Cadence is an RFC-5545 RRULE string (plain text field + hint). Status badge `data-testid="recurring-status"`. Stripe-checkout button `data-testid="invoice-stripe-checkout-btn"`, URL `data-testid="invoice-checkout-url"` (additive on the existing Invoices feature).
+
 ## Phase D: Time & Expenses (SHIPPED)
 
 Phase D adds the time-tracking and expense-management vertical:
@@ -104,7 +129,7 @@ Phase B shipped the following 9 new admin areas on top of the Phase A baseline (
 
 **Base URL**: `/api/v1` (set in `packages/admin/src/app/api/client.ts` line 12; MSW handlers use same constant in `handlers.ts`).
 
-**Remaining deferred (Tier-2)**: Stripe / Portal auth / Sequences / GDPR compliance (DSR, consent, retention) / Automation / Webhooks / Home-services / QuickBooks / Restaurant / Salon-Spa / Square POS / portal-authenticated components (PortalProfile, PortalInvoices, PortalActivities, SupportTicketForm). Deferred until a client engagement pulls them into scope.
+**Remaining deferred (Tier-2)**: Portal auth / Sequences / GDPR compliance (DSR, consent, retention) / Automation / Webhooks / Home-services / QuickBooks / Restaurant / Salon-Spa / Square POS / portal-authenticated components (PortalProfile, PortalInvoices, PortalActivities, SupportTicketForm). Deferred until a client engagement pulls them into scope. (Admin **Stripe Checkout** link generation + **recurring invoices** shipped in Phase E; admin **contracts/templates** in Phase F. The client-facing portal payment surface is still deferred under "portal-authenticated components".)
 
 When adding new resource pages, derive `types/api.ts` types from the generated `openapi.ts` aliases (`components["schemas"]["X"]`), not from runtime responses. Use hand-written narrow interfaces only when generated types are too permissive for strict call sites.
 
