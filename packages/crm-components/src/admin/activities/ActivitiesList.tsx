@@ -61,7 +61,7 @@ const columns: Column<ActivityDTO>[] = [
     header: "Subject",
     cell: (a) => (
       <span className="text-xs text-muted-foreground">
-        {labelFor(SUBJECT_TYPE_LABELS, a.subjectType, "?")} / {a.subjectId ?? "—"}
+        {labelFor(SUBJECT_TYPE_LABELS, a.subjectType, "?")} / {a.subjectName ?? a.subjectId ?? "—"}
       </span>
     ),
   },
