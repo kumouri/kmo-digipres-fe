@@ -115,6 +115,37 @@ test("STAFF-only user: admin nav hidden and admin routes redirect to dashboard",
   await expect(page).toHaveURL("http://localhost:5273/");
 });
 
+test("CONTRACTOR sees only their own surfaces; other nav hidden; deep-links redirect", async ({
+  page,
+}) => {
+  await loginAs(page, "contractor@example.test");
+
+  // Scoped-down nav: only Dashboard + My Projects / Timesheet / Expenses.
+  await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "My Projects" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "My Timesheet" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "My Expenses" })).toBeVisible();
+
+  // Everything else is hidden — including the admin-only Team directory.
+  await expect(page.getByRole("link", { name: "Contacts" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Deals" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Invoices" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Team" })).toHaveCount(0);
+
+  // Their own routes still work.
+  await page.getByRole("link", { name: "My Projects" }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+
+  // Deep-linking a hidden route bounces back to the dashboard.
+  await page.goto("/contacts");
+  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page.getByTestId("dashboard")).toBeVisible();
+  await page.goto("/team");
+  await expect(page).toHaveURL("http://localhost:5273/");
+  await page.goto("/deals");
+  await expect(page).toHaveURL("http://localhost:5273/");
+});
+
 // --- Mobile navigation -----------------------------------------------------
 
 test.describe("mobile navigation", () => {

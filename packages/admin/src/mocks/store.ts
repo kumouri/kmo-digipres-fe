@@ -25,10 +25,13 @@ import type {
   Payment,
   PipelineStage,
   Project,
+  ProjectAssignment,
   Quote,
   RecurringInvoice,
   SavedReport,
   Task,
+  TeamMember,
+  TeamMemberRequest,
   TimeEntry,
   Ticket,
   TicketComment,
@@ -75,6 +78,23 @@ export const SMOKE_STAFF_USER: User = {
 };
 
 export const SMOKE_STAFF_TOKEN = "msw-mock-jwt-token-staff";
+
+// Contractor user (STAFF + CONTRACTOR, no ADMIN) — exercises the scoped-down
+// nav + the RequireNotContractor redirects in smoke. Same tenant + password.
+export const SMOKE_CONTRACTOR_USER: User = {
+  id: "99999999-9999-9999-9999-999999999999",
+  tenantId: SMOKE_USER.tenantId,
+  email: "contractor@example.test",
+  displayName: "Jordan Rivera",
+  tenantName: SMOKE_TENANT_NAME,
+  roles: ["STAFF", "CONTRACTOR"],
+  status: "ACTIVE",
+  version: 0,
+  createdAt: "2026-05-14T00:00:00Z",
+  updatedAt: "2026-05-14T00:00:00Z",
+};
+
+export const SMOKE_CONTRACTOR_TOKEN = "msw-mock-jwt-token-contractor";
 
 function uuid(): string {
   // Stable-enough UUID for mock state.
@@ -1874,5 +1894,197 @@ export const recurringInvoiceStore = {
     };
     recurringInvoices.set(id, updated);
     return updated;
+  },
+};
+
+// --- Team (contractor / time-management Phase 1) -----------------------------
+
+// Stable seed IDs for smoke determinism.
+export const SEED_OWNER_MEMBER_ID = SMOKE_USER.id;
+export const SEED_CONTRACTOR_MEMBER_ID = SMOKE_CONTRACTOR_USER.id;
+
+const seedTeam: TeamMember[] = [
+  {
+    id: SEED_OWNER_MEMBER_ID,
+    email: SMOKE_USER.email,
+    displayName: SMOKE_USER.displayName,
+    roles: ["STAFF", "ADMIN"],
+    status: "ACTIVE",
+    portal: "ADMIN",
+    createdAt: "2026-05-01T00:00:00Z",
+    updatedAt: "2026-05-01T00:00:00Z",
+  },
+  {
+    id: SEED_CONTRACTOR_MEMBER_ID,
+    email: SMOKE_CONTRACTOR_USER.email,
+    displayName: SMOKE_CONTRACTOR_USER.displayName,
+    roles: ["STAFF", "CONTRACTOR"],
+    status: "ACTIVE",
+    portal: "ADMIN",
+    defaultBillRate: 150,
+    defaultCostRate: 90,
+    createdAt: "2026-05-01T00:00:00Z",
+    updatedAt: "2026-05-01T00:00:00Z",
+  },
+];
+
+const team = new Map<string, TeamMember>(seedTeam.map((m) => [m.id!, m]));
+
+export const teamStore = {
+  list(): TeamMember[] {
+    return Array.from(team.values());
+  },
+  get(id: string): TeamMember | undefined {
+    return team.get(id);
+  },
+  create(input: TeamMemberRequest): TeamMember {
+    const id = uuid();
+    const roles =
+      input.roles && input.roles.length > 0 ? input.roles : ["STAFF"];
+    // CONTRACTOR implies STAFF; no password ⇒ INVITED, password ⇒ ACTIVE.
+    const normalizedRoles = roles.includes("CONTRACTOR")
+      ? Array.from(new Set(["STAFF", ...roles]))
+      : roles;
+    const status = input.status ?? (input.password ? "ACTIVE" : "INVITED");
+    const created: TeamMember = {
+      id,
+      email: input.email,
+      displayName: input.displayName,
+      roles: normalizedRoles,
+      status,
+      portal: "ADMIN",
+      defaultBillRate: input.defaultBillRate,
+      defaultCostRate: input.defaultCostRate,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    team.set(id, created);
+    return created;
+  },
+  update(id: string, input: TeamMemberRequest): TeamMember | undefined {
+    const existing = team.get(id);
+    if (!existing) return undefined;
+    const roles =
+      input.roles && input.roles.length > 0 ? input.roles : existing.roles;
+    const normalizedRoles =
+      roles?.includes("CONTRACTOR")
+        ? Array.from(new Set(["STAFF", ...roles]))
+        : roles;
+    const updated: TeamMember = {
+      ...existing,
+      email: input.email ?? existing.email,
+      displayName: input.displayName ?? existing.displayName,
+      roles: normalizedRoles,
+      status: input.status ?? existing.status,
+      defaultBillRate:
+        input.defaultBillRate ?? existing.defaultBillRate,
+      defaultCostRate:
+        input.defaultCostRate ?? existing.defaultCostRate,
+      updatedAt: new Date().toISOString(),
+    };
+    team.set(id, updated);
+    return updated;
+  },
+  disable(id: string): TeamMember | undefined {
+    const existing = team.get(id);
+    if (!existing) return undefined;
+    const updated: TeamMember = {
+      ...existing,
+      status: "DISABLED",
+      updatedAt: new Date().toISOString(),
+    };
+    team.set(id, updated);
+    return updated;
+  },
+};
+
+// --- Project assignments -----------------------------------------------------
+
+const seedAssignment: ProjectAssignment = {
+  id: "as000000-0000-0000-0000-000000000001",
+  tenantId: SMOKE_USER.tenantId,
+  projectId: SEED_PROJECT_ID,
+  userId: SEED_CONTRACTOR_MEMBER_ID,
+  billRateOverride: 160,
+  costRateOverride: 95,
+  role: "Engineer",
+  active: true,
+  createdAt: "2026-05-02T00:00:00Z",
+  updatedAt: "2026-05-02T00:00:00Z",
+};
+
+const assignments = new Map<string, ProjectAssignment>([
+  [seedAssignment.id!, seedAssignment],
+]);
+
+export const assignmentStore = {
+  listByProject(projectId: string): ProjectAssignment[] {
+    return Array.from(assignments.values()).filter(
+      (a) => a.projectId === projectId && a.active !== false,
+    );
+  },
+  // Idempotent on (projectId, userId): a repeat add reactivates / returns the
+  // existing row (200) rather than creating a duplicate (201).
+  create(
+    projectId: string,
+    input: { userId?: string; billRateOverride?: number; costRateOverride?: number; role?: string },
+  ): { assignment: ProjectAssignment; created: boolean } {
+    const existing = Array.from(assignments.values()).find(
+      (a) => a.projectId === projectId && a.userId === input.userId,
+    );
+    if (existing) {
+      const reactivated: ProjectAssignment = {
+        ...existing,
+        active: true,
+        billRateOverride: input.billRateOverride ?? existing.billRateOverride,
+        costRateOverride: input.costRateOverride ?? existing.costRateOverride,
+        role: input.role ?? existing.role,
+        updatedAt: new Date().toISOString(),
+      };
+      assignments.set(existing.id!, reactivated);
+      return { assignment: reactivated, created: false };
+    }
+    const id = uuid();
+    const created: ProjectAssignment = {
+      id,
+      tenantId: SMOKE_USER.tenantId,
+      projectId,
+      userId: input.userId,
+      billRateOverride: input.billRateOverride,
+      costRateOverride: input.costRateOverride,
+      role: input.role,
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    assignments.set(id, created);
+    return { assignment: created, created: true };
+  },
+  update(
+    id: string,
+    input: { billRateOverride?: number; costRateOverride?: number; role?: string },
+  ): ProjectAssignment | undefined {
+    const existing = assignments.get(id);
+    if (!existing) return undefined;
+    const updated: ProjectAssignment = {
+      ...existing,
+      billRateOverride: input.billRateOverride ?? existing.billRateOverride,
+      costRateOverride: input.costRateOverride ?? existing.costRateOverride,
+      role: input.role ?? existing.role,
+      updatedAt: new Date().toISOString(),
+    };
+    assignments.set(id, updated);
+    return updated;
+  },
+  // Soft delete: active=false (logged time stays attributed).
+  remove(id: string): boolean {
+    const existing = assignments.get(id);
+    if (!existing) return false;
+    assignments.set(id, {
+      ...existing,
+      active: false,
+      updatedAt: new Date().toISOString(),
+    });
+    return true;
   },
 };

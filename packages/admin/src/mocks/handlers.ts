@@ -31,17 +31,21 @@ import type {
   SingleEmailCommunicationDTO,
   SummarizeBody,
   Task,
+  TeamMemberRequest,
   TimeEntry,
   Ticket,
 } from "@kmosf/crm-components";
 import type { components } from "@kmosf/crm-components";
 import {
+  SMOKE_CONTRACTOR_TOKEN,
+  SMOKE_CONTRACTOR_USER,
   SMOKE_PASSWORD,
   SMOKE_STAFF_TOKEN,
   SMOKE_STAFF_USER,
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  assignmentStore,
   attachmentStore,
   auditStore,
   bookingStore,
@@ -62,6 +66,7 @@ import {
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
+  teamStore,
   ticketStore,
   timeEntryStore,
 } from "./store";
@@ -88,7 +93,9 @@ export const handlers = [
         ? { user: SMOKE_USER, token: SMOKE_TOKEN }
         : body.email === SMOKE_STAFF_USER.email
           ? { user: SMOKE_STAFF_USER, token: SMOKE_STAFF_TOKEN }
-          : null;
+          : body.email === SMOKE_CONTRACTOR_USER.email
+            ? { user: SMOKE_CONTRACTOR_USER, token: SMOKE_CONTRACTOR_TOKEN }
+            : null;
     if (account && body.password === SMOKE_PASSWORD) {
       const res: LoginResponse = {
         token: account.token,
@@ -108,7 +115,11 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const header = request.headers.get("authorization") ?? "";
     const me =
-      header === `Bearer ${SMOKE_STAFF_TOKEN}` ? SMOKE_STAFF_USER : SMOKE_USER;
+      header === `Bearer ${SMOKE_STAFF_TOKEN}`
+        ? SMOKE_STAFF_USER
+        : header === `Bearer ${SMOKE_CONTRACTOR_TOKEN}`
+          ? SMOKE_CONTRACTOR_USER
+          : SMOKE_USER;
     return HttpResponse.json(me);
   }),
 
@@ -820,6 +831,78 @@ export const handlers = [
     if (existing) return HttpResponse.json(existing, { status: 200 });
     const created = projectStore.createFromDeal(deal);
     return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // --- Project assignments (contractor / time-mgmt Phase 1) ------------------
+
+  http.get(`${API_BASE}/projects/:projectId/assignments`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(
+      assignmentStore.listByProject(params.projectId as string),
+    );
+  }),
+
+  // POST is @IdempotentRoute on the BE: 201 new / 200 existing. Mirror that.
+  http.post(`${API_BASE}/projects/:projectId/assignments`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as {
+      userId?: string;
+      billRateOverride?: number;
+      costRateOverride?: number;
+      role?: string;
+    };
+    const { assignment, created } = assignmentStore.create(
+      params.projectId as string,
+      body,
+    );
+    return HttpResponse.json(assignment, { status: created ? 201 : 200 });
+  }),
+
+  http.put(`${API_BASE}/projects/:projectId/assignments/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as {
+      billRateOverride?: number;
+      costRateOverride?: number;
+      role?: string;
+    };
+    const updated = assignmentStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API_BASE}/projects/:projectId/assignments/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const ok = assignmentStore.remove(params.id as string);
+    return new HttpResponse(null, { status: ok ? 204 : 404 });
+  }),
+
+  // --- Team (contractor / time-mgmt Phase 1) ---------------------------------
+
+  http.get(`${API_BASE}/team`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(teamStore.list());
+  }),
+
+  http.post(`${API_BASE}/team`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as TeamMemberRequest;
+    const created = teamStore.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/team/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as TeamMemberRequest;
+    const updated = teamStore.update(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  http.post(`${API_BASE}/team/:id/disable`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const updated = teamStore.disable(params.id as string);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
   }),
 
   // --- Milestones (Phase C) --------------------------------------------------

@@ -132,6 +132,47 @@ test("dragging a task card to another column moves the task", async ({ page }) =
   await expect(inProgressColumn.getByTestId("task-card")).toHaveCount(2);
 });
 
+// Contractor / time-mgmt Phase 1: project Team tab — assign + remove a person,
+// and the existing tabs keep working.
+test("project Team tab assigns a person, sets a rate, then removes them", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/projects");
+  await page.getByTestId("project-row-name").first().click();
+  await expect(page.getByTestId("project-detail")).toBeVisible();
+
+  // Open the Team tab — the seeded contractor (Jordan Rivera) is already on it.
+  await page.getByTestId("tab-team").click();
+  await expect(page.getByTestId("add-assignment")).toBeVisible();
+  const rowsBefore = await page.getByTestId("assignment-row").count();
+  expect(rowsBefore).toBeGreaterThanOrEqual(1);
+
+  // Pick the first available teammate from the picker and set a bill rate.
+  await page.getByTestId("assignment-user").click();
+  await page.getByRole("option").first().click();
+  await page.getByTestId("assignment-bill-rate").fill("200");
+  await page.getByTestId("add-assignment").click();
+
+  // A new assignment row appears.
+  await expect(page.getByTestId("assignment-row")).toHaveCount(rowsBefore + 1);
+
+  // Remove the newly added assignee (last row) via the confirm dialog.
+  await page
+    .getByTestId("assignment-row")
+    .last()
+    .getByTestId("remove-assignment")
+    .click();
+  await page.getByTestId("confirm-remove-assignment").click();
+  await expect(page.getByTestId("assignment-row")).toHaveCount(rowsBefore);
+
+  // The other tabs still render (no regression from adding the Team tab).
+  await page.getByTestId("tab-milestones").click();
+  await expect(page.getByTestId("milestones-list")).toBeVisible();
+  await page.getByTestId("tab-tasks").click();
+  await expect(page.getByTestId("task-kanban")).toBeVisible();
+});
+
 // AC-C8: WON deal "Convert to Project" button navigates to a project
 test("WON deal 'Convert to Project' button navigates to the project", async ({
   page,
