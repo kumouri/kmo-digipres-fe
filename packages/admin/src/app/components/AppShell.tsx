@@ -8,6 +8,7 @@ import {
   Building2,
   ClipboardList,
   Clock,
+  Contact,
   FileSignature,
   FileText,
   FolderKanban,
@@ -36,36 +37,41 @@ import {
   DialogTrigger,
 } from "@kmosf/crm-components";
 import { useAuth } from "../auth/useAuth";
-import { isAdmin } from "../auth/roles";
+import { isAdmin, isContractor } from "../auth/roles";
 
 interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
+  /** Hide this item entirely from a scoped-down contractor. */
+  hideForContractor?: boolean;
+  /** Label shown to a contractor when the generic label would be wrong. */
+  contractorLabel?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/contacts", label: "Contacts", icon: Users },
-  { to: "/companies", label: "Companies", icon: Building2 },
-  { to: "/deals", label: "Deals", icon: Target },
-  { to: "/activities", label: "Activities", icon: Activity },
-  { to: "/quotes", label: "Quotes", icon: FileText },
-  { to: "/invoices", label: "Invoices", icon: Receipt },
-  { to: "/tickets", label: "Tickets", icon: TicketIcon },
-  { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
-  { to: "/inbox", label: "Inbox", icon: Inbox },
+  { to: "/contacts", label: "Contacts", icon: Users, hideForContractor: true },
+  { to: "/companies", label: "Companies", icon: Building2, hideForContractor: true },
+  { to: "/deals", label: "Deals", icon: Target, hideForContractor: true },
+  { to: "/activities", label: "Activities", icon: Activity, hideForContractor: true },
+  { to: "/quotes", label: "Quotes", icon: FileText, hideForContractor: true },
+  { to: "/invoices", label: "Invoices", icon: Receipt, hideForContractor: true },
+  { to: "/tickets", label: "Tickets", icon: TicketIcon, hideForContractor: true },
+  { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen, hideForContractor: true },
+  { to: "/inbox", label: "Inbox", icon: Inbox, hideForContractor: true },
+  { to: "/team", label: "Team", icon: Contact, adminOnly: true },
   { to: "/field-definitions", label: "Field Definitions", icon: Settings2, adminOnly: true },
   { to: "/audit", label: "Audit Log", icon: ClipboardList, adminOnly: true },
-  { to: "/reports", label: "Reports", icon: BarChart2 },
-  { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/timesheet", label: "Timesheet", icon: Clock },
-  { to: "/expenses", label: "Expenses", icon: ReceiptText },
-  { to: "/contracts", label: "Contracts", icon: FileSignature },
+  { to: "/reports", label: "Reports", icon: BarChart2, hideForContractor: true },
+  { to: "/dashboards", label: "Dashboards", icon: LayoutGrid, hideForContractor: true },
+  { to: "/projects", label: "Projects", icon: FolderKanban, contractorLabel: "My Projects" },
+  { to: "/timesheet", label: "Timesheet", icon: Clock, contractorLabel: "My Timesheet" },
+  { to: "/expenses", label: "Expenses", icon: ReceiptText, contractorLabel: "My Expenses" },
+  { to: "/contracts", label: "Contracts", icon: FileSignature, hideForContractor: true },
   { to: "/contract-templates", label: "Contract Templates", icon: FileText, adminOnly: true },
-  { to: "/recurring-invoices", label: "Recurring Invoices", icon: RefreshCw },
+  { to: "/recurring-invoices", label: "Recurring Invoices", icon: RefreshCw, hideForContractor: true },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -79,13 +85,15 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 function NavList({
   items,
   onNavigate,
+  contractor,
 }: {
   items: NavItem[];
   onNavigate?: () => void;
+  contractor?: boolean;
 }) {
   return (
     <>
-      {items.map(({ to, label, icon: Icon }) => (
+      {items.map(({ to, label, contractorLabel, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -93,7 +101,8 @@ function NavList({
           onClick={onNavigate}
           className={navLinkClass}
         >
-          <Icon className="size-4" /> {label}
+          <Icon className="size-4" />{" "}
+          {contractor && contractorLabel ? contractorLabel : label}
         </NavLink>
       ))}
     </>
@@ -103,9 +112,14 @@ function NavList({
 export function AppShell() {
   const { user, roles, tenantName } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const navItems = NAV_ITEMS.filter(
-    (item) => !item.adminOnly || isAdmin(roles),
-  );
+  const contractor = isContractor(roles);
+  const navItems = NAV_ITEMS.filter((item) => {
+    // A scoped-down contractor sees only their own working surfaces.
+    if (contractor && item.hideForContractor) return false;
+    // Admin-only items stay admin-only (a contractor is never admin).
+    if (item.adminOnly && !isAdmin(roles)) return false;
+    return true;
+  });
   return (
     <div className="flex min-h-screen bg-muted/40">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
@@ -125,7 +139,7 @@ export function AppShell() {
           </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-2 py-4" data-testid="sidebar-nav">
-          <NavList items={navItems} />
+          <NavList items={navItems} contractor={contractor} />
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -158,6 +172,7 @@ export function AppShell() {
                 >
                   <NavList
                     items={navItems}
+                    contractor={contractor}
                     onNavigate={() => setMobileOpen(false)}
                   />
                 </nav>
