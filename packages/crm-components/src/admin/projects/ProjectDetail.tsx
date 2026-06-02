@@ -31,6 +31,7 @@ import {
 } from "../../primitives/tabs";
 import { useProjectsApi } from "../../hooks/useProjectsApi";
 import { TaskKanban } from "./TaskKanban";
+import { ProjectAssignments } from "./ProjectAssignments";
 import type { Milestone } from "../../types/api";
 import { MILESTONE_STATUS_LABELS, PROJECT_STATUS_LABELS, labelFor } from "../labels";
 
@@ -182,6 +183,9 @@ export function ProjectDetail() {
           <TabsTrigger value="tasks" data-testid="tab-tasks">
             Tasks
           </TabsTrigger>
+          <TabsTrigger value="team" data-testid="tab-team">
+            Team
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview tab */}
@@ -284,6 +288,11 @@ export function ProjectDetail() {
           {id ? (
             <TaskKanban projectId={id} />
           ) : null}
+        </TabsContent>
+
+        {/* Team tab */}
+        <TabsContent value="team">
+          {id ? <ProjectAssignments projectId={id} /> : null}
         </TabsContent>
       </Tabs>
     </section>

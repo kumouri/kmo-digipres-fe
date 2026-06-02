@@ -175,6 +175,24 @@ export const FIELD_TYPE_LABELS: Record<string, string> = {
   LOOKUP: "Lookup",
 };
 
+// --- Team / Roles -----------------------------------------------------------
+// "Owner" reads warmer than "Admin" for the account owner; contractors and
+// staff are shown by their plain role name.
+
+export const ROLE_LABELS: Record<string, string> = {
+  ADMIN: "Owner",
+  STAFF: "Staff",
+  CONTRACTOR: "Contractor",
+};
+
+// Account lifecycle: a teammate invited without a password is INVITED until
+// they set one; "Deactivated" reads gentler than the raw "Disabled".
+export const USER_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Active",
+  INVITED: "Invited",
+  DISABLED: "Deactivated",
+};
+
 // --- Recurring Invoices ------------------------------------------------------
 
 export const RECURRING_INVOICE_STATUS_LABELS: Record<string, string> = {

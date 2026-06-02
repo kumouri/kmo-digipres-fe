@@ -381,3 +381,32 @@ export const PAYMENT_TERMS: PaymentTerms[] = [
   "NET_45",
   "NET_60",
 ];
+
+// =============================================================================
+// Contractor / time-management Phase 1 — Team + Project Assignments
+// =============================================================================
+
+// --- Team members ------------------------------------------------------------
+
+export type TeamMember = components["schemas"]["TeamMemberView"];
+export type TeamMemberRequest = components["schemas"]["TeamMemberRequest"];
+
+// Roles a team member can hold. ADMIN is the owner; CONTRACTOR implies STAFF
+// (a contractor is a STAFF user with the CONTRACTOR role added on the BE).
+export type UserRole = "ADMIN" | "STAFF" | "CONTRACTOR";
+
+// The two roles selectable when inviting a teammate. ADMIN (owner) is granted
+// out-of-band, never from this form.
+export const ASSIGNABLE_USER_ROLES: UserRole[] = ["STAFF", "CONTRACTOR"];
+
+export type UserAccountStatus = "ACTIVE" | "INVITED" | "DISABLED";
+
+export const USER_ACCOUNT_STATUSES: UserAccountStatus[] = [
+  "ACTIVE",
+  "INVITED",
+  "DISABLED",
+];
+
+// --- Project assignments -----------------------------------------------------
+
+export type ProjectAssignment = components["schemas"]["ProjectAssignment"];
