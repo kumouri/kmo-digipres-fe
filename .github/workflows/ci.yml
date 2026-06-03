@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '.claude/**'
+      - 'LICENSE'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -13,6 +17,11 @@ jobs:
   verify:
     name: typecheck + build + smoke
     runs-on: ubuntu-latest
+    # Playwright's official image ships the browsers + their OS deps preinstalled, so we
+    # skip the per-run `playwright install --with-deps` (the apt step was never cached
+    # and ran on every job). The tag MUST track @playwright/test in package-lock.json
+    # (currently 1.60.0) — bump both together, or smoke fails on a browser/SDK mismatch.
+    container: mcr.microsoft.com/playwright:v1.60.0-noble
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -25,16 +34,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright (chromium)
-        run: npx playwright install --with-deps chromium
 
       - name: Codegen drift check
         run: npm run gen:api:check
