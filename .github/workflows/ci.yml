@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '.claude/**'
+      - 'LICENSE'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -33,8 +37,14 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Install Playwright (chromium)
+      # Cache hit: only the (uncacheable) apt OS-deps. Miss: full browser + deps install.
+      - name: Install Playwright (chromium + deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Codegen drift check
         run: npm run gen:api:check
