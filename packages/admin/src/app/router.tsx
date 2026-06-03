@@ -132,6 +132,9 @@ const RecurringInvoicesList = lazy(() =>
 const RecurringInvoiceDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.RecurringInvoiceDetail })),
 );
+const ReviewRepliesList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReviewRepliesList })),
+);
 const TeamList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamList })),
 );
@@ -261,6 +264,7 @@ export const router = createBrowserRouter([
                   {
                     element: <RequireAdmin />,
                     children: [
+                      { path: "review-replies", element: <ReviewRepliesList /> },
                       { path: "team", element: <TeamList /> },
                       { path: "team/:id", element: <TeamDetail /> },
                       { path: "field-definitions", element: <FieldDefinitionsList /> },

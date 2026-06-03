@@ -39,6 +39,20 @@ Follow-on to the tenant-admin polish — the deferred **Phase-5a content/voice w
 - **Out of scope (left intact):** empty-state `emptyMessage`s (already standardized); `com.kumouri`/`digipres` identifiers; code comments; `data-testid`s. Smoke stayed **84 specs** (a handful of assertions that keyed on humanized status text were updated in lockstep — e.g. `toContainText("UPDATE")` → `"Updated"`).
 - **Known follow-up (data, not copy):** the Activities "Subject" column still shows a raw `subjectId` UUID after the (now-humanized) record type — resolving it to the linked record's name needs a lookup, deferred.
 
+## Review replies — GBP review-reply admin queue (SHIPPED 2026-06-02)
+
+Admin UI for the backend's **Google Business Profile review-reply automation** (BE-shipped, BE-only until this). The BE poller drafts on-brand replies to new Google reviews and leaves them `DRAFTED`; this **admin-only** queue lets the owner review → edit → approve & post (or skip) each one. PR **#46**; branch `feat/gbp-review-replies-admin`; smoke 116→122.
+
+| Area | Route | API surface |
+|---|---|---|
+| Review replies (admin-only, `<RequireAdmin>`) | `/review-replies` | GET /gbp/review-replies (DRAFTED only); POST /gbp/review-replies/:id/post (optional `{reply}` edit → POSTED); POST /gbp/review-replies/:id/skip (→ SKIPPED) |
+
+- **Card queue, not a DataTable** — each row needs an inline editable `Textarea` (pre-filled with the AI draft) + Approve & post / Skip actions, so `ReviewRepliesList.tsx` renders `Card`s directly. Reviewer name + 5-star rating (`lucide` `Star`, filled to `rating`) + the review comment + the editable reply. Loading / empty ("No review replies waiting") / error-with-retry states.
+- **Admin-only** because the BE endpoints are ADMIN-guarded (`RoleGuard.requireRole("ADMIN")`, `1800`): route under `<RequireAdmin>`, nav `adminOnly: true` (`MessageSquare` icon).
+- **New generated types** (regen from BE spec): `GbpReviewReply`, `PostReplyRequest`. Aliases + `GBP_REVIEW_REPLY_STATUSES` in `types/api.ts`; `REVIEW_REPLY_STATUS_LABELS` in `admin/labels.ts` (`DRAFTED`→"Needs review"). API fetchers `api/gbp-review-replies.ts` + hook `useReviewRepliesApi`.
+- **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
+- **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
+
 ## Phase F: Contracts (SHIPPED 2026-05-30)
 
 Admin UI for the backend contracts vertical (BE Phase F). PR **#40**; smoke 84→101.

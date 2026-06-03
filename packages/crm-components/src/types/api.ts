@@ -430,3 +430,22 @@ export const TIMESHEET_STATUSES: TimesheetStatus[] = [
   "APPROVED",
   "REJECTED",
 ];
+
+// =============================================================================
+// GBP review-reply automation — review-reply approval queue (generated aliases)
+// =============================================================================
+
+// A Google Business Profile review the platform drafted an on-brand reply for.
+// The owner reviews → edits → approves & posts (or skips) each DRAFTED reply.
+export type GbpReviewReply = components["schemas"]["GbpReviewReply"];
+export type PostReplyRequest = components["schemas"]["PostReplyRequest"];
+
+// Lifecycle: a poller drafts DRAFTED; the owner moves it to POSTED (posted to
+// Google) or SKIPPED. The queue lists DRAFTED only.
+export type GbpReviewReplyStatus = "DRAFTED" | "POSTED" | "SKIPPED";
+
+export const GBP_REVIEW_REPLY_STATUSES: GbpReviewReplyStatus[] = [
+  "DRAFTED",
+  "POSTED",
+  "SKIPPED",
+];
