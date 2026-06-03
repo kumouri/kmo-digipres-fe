@@ -276,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/contractor/time/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_14"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/landing-pages/{id}": {
         parameters: {
             query?: never;
@@ -284,7 +300,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_13"];
-        put: operations["update_14"];
+        put: operations["update_15"];
         post?: never;
         delete: operations["delete_12"];
         options?: never;
@@ -300,7 +316,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_14"];
-        put: operations["update_15"];
+        put: operations["update_16"];
         post?: never;
         delete: operations["delete_13"];
         options?: never;
@@ -316,7 +332,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_16"];
-        put: operations["update_16"];
+        put: operations["update_17"];
         post?: never;
         delete: operations["delete_15"];
         options?: never;
@@ -332,7 +348,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_18"];
-        put: operations["update_17"];
+        put: operations["update_18"];
         post?: never;
         delete: operations["delete_16"];
         options?: never;
@@ -348,7 +364,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_19"];
-        put: operations["update_18"];
+        put: operations["update_19"];
         post?: never;
         delete: operations["delete_17"];
         options?: never;
@@ -364,7 +380,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_20"];
-        put: operations["update_19"];
+        put: operations["update_20"];
         post?: never;
         delete: operations["delete_18"];
         options?: never;
@@ -380,7 +396,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_21"];
-        put: operations["update_20"];
+        put: operations["update_21"];
         post?: never;
         delete: operations["delete_19"];
         options?: never;
@@ -396,7 +412,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_22"];
-        put: operations["update_21"];
+        put: operations["update_22"];
         post?: never;
         delete: operations["delete_20"];
         options?: never;
@@ -412,7 +428,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_23"];
-        put: operations["update_22"];
+        put: operations["update_23"];
         post?: never;
         delete: operations["delete_21"];
         options?: never;
@@ -428,7 +444,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_24"];
-        put: operations["update_23"];
+        put: operations["update_24"];
         post?: never;
         delete: operations["delete_22"];
         options?: never;
@@ -444,7 +460,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_25"];
-        put: operations["update_24"];
+        put: operations["update_25"];
         post?: never;
         delete: operations["delete_23"];
         options?: never;
@@ -460,7 +476,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_26"];
-        put: operations["update_25"];
+        put: operations["update_26"];
         post?: never;
         delete: operations["delete_24"];
         options?: never;
@@ -476,7 +492,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_27"];
-        put: operations["update_26"];
+        put: operations["update_27"];
         post?: never;
         delete: operations["delete_25"];
         options?: never;
@@ -492,7 +508,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_28"];
-        put: operations["update_27"];
+        put: operations["update_28"];
         post?: never;
         delete: operations["delete_27"];
         options?: never;
@@ -540,7 +556,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_30"];
-        put: operations["update_28"];
+        put: operations["update_29"];
         post?: never;
         delete: operations["delete_28"];
         options?: never;
@@ -556,7 +572,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_31"];
-        put: operations["update_29"];
+        put: operations["update_30"];
         post?: never;
         delete: operations["delete_29"];
         options?: never;
@@ -1508,7 +1524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/landing-pages": {
+    "/me/contractor/time": {
         parameters: {
             query?: never;
             header?: never;
@@ -1516,6 +1532,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_11"];
+        put?: never;
+        post: operations["log"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/time/timer/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["stopTimer_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/time/timer/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startTimer_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_12"];
+        put?: never;
+        post: operations["submit_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/landing-pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_13"];
         put?: never;
         post: operations["create_15"];
         delete?: never;
@@ -1547,7 +1627,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_14"];
         put?: never;
         post: operations["create_16"];
         delete?: never;
@@ -1579,7 +1659,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_15"];
         put?: never;
         post: operations["create_17"];
         delete?: never;
@@ -1675,7 +1755,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_14"];
+        get: operations["list_16"];
         put?: never;
         post: operations["upsert_1"];
         delete?: never;
@@ -1739,7 +1819,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_15"];
+        get: operations["list_17"];
         put?: never;
         post: operations["create_18"];
         delete?: never;
@@ -1819,7 +1899,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_16"];
+        get: operations["list_18"];
         put?: never;
         post: operations["create_20"];
         delete?: never;
@@ -1835,7 +1915,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_17"];
+        get: operations["list_19"];
         put?: never;
         post: operations["create_21"];
         delete?: never;
@@ -1867,7 +1947,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_18"];
+        get: operations["list_20"];
         put?: never;
         post: operations["create_22"];
         delete?: never;
@@ -1931,7 +2011,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_19"];
+        get: operations["list_21"];
         put?: never;
         post: operations["create_23"];
         delete?: never;
@@ -1947,7 +2027,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_20"];
+        get: operations["list_22"];
         put?: never;
         post: operations["create_24"];
         delete?: never;
@@ -1963,7 +2043,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_21"];
+        get: operations["list_23"];
         put?: never;
         post: operations["record"];
         delete?: never;
@@ -1979,7 +2059,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_22"];
+        get: operations["list_24"];
         put?: never;
         post: operations["create_25"];
         delete?: never;
@@ -2043,7 +2123,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_23"];
+        get: operations["list_25"];
         put?: never;
         post: operations["create_26"];
         delete?: never;
@@ -2059,7 +2139,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_24"];
+        get: operations["list_26"];
         put?: never;
         post: operations["create_27"];
         delete?: never;
@@ -2107,7 +2187,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_26"];
+        get: operations["list_28"];
         put?: never;
         post: operations["register"];
         delete?: never;
@@ -2203,7 +2283,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_27"];
+        get: operations["list_29"];
         put?: never;
         post: operations["create_28"];
         delete?: never;
@@ -2219,7 +2299,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_29"];
+        get: operations["list_31"];
         put?: never;
         post: operations["create_29"];
         delete?: never;
@@ -2299,7 +2379,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_31"];
+        get: operations["list_33"];
         put?: never;
         post: operations["create_30"];
         delete?: never;
@@ -2347,7 +2427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_32"];
+        get: operations["list_34"];
         put?: never;
         post: operations["create_31"];
         delete?: never;
@@ -2724,6 +2804,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/contractor/time/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["weekly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listProjects_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getProject_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/projects/{id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/contractor/projects/{id}/client": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getClient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invoices/{id}": {
         parameters: {
             query?: never;
@@ -2987,7 +3147,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_25"];
+        get: operations["list_27"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3035,7 +3195,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_28"];
+        get: operations["list_30"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3051,7 +3211,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_30"];
+        get: operations["list_32"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4911,6 +5071,41 @@ export interface components {
             roles?: string[];
             portal?: string;
         };
+        ContractorProjectView: {
+            id?: string;
+            code?: string;
+            name?: string;
+            /** @enum {string} */
+            status?: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
+            description?: string;
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            targetEndDate?: string;
+            /** Format: date */
+            actualEndDate?: string;
+        };
+        ContractorTaskView: {
+            id?: string;
+            projectId?: string;
+            milestoneId?: string;
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+            /** @enum {string} */
+            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+            /** Format: date */
+            dueDate?: string;
+            /** Format: int32 */
+            orderIndex?: number;
+        };
+        ContractorClientView: {
+            contactName?: string;
+            contactEmail?: string;
+            contactPhone?: string;
+            companyName?: string;
+        };
         InboxMessage: {
             /** Format: uuid */
             id?: string;
@@ -6080,6 +6275,34 @@ export interface operations {
             };
         };
     };
+    update_14: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Zone-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeEntry"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"];
+                };
+            };
+        };
+    };
     get_13: {
         parameters: {
             query?: never;
@@ -6102,7 +6325,7 @@ export interface operations {
             };
         };
     };
-    update_14: {
+    update_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -6170,7 +6393,7 @@ export interface operations {
             };
         };
     };
-    update_15: {
+    update_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -6238,7 +6461,7 @@ export interface operations {
             };
         };
     };
-    update_16: {
+    update_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -6306,7 +6529,7 @@ export interface operations {
             };
         };
     };
-    update_17: {
+    update_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -6374,7 +6597,7 @@ export interface operations {
             };
         };
     };
-    update_18: {
+    update_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -6442,7 +6665,7 @@ export interface operations {
             };
         };
     };
-    update_19: {
+    update_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -6510,7 +6733,7 @@ export interface operations {
             };
         };
     };
-    update_20: {
+    update_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -6578,7 +6801,7 @@ export interface operations {
             };
         };
     };
-    update_21: {
+    update_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -6646,7 +6869,7 @@ export interface operations {
             };
         };
     };
-    update_22: {
+    update_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -6714,7 +6937,7 @@ export interface operations {
             };
         };
     };
-    update_23: {
+    update_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -6782,7 +7005,7 @@ export interface operations {
             };
         };
     };
-    update_24: {
+    update_25: {
         parameters: {
             query?: never;
             header?: never;
@@ -6850,7 +7073,7 @@ export interface operations {
             };
         };
     };
-    update_25: {
+    update_26: {
         parameters: {
             query?: never;
             header?: never;
@@ -6918,7 +7141,7 @@ export interface operations {
             };
         };
     };
-    update_26: {
+    update_27: {
         parameters: {
             query?: never;
             header?: never;
@@ -6986,7 +7209,7 @@ export interface operations {
             };
         };
     };
-    update_27: {
+    update_28: {
         parameters: {
             query?: never;
             header?: never;
@@ -7124,7 +7347,7 @@ export interface operations {
             };
         };
     };
-    update_28: {
+    update_29: {
         parameters: {
             query?: never;
             header?: never;
@@ -7192,7 +7415,7 @@ export interface operations {
             };
         };
     };
-    update_29: {
+    update_30: {
         parameters: {
             query?: never;
             header?: never;
@@ -9041,6 +9264,143 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "*/*": components["schemas"]["TimeEntry"][];
+                };
+            };
+        };
+    };
+    log: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Zone-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeEntry"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"];
+                };
+            };
+        };
+    };
+    stopTimer_1: {
+        parameters: {
+            query?: {
+                endedAt?: string;
+                zoneId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"][];
+                };
+            };
+        };
+    };
+    startTimer_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TimeEntry"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"];
+                };
+            };
+        };
+    };
+    list_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"][];
+                };
+            };
+        };
+    };
+    submit_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expense"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Expense"];
+                };
+            };
+        };
+    };
+    list_13: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "*/*": components["schemas"]["LandingPage"][];
                 };
             };
@@ -9096,7 +9456,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -9162,7 +9522,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -9346,7 +9706,7 @@ export interface operations {
             };
         };
     };
-    list_14: {
+    list_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -9489,7 +9849,7 @@ export interface operations {
             };
         };
     };
-    list_15: {
+    list_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -9627,7 +9987,7 @@ export interface operations {
             };
         };
     };
-    list_16: {
+    list_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -9671,7 +10031,7 @@ export interface operations {
             };
         };
     };
-    list_17: {
+    list_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -9741,7 +10101,7 @@ export interface operations {
             };
         };
     };
-    list_18: {
+    list_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -9860,7 +10220,7 @@ export interface operations {
             };
         };
     };
-    list_19: {
+    list_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -9904,7 +10264,7 @@ export interface operations {
             };
         };
     };
-    list_20: {
+    list_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -9948,7 +10308,7 @@ export interface operations {
             };
         };
     };
-    list_21: {
+    list_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -9996,7 +10356,7 @@ export interface operations {
             };
         };
     };
-    list_22: {
+    list_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -10112,7 +10472,7 @@ export interface operations {
             };
         };
     };
-    list_23: {
+    list_25: {
         parameters: {
             query?: never;
             header?: never;
@@ -10156,7 +10516,7 @@ export interface operations {
             };
         };
     };
-    list_24: {
+    list_26: {
         parameters: {
             query?: never;
             header?: never;
@@ -10242,7 +10602,7 @@ export interface operations {
             };
         };
     };
-    list_26: {
+    list_28: {
         parameters: {
             query: {
                 subjectType: string;
@@ -10409,7 +10769,7 @@ export interface operations {
             };
         };
     };
-    list_27: {
+    list_29: {
         parameters: {
             query?: never;
             header?: never;
@@ -10453,7 +10813,7 @@ export interface operations {
             };
         };
     };
-    list_29: {
+    list_31: {
         parameters: {
             query?: never;
             header?: never;
@@ -10583,7 +10943,7 @@ export interface operations {
             };
         };
     };
-    list_31: {
+    list_33: {
         parameters: {
             query?: {
                 entityType?: string;
@@ -10673,7 +11033,7 @@ export interface operations {
             };
         };
     };
-    list_32: {
+    list_34: {
         parameters: {
             query?: never;
             header?: never;
@@ -11218,6 +11578,115 @@ export interface operations {
             };
         };
     };
+    weekly: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TimeEntry"][];
+                };
+            };
+        };
+    };
+    listProjects_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ContractorProjectView"][];
+                };
+            };
+        };
+    };
+    getProject_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ContractorProjectView"];
+                };
+            };
+        };
+    };
+    listTasks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ContractorTaskView"][];
+                };
+            };
+        };
+    };
+    getClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ContractorClientView"];
+                };
+            };
+        };
+    };
     get_15: {
         parameters: {
             query?: never;
@@ -11584,7 +12053,7 @@ export interface operations {
             };
         };
     };
-    list_25: {
+    list_27: {
         parameters: {
             query: {
                 entityType: string;
@@ -11658,7 +12127,7 @@ export interface operations {
             };
         };
     };
-    list_28: {
+    list_30: {
         parameters: {
             query?: never;
             header?: never;
@@ -11678,7 +12147,7 @@ export interface operations {
             };
         };
     };
-    list_30: {
+    list_32: {
         parameters: {
             query?: never;
             header?: never;
