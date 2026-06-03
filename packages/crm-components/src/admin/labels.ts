@@ -218,3 +218,13 @@ export const PAYMENT_TERMS_LABELS: Record<string, string> = {
   NET_45: "Net 45",
   NET_60: "Net 60",
 };
+
+// --- Review replies (Google Business Profile) -------------------------------
+// A drafted reply is waiting on the owner — "Needs review" reads clearer than
+// the raw "Drafted" for someone deciding whether to post it (brand-voice §3.2).
+
+export const REVIEW_REPLY_STATUS_LABELS: Record<string, string> = {
+  DRAFTED: "Needs review",
+  POSTED: "Posted",
+  SKIPPED: "Skipped",
+};

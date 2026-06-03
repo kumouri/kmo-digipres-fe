@@ -16,6 +16,7 @@ import type {
   Contract,
   ContractTemplate,
   Dashboard,
+  GbpReviewReply,
   DealDTO,
   Expense,
   FieldDefinition,
@@ -1951,6 +1952,94 @@ export const recurringInvoiceStore = {
       updatedAt: new Date().toISOString(),
     };
     recurringInvoices.set(id, updated);
+    return updated;
+  },
+};
+
+// --- Review replies (Google Business Profile) --------------------------------
+// The backend poller drafts on-brand replies to new Google reviews and leaves
+// them DRAFTED. The admin queue lists DRAFTED, posts the (edited) reply, or
+// skips it. Seed two drafts — a glowing 5★ and a needs-care 2★ — so the queue
+// renders with content in smoke.
+
+export const SEED_REVIEW_REPLY_5STAR_ID =
+  "gbpr0000-0000-0000-0000-000000000001";
+export const SEED_REVIEW_REPLY_2STAR_ID =
+  "gbpr0000-0000-0000-0000-000000000002";
+
+const seedReviewReplies: GbpReviewReply[] = [
+  {
+    id: SEED_REVIEW_REPLY_5STAR_ID,
+    tenantId: SMOKE_USER.tenantId,
+    reviewId: "accounts/123/locations/456/reviews/aaa",
+    rating: 5,
+    reviewerName: "Dana Whitfield",
+    comment:
+      "Showed up on time, explained everything, and left the place spotless. Couldn't ask for better service.",
+    reviewCreateTime: "2026-05-30T14:20:00Z",
+    draftedReply:
+      "Thank you so much, Dana! We're thrilled we could help, and we really appreciate you taking the time to share your experience. We're always here whenever you need us.",
+    status: "DRAFTED",
+    receivedAt: "2026-05-30T14:25:00Z",
+  },
+  {
+    id: SEED_REVIEW_REPLY_2STAR_ID,
+    tenantId: SMOKE_USER.tenantId,
+    reviewId: "accounts/123/locations/456/reviews/bbb",
+    rating: 2,
+    reviewerName: "Marcus Lee",
+    comment:
+      "The work was fine but the crew ran two hours late and nobody called to let me know.",
+    reviewCreateTime: "2026-05-29T09:05:00Z",
+    draftedReply:
+      "Marcus, we're sorry we kept you waiting and didn't call ahead — that's not the experience we want to give you. We'd like to make it right; please reach out to us directly so we can follow up.",
+    status: "DRAFTED",
+    receivedAt: "2026-05-29T09:10:00Z",
+  },
+];
+
+const reviewReplies = new Map<string, GbpReviewReply>(
+  seedReviewReplies.map((r) => [r.id!, r]),
+);
+
+export const gbpReviewReplyStore = {
+  /** DRAFTED only, most-recent first (mirrors the BE list contract). */
+  listDrafted(): GbpReviewReply[] {
+    return Array.from(reviewReplies.values())
+      .filter((r) => r.status === "DRAFTED")
+      .sort((a, b) =>
+        (b.receivedAt ?? "").localeCompare(a.receivedAt ?? ""),
+      );
+  },
+  get(id: string): GbpReviewReply | undefined {
+    return reviewReplies.get(id);
+  },
+  /** Post the (optionally edited) reply → POSTED. 404 if missing, 409 if not DRAFTED. */
+  post(id: string, reply?: string): GbpReviewReply | { code: number } {
+    const existing = reviewReplies.get(id);
+    if (!existing) return { code: 4032 };
+    if (existing.status !== "DRAFTED") return { code: 4033 };
+    const updated: GbpReviewReply = {
+      ...existing,
+      draftedReply: reply !== undefined ? reply : existing.draftedReply,
+      status: "POSTED",
+      postedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    reviewReplies.set(id, updated);
+    return updated;
+  },
+  /** Skip → SKIPPED, no Google call. 404 if missing, 409 if not DRAFTED. */
+  skip(id: string): GbpReviewReply | { code: number } {
+    const existing = reviewReplies.get(id);
+    if (!existing) return { code: 4032 };
+    if (existing.status !== "DRAFTED") return { code: 4033 };
+    const updated: GbpReviewReply = {
+      ...existing,
+      status: "SKIPPED",
+      updatedAt: new Date().toISOString(),
+    };
+    reviewReplies.set(id, updated);
     return updated;
   },
 };

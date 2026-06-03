@@ -145,3 +145,5 @@ export {
   type RecurringInvoiceFormValues,
 } from "./admin/recurring-invoices";
 export { useRecurringInvoicesApi } from "./hooks/useRecurringInvoicesApi";
+export { ReviewRepliesList } from "./admin/review-replies";
+export { useReviewRepliesApi } from "./hooks/useReviewRepliesApi";

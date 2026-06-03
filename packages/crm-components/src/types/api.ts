@@ -442,3 +442,22 @@ export const TIMESHEET_STATUSES: TimesheetStatus[] = [
 // cost rate set — they count toward hours but contribute 0 to the amount owed.
 export type PayoutReport = components["schemas"]["PayoutReport"];
 export type PayoutPeriodLine = components["schemas"]["PayoutPeriodLine"];
+
+// =============================================================================
+// GBP review-reply automation — review-reply approval queue (generated aliases)
+// =============================================================================
+
+// A Google Business Profile review the platform drafted an on-brand reply for.
+// The owner reviews → edits → approves & posts (or skips) each DRAFTED reply.
+export type GbpReviewReply = components["schemas"]["GbpReviewReply"];
+export type PostReplyRequest = components["schemas"]["PostReplyRequest"];
+
+// Lifecycle: a poller drafts DRAFTED; the owner moves it to POSTED (posted to
+// Google) or SKIPPED. The queue lists DRAFTED only.
+export type GbpReviewReplyStatus = "DRAFTED" | "POSTED" | "SKIPPED";
+
+export const GBP_REVIEW_REPLY_STATUSES: GbpReviewReplyStatus[] = [
+  "DRAFTED",
+  "POSTED",
+  "SKIPPED",
+];
