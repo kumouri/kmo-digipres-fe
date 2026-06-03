@@ -430,3 +430,15 @@ export const TIMESHEET_STATUSES: TimesheetStatus[] = [
   "APPROVED",
   "REJECTED",
 ];
+
+// =============================================================================
+// Contractor / time-management Phase 4 — Payout & margin report
+// =============================================================================
+
+// The 1099 payout + margin rollup an ADMIN reads for a contractor: what is owed
+// (payout = approved hours × cost rate), what was billed (bill = approved hours
+// × bill rate), and the margin (bill − payout), per Timesheet period and as a
+// window total / year-to-date. `hasUnratedEntries` flags approved hours with no
+// cost rate set — they count toward hours but contribute 0 to the amount owed.
+export type PayoutReport = components["schemas"]["PayoutReport"];
+export type PayoutPeriodLine = components["schemas"]["PayoutPeriodLine"];

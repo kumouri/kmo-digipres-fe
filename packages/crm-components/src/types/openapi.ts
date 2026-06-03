@@ -1924,6 +1924,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/gbp/review-replies/{id}/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["skip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gbp/review-replies/{id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/forms": {
         parameters: {
             query?: never;
@@ -2644,6 +2676,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/payout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payout"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/payout/ytd": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payoutYtd"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/activity": {
         parameters: {
             query?: never;
@@ -3132,6 +3196,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_19"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gbp/review-replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listDrafted"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4973,6 +5053,35 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        GbpReviewReply: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            reviewId?: string;
+            /** Format: int32 */
+            rating?: number;
+            comment?: string;
+            reviewerName?: string;
+            /** Format: date-time */
+            reviewCreateTime?: string;
+            draftedReply?: string;
+            /** @enum {string} */
+            status?: "DRAFTED" | "POSTED" | "SKIPPED";
+            /** Format: date-time */
+            postedAt?: string;
+            /** Format: date-time */
+            receivedAt?: string;
+            /** Format: int64 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        PostReplyRequest: {
+            reply?: string;
+        };
         InvoiceFromExpensesRequest: {
             /** Format: uuid */
             projectId?: string;
@@ -5213,6 +5322,30 @@ export interface components {
             /** Format: int64 */
             count?: number;
             totalValue?: number;
+        };
+        PayoutPeriodLine: {
+            /** Format: date */
+            periodStart?: string;
+            /** Format: date */
+            periodEnd?: string;
+            hours?: number;
+            payout?: number;
+            bill?: number;
+            margin?: number;
+        };
+        PayoutReport: {
+            userId?: string;
+            displayName?: string;
+            /** Format: date-time */
+            from?: string;
+            /** Format: date-time */
+            to?: string;
+            totalHours?: number;
+            payout?: number;
+            bill?: number;
+            margin?: number;
+            hasUnratedEntries?: boolean;
+            periods?: components["schemas"]["PayoutPeriodLine"][];
         };
         TypeRow: {
             type?: string;
@@ -10249,6 +10382,54 @@ export interface operations {
             };
         };
     };
+    skip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GbpReviewReply"];
+                };
+            };
+        };
+    };
+    post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PostReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GbpReviewReply"];
+                };
+            };
+        };
+    };
     list_19: {
         parameters: {
             query?: never;
@@ -11609,6 +11790,53 @@ export interface operations {
             };
         };
     };
+    payout: {
+        parameters: {
+            query?: {
+                userId?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PayoutReport"];
+                };
+            };
+        };
+    };
+    payoutYtd: {
+        parameters: {
+            query: {
+                userId?: string;
+                year: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PayoutReport"];
+                };
+            };
+        };
+    };
     activity: {
         parameters: {
             query: {
@@ -12297,6 +12525,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ImportJob"];
+                };
+            };
+        };
+    };
+    listDrafted: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GbpReviewReply"][];
                 };
             };
         };
