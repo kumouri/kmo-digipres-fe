@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "../../primitives/dialog";
 import { DataTable, type Column } from "../../components/DataTable";
+import { useContractorApi } from "../../hooks/useContractorApi";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
 import type { Expense } from "../../types/api";
 import { BILLING_STATUS_LABELS, EXPENSE_APPROVAL_LABELS, labelFor } from "../labels";
@@ -37,6 +38,13 @@ const BILLING_VARIANT: Record<
 
 interface Props {
   userId: string;
+  /**
+   * When true, the signed-in user is a scoped-down contractor: list + submit
+   * hit /me/contractor/expenses instead of the staff /expenses surface (which
+   * denies a CONTRACTOR token, 4135), and the staff-only "Invoice approved"
+   * action is hidden. Defaults to false (staff/admin — unchanged behavior).
+   */
+  isContractor?: boolean;
 }
 
 const columns: Column<Expense>[] = [
@@ -94,10 +102,11 @@ const columns: Column<Expense>[] = [
   },
 ];
 
-export function ExpensesList({ userId }: Props) {
+export function ExpensesList({ userId, isContractor = false }: Props) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const api = useTimeExpensesApi();
+  const staffApi = useTimeExpensesApi();
+  const contractorApi = useContractorApi();
   const [createOpen, setCreateOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [newDesc, setNewDesc] = useState("");
@@ -106,9 +115,15 @@ export function ExpensesList({ userId }: Props) {
   const [newCategory, setNewCategory] = useState("");
   const [defaultMarkup, setDefaultMarkup] = useState("15");
 
+  // Contractors are denied the staff /expenses reader (4135) — their list +
+  // submit go through /me/contractor/expenses. Namespaced query key so the two
+  // never collide in the cache.
+  const expensesKey = isContractor ? ["contractor", "expenses"] : ["expenses"];
+
   const { data: expenses = [], isLoading } = useQuery({
-    queryKey: ["expenses"],
-    queryFn: api.listExpenses,
+    queryKey: expensesKey,
+    queryFn: () =>
+      isContractor ? contractorApi.listExpenses() : staffApi.listExpenses(),
   });
 
   const approvedUnbilled = expenses.filter(
@@ -119,16 +134,20 @@ export function ExpensesList({ userId }: Props) {
   );
 
   const createMutation = useMutation({
-    mutationFn: api.createExpense,
+    mutationFn: (body: Expense) =>
+      isContractor ? contractorApi.submitExpense(body) : staffApi.createExpense(body),
     onSuccess: (created) => {
-      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: expensesKey });
       toast.success("Expense submitted.");
       setCreateOpen(false);
       setNewDesc("");
       setNewAmount("");
       setNewDate("");
       setNewCategory("");
-      if (created.id) navigate(`/expenses/${created.id}`);
+      // Contractors have no scoped single-expense detail surface
+      // (/me/contractor/expenses is list + submit only), so stay on the list —
+      // the invalidated query re-fetches and shows the new row.
+      if (!isContractor && created.id) navigate(`/expenses/${created.id}`);
     },
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Submit failed."),
@@ -136,11 +155,11 @@ export function ExpensesList({ userId }: Props) {
 
   const invoiceMutation = useMutation({
     mutationFn: () =>
-      api.createInvoiceFromExpenses({
+      staffApi.createInvoiceFromExpenses({
         defaultMarkupPercent: parseFloat(defaultMarkup) || 0,
       }),
     onSuccess: (inv) => {
-      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: expensesKey });
       toast.success(
         `Draft invoice created — ID ${inv.id?.slice(0, 8) ?? "?"}`,
         { duration: 8000 },
@@ -157,9 +176,13 @@ export function ExpensesList({ userId }: Props) {
     <section className="flex flex-col gap-4" data-testid="expenses-page">
       <header className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-medium">Expenses</h1>
+          <h1 className="text-2xl font-medium">
+            {isContractor ? "My expenses" : "Expenses"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Submit expenses and follow them through approval and billing.
+            {isContractor
+              ? "Submit expenses for approval and track where they stand."
+              : "Submit expenses and follow them through approval and billing."}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -169,7 +192,7 @@ export function ExpensesList({ userId }: Props) {
           >
             <Plus /> New expense
           </Button>
-          {approvedUnbilled.length > 0 && (
+          {!isContractor && approvedUnbilled.length > 0 && (
             <Button
               variant="outline"
               onClick={() => setInvoiceOpen(true)}
@@ -188,7 +211,11 @@ export function ExpensesList({ userId }: Props) {
         rowKey={(e) => e.id ?? Math.random().toString()}
         isLoading={isLoading}
         emptyMessage="No expenses yet — submit one to get started."
-        onRowClick={(e) => e.id && navigate(`/expenses/${e.id}`)}
+        onRowClick={
+          isContractor
+            ? undefined
+            : (e) => e.id && navigate(`/expenses/${e.id}`)
+        }
       />
 
       {/* New expense dialog */}

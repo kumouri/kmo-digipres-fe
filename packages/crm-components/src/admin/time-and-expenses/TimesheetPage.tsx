@@ -12,12 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../primitives/dialog";
+import { useContractorApi } from "../../hooks/useContractorApi";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
 import type { TimeEntry } from "../../types/api";
 import { BILLING_STATUS_LABELS, labelFor } from "../labels";
 
 interface Props {
   userId: string;
+  /**
+   * When true, the signed-in user is a scoped-down contractor: the weekly read
+   * + manual log hit /me/contractor/time* instead of the staff /time-entries
+   * surface (which denies a CONTRACTOR token, 4135), and the staff-only
+   * "Invoice unbilled" action is hidden. Defaults to false (staff/admin).
+   */
+  isContractor?: boolean;
 }
 
 /**
@@ -84,9 +92,10 @@ function groupEntries(entries: TimeEntry[]): Array<{
   }));
 }
 
-export function TimesheetPage({ userId }: Props) {
+export function TimesheetPage({ userId, isContractor = false }: Props) {
   const qc = useQueryClient();
-  const api = useTimeExpensesApi();
+  const staffApi = useTimeExpensesApi();
+  const contractorApi = useContractorApi();
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [addOpen, setAddOpen] = useState(false);
   const [newDesc, setNewDesc] = useState("");
@@ -99,15 +108,25 @@ export function TimesheetPage({ userId }: Props) {
   const from = weekDays[0].toISOString();
   const to = new Date(weekDays[6].getTime() + 86400000).toISOString(); // exclusive end
 
+  // Contractors are denied the staff /time-entries readers (4135) — their
+  // weekly read + manual log go through /me/contractor/time*. The query key is
+  // namespaced so contractor + staff data never collide in the cache, and the
+  // timer (in TimerWidget) invalidates the matching family on start/stop.
+  const timeKeyRoot = isContractor ? ["contractor", "time"] : ["time-entries"];
+
   const { data: entries = [], isLoading } = useQuery({
-    queryKey: ["time-entries", userId, "weekly", fmtDate(weekDays[0])],
-    queryFn: () => api.listWeeklyTimeEntries(userId, from, to),
+    queryKey: [...timeKeyRoot, userId, "weekly", fmtDate(weekDays[0])],
+    queryFn: () =>
+      isContractor
+        ? contractorApi.listWeeklyTime(from, to)
+        : staffApi.listWeeklyTimeEntries(userId, from, to),
   });
 
   const createMutation = useMutation({
-    mutationFn: (body: TimeEntry) => api.createTimeEntry(body),
+    mutationFn: (body: TimeEntry) =>
+      isContractor ? contractorApi.logTime(body) : staffApi.createTimeEntry(body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["time-entries"] });
+      qc.invalidateQueries({ queryKey: timeKeyRoot });
       toast.success("Time entry logged.");
       setAddOpen(false);
       setNewDesc("");
@@ -119,7 +138,7 @@ export function TimesheetPage({ userId }: Props) {
 
   const invoiceMutation = useMutation({
     mutationFn: () =>
-      api.createInvoiceFromTime({
+      staffApi.createInvoiceFromTime({
         defaultRateAmount: parseFloat(defaultRate) || 0,
       }),
     onSuccess: (inv) => {
@@ -173,7 +192,7 @@ export function TimesheetPage({ userId }: Props) {
           <Button onClick={() => setAddOpen(true)} data-testid="log-time">
             <Plus /> Log time
           </Button>
-          {unbilledCount > 0 && (
+          {!isContractor && unbilledCount > 0 && (
             <Button
               variant="outline"
               onClick={() => setInvoiceOpen(true)}

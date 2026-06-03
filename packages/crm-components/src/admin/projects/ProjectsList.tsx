@@ -14,9 +14,19 @@ import {
   DialogTitle,
 } from "../../primitives/dialog";
 import { DataTable, type Column } from "../../components/DataTable";
+import { useContractorApi } from "../../hooks/useContractorApi";
 import { useProjectsApi } from "../../hooks/useProjectsApi";
 import type { Project } from "../../types/api";
 import { PROJECT_STATUS_LABELS, labelFor } from "../labels";
+
+// Both the staff `Project` and the contractor `ContractorProjectView` carry the
+// columns this list renders (code, name, status, startDate, targetEndDate), so
+// a single column set drives both. The view is a strict subset of Project for
+// these fields — narrow to the shared shape.
+type ProjectRow = Pick<
+  Project,
+  "id" | "code" | "name" | "status" | "startDate" | "targetEndDate"
+>;
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline" | "secondary" | "destructive"> = {
   PLANNING: "muted",
@@ -26,7 +36,7 @@ const STATUS_VARIANT: Record<string, "default" | "muted" | "outline" | "secondar
   CANCELLED: "destructive",
 };
 
-const columns: Column<Project>[] = [
+const columns: Column<ProjectRow>[] = [
   {
     key: "code",
     header: "Code",
@@ -64,16 +74,30 @@ const columns: Column<Project>[] = [
   },
 ];
 
-export function ProjectsList() {
+interface Props {
+  /**
+   * When true, the signed-in user is a scoped-down contractor: list only their
+   * assigned projects (via /me/contractor/projects) and hide create. Defaults
+   * to false (staff/admin — unchanged behavior).
+   */
+  isContractor?: boolean;
+}
+
+export function ProjectsList({ isContractor = false }: Props) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const projectsApi = useProjectsApi();
+  const contractorApi = useContractorApi();
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["projects"],
-    queryFn: projectsApi.listProjects,
+  // Contractors are denied the broad staff reader (GET /projects → 4135), so
+  // they read their assignment-scoped list instead. The query key is namespaced
+  // so the two never collide in the cache.
+  const { data, isLoading } = useQuery<ProjectRow[]>({
+    queryKey: isContractor ? ["contractor", "projects"] : ["projects"],
+    queryFn: () =>
+      isContractor ? contractorApi.listProjects() : projectsApi.listProjects(),
   });
 
   const createMutation = useMutation({
@@ -94,14 +118,20 @@ export function ProjectsList() {
     <section className="flex flex-col gap-4" data-testid="projects-page">
       <header className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-medium">Projects</h1>
+          <h1 className="text-2xl font-medium">
+            {isContractor ? "My projects" : "Projects"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            The work you're delivering for clients, with milestones and tasks.
+            {isContractor
+              ? "The projects you're assigned to. Open one to see its details and tasks."
+              : "The work you're delivering for clients, with milestones and tasks."}
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} data-testid="new-project">
-          <Plus /> New project
-        </Button>
+        {!isContractor && (
+          <Button onClick={() => setCreateOpen(true)} data-testid="new-project">
+            <Plus /> New project
+          </Button>
+        )}
       </header>
 
       <DataTable
@@ -109,10 +139,15 @@ export function ProjectsList() {
         rows={data}
         rowKey={(r) => r.id ?? r.code ?? Math.random().toString()}
         isLoading={isLoading}
-        emptyMessage="No projects yet — create one to get started."
+        emptyMessage={
+          isContractor
+            ? "No projects assigned to you yet."
+            : "No projects yet — create one to get started."
+        }
         onRowClick={(r) => r.id && navigate(`/projects/${r.id}`)}
       />
 
+      {!isContractor && (
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
@@ -153,6 +188,7 @@ export function ProjectsList() {
           </div>
         </DialogContent>
       </Dialog>
+      )}
     </section>
   );
 }
