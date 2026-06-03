@@ -1,5 +1,6 @@
 export { TeamList } from "./TeamList";
 export { TeamDetail } from "./TeamDetail";
+export { PayoutSummary } from "./PayoutSummary";
 export {
   TeamMemberForm,
   teamMemberToFormValues,

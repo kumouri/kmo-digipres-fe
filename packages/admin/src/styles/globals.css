@@ -1,6 +1,18 @@
 @import "tailwindcss";
 
 /*
+ * Explicitly scan the sibling crm-components package for utility classes.
+ * Tailwind 4's automatic content detection keys off the Vite module graph,
+ * which makes the emitted class set depend on traversal order — adding or
+ * removing an unrelated module could non-deterministically drop classes used
+ * only inside the `@kmosf/crm-components` primitives (e.g. the Dialog's
+ * `fixed` / `max-h-[90vh]`), breaking those components' layout. Pinning the
+ * package as an explicit source makes generation deterministic across the
+ * monorepo. Path is relative to this file (packages/admin/src/styles/).
+ */
+@source "../../../crm-components/src";
+
+/*
  * Design tokens — canonical source: repos/kmosf-homepage/src/styles/globals.css
  * Manually synced 2026-05-17. These are separate git repos with no shared
  * package, so this is a vendored copy (same pattern as the vendored OpenAPI

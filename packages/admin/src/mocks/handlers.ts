@@ -66,6 +66,7 @@ import {
   invoiceStore,
   kbStore,
   milestoneStore,
+  payoutStore,
   projectStore,
   quoteStore,
   recurringInvoiceStore,
@@ -1491,6 +1492,30 @@ export const handlers = [
     const found = timesheetStore.get(params.id as string);
     if (!found) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(found);
+  }),
+
+  // --- Payout & margin report (Phase J4, ADMIN) ------------------------------
+  // ?userId&year — the 1099 year-to-date view ("what you owe" + margin).
+  http.get(`${API_BASE}/reports/payout/ytd`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId") ?? "";
+    const year = Number(url.searchParams.get("year")) || new Date().getFullYear();
+    return HttpResponse.json(payoutStore.ytd(userId, year));
+  }),
+
+  // ?userId&from&to (ISO instants) — the per-period breakdown over a window.
+  http.get(`${API_BASE}/reports/payout`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId") ?? "";
+    const from = url.searchParams.get("from") ?? "";
+    const to = url.searchParams.get("to") ?? "";
+    return HttpResponse.json(payoutStore.report(userId, from, to));
   }),
 
   // --- Contractor self-service surface (Phase J2) ----------------------------

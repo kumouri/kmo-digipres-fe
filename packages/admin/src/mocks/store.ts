@@ -27,6 +27,8 @@ import type {
   KnowledgeBaseArticle,
   Milestone,
   Payment,
+  PayoutPeriodLine,
+  PayoutReport,
   PipelineStage,
   Project,
   ProjectAssignment,
@@ -2512,5 +2514,161 @@ export const timesheetStore = {
     };
     timesheets.set(id, updated);
     return updated;
+  },
+};
+
+// --- Payout & margin report (contractor / time-management Phase 4) ------------
+
+// The admin payout/margin report (GET /reports/payout[/ytd]) sums APPROVED time
+// only — payout = Σ(hours × costRate), bill = Σ(hours × billRate), margin =
+// bill − payout — grouped by the owning Timesheet period. This mock mirrors the
+// BE PayoutReportService faithfully (scale-2 HALF_UP money; a null cost rate
+// still counts its hours and sets hasUnratedEntries but adds 0 to payout).
+//
+// To keep smoke deterministic regardless of the calendar year CI runs in, the
+// seeded approved entries are dated in the CURRENT year (the YTD window is
+// [Jan 1 this year, now], so a fixed 2026 date would fall outside it in 2027+).
+
+// An approved, period-stamped time row the payout report rolls up. A thin
+// internal shape (only the fields the report needs) rather than a full TimeEntry.
+interface PayoutSeedEntry {
+  userId: string;
+  startedAt: string; // ISO instant — the window filter key
+  periodStart: string | null; // owning Timesheet period (null ⇒ ungrouped bucket)
+  periodEnd: string | null;
+  durationSeconds: number;
+  costRateAmount: number | null; // null ⇒ surfaced via hasUnratedEntries, 0 payout
+  rateAmount: number | null; // bill rate; null ⇒ excluded from bill
+}
+
+// Jordan Rivera's seeded approved time: two named periods (so the period table
+// has multiple rows). Cost 95 / bill 160 mirror the seeded assignment override.
+//   Period A: 8.00h → payout 760.00, bill 1280.00, margin 520.00
+//   Period B: 5.00h → payout 475.00, bill  800.00, margin 325.00
+//   YTD total: 13.00h → payout 1235.00, bill 2080.00, margin 845.00
+const PAYOUT_YEAR = new Date().getFullYear();
+const payoutEntries: PayoutSeedEntry[] = [
+  {
+    userId: SEED_CONTRACTOR_MEMBER_ID,
+    startedAt: `${PAYOUT_YEAR}-05-12T13:00:00Z`,
+    periodStart: `${PAYOUT_YEAR}-05-11`,
+    periodEnd: `${PAYOUT_YEAR}-05-17`,
+    durationSeconds: 28800, // 8h
+    costRateAmount: 95,
+    rateAmount: 160,
+  },
+  {
+    userId: SEED_CONTRACTOR_MEMBER_ID,
+    startedAt: `${PAYOUT_YEAR}-05-06T13:00:00Z`,
+    periodStart: `${PAYOUT_YEAR}-05-04`,
+    periodEnd: `${PAYOUT_YEAR}-05-10`,
+    durationSeconds: 18000, // 5h
+    costRateAmount: 95,
+    rateAmount: 160,
+  },
+];
+
+// Money discipline mirrors the BE: scale-2, HALF_UP. (Number.toFixed already
+// rounds HALF_UP for these non-negative magnitudes; we round at each Σ step.)
+function scaleMoney(v: number): number {
+  return Math.round((v + Number.EPSILON) * 100) / 100;
+}
+function entryHours(seconds: number): number {
+  return scaleMoney(seconds / 3600);
+}
+
+interface PayoutAcc {
+  start: string | null;
+  end: string | null;
+  hours: number;
+  payout: number;
+  bill: number;
+}
+
+export const payoutStore = {
+  // Build the report for [from, to) — startedAt-windowed, approved-only (the
+  // seed set is approved by construction), grouped by period (ungrouped last).
+  report(userId: string, from: string, to: string): PayoutReport {
+    const fromMs = new Date(from).getTime();
+    const toMs = new Date(to).getTime();
+    const rows = payoutEntries.filter((e) => {
+      if (e.userId !== userId) return false;
+      const t = new Date(e.startedAt).getTime();
+      return t >= fromMs && t < toMs;
+    });
+
+    const byPeriod = new Map<string, PayoutAcc>();
+    let totalHours = 0;
+    let totalPayout = 0;
+    let totalBill = 0;
+    let hasUnratedEntries = false;
+
+    for (const e of rows) {
+      const hours = entryHours(e.durationSeconds);
+      const key = e.periodStart == null ? " ungrouped" : `${e.periodStart}`;
+      const acc =
+        byPeriod.get(key) ??
+        { start: e.periodStart, end: e.periodEnd, hours: 0, payout: 0, bill: 0 };
+
+      acc.hours = scaleMoney(acc.hours + hours);
+      totalHours = scaleMoney(totalHours + hours);
+
+      if (e.costRateAmount != null) {
+        const payout = scaleMoney(hours * e.costRateAmount);
+        acc.payout = scaleMoney(acc.payout + payout);
+        totalPayout = scaleMoney(totalPayout + payout);
+      } else {
+        hasUnratedEntries = true;
+      }
+
+      if (e.rateAmount != null) {
+        const bill = scaleMoney(hours * e.rateAmount);
+        acc.bill = scaleMoney(acc.bill + bill);
+        totalBill = scaleMoney(totalBill + bill);
+      }
+
+      byPeriod.set(key, acc);
+    }
+
+    // Named periods sorted by periodStart ascending; the ungrouped bucket last.
+    const periods: PayoutPeriodLine[] = Array.from(byPeriod.values())
+      .sort((a, b) => {
+        if (a.start == null) return 1;
+        if (b.start == null) return -1;
+        return a.start.localeCompare(b.start);
+      })
+      .map((a) => ({
+        periodStart: a.start ?? undefined,
+        periodEnd: a.end ?? undefined,
+        hours: a.hours,
+        payout: a.payout,
+        bill: a.bill,
+        margin: scaleMoney(a.bill - a.payout),
+      }));
+
+    const member = teamStore.get(userId);
+    return {
+      userId,
+      displayName: member?.displayName,
+      from,
+      to,
+      totalHours,
+      payout: totalPayout,
+      bill: totalBill,
+      margin: scaleMoney(totalBill - totalPayout),
+      hasUnratedEntries,
+      periods,
+    };
+  },
+
+  // YTD window mirrors the BE: [year-01-01T00:00:00Z, now] for the current year,
+  // else the full [year-01-01, year-12-31T23:59:59Z].
+  ytd(userId: string, year: number): PayoutReport {
+    const from = new Date(Date.UTC(year, 0, 1, 0, 0, 0)).toISOString();
+    const to =
+      year === new Date().getUTCFullYear()
+        ? new Date().toISOString()
+        : new Date(Date.UTC(year, 11, 31, 23, 59, 59)).toISOString();
+    return this.report(userId, from, to);
   },
 };

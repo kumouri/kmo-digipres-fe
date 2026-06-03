@@ -2676,6 +2676,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/payout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payout"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/payout/ytd": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payoutYtd"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/activity": {
         parameters: {
             query?: never;
@@ -5290,6 +5322,30 @@ export interface components {
             /** Format: int64 */
             count?: number;
             totalValue?: number;
+        };
+        PayoutPeriodLine: {
+            /** Format: date */
+            periodStart?: string;
+            /** Format: date */
+            periodEnd?: string;
+            hours?: number;
+            payout?: number;
+            bill?: number;
+            margin?: number;
+        };
+        PayoutReport: {
+            userId?: string;
+            displayName?: string;
+            /** Format: date-time */
+            from?: string;
+            /** Format: date-time */
+            to?: string;
+            totalHours?: number;
+            payout?: number;
+            bill?: number;
+            margin?: number;
+            hasUnratedEntries?: boolean;
+            periods?: components["schemas"]["PayoutPeriodLine"][];
         };
         TypeRow: {
             type?: string;
@@ -11730,6 +11786,53 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StageRow"][];
+                };
+            };
+        };
+    };
+    payout: {
+        parameters: {
+            query?: {
+                userId?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PayoutReport"];
+                };
+            };
+        };
+    };
+    payoutYtd: {
+        parameters: {
+            query: {
+                userId?: string;
+                year: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PayoutReport"];
                 };
             };
         };
