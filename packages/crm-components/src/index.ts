@@ -106,8 +106,19 @@ export { ReportsList, ReportDetail, DashboardsList, DashboardDetail } from "./ad
 export { useReportsApi } from "./hooks/useReportsApi";
 export { AskAiDialog } from "./admin/ai";
 export { useAiApi } from "./hooks/useAiApi";
-export { ProjectsList, ProjectDetail } from "./admin/projects";
+export { ProjectsList, ProjectDetail, ProjectAssignments } from "./admin/projects";
 export { useProjectsApi } from "./hooks/useProjectsApi";
+export { useProjectAssignmentsApi } from "./hooks/useProjectAssignmentsApi";
+export type { AssignmentInput } from "./api/project-assignments";
+export {
+  TeamList,
+  TeamDetail,
+  TeamMemberForm,
+  teamMemberToFormValues,
+  formValuesToTeamMember,
+  type TeamMemberFormValues,
+} from "./admin/team";
+export { useTeamApi } from "./hooks/useTeamApi";
 export { TimesheetPage, ExpensesList, ExpenseDetail, TimerWidget } from "./admin/time-and-expenses";
 export { useTimeExpensesApi } from "./hooks/useTimeExpensesApi";
 export { ContractsList, ContractDetail, ContractForm, contractToFormValues, formValuesToContract, type ContractFormValues } from "./admin/contracts";

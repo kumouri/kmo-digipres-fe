@@ -4,6 +4,7 @@ import { createBrowserRouter, Outlet } from "react-router";
 import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { RequireAdmin } from "./auth/RequireAdmin";
+import { RequireNotContractor } from "./auth/RequireNotContractor";
 import { RouteFallback } from "./components/RouteFallback";
 import { DashboardPage } from "./pages/DashboardPage";
 import { useAuth } from "./auth/useAuth";
@@ -128,6 +129,12 @@ const RecurringInvoicesList = lazy(() =>
 const RecurringInvoiceDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.RecurringInvoiceDetail })),
 );
+const TeamList = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.TeamList })),
+);
+const TeamDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.TeamDetail })),
+);
 
 /** Wrapper: provides userId from auth context to TimesheetPage */
 function TimesheetPageRoute() {
@@ -182,53 +189,62 @@ export const router = createBrowserRouter([
           {
             element: <LazyOutlet />,
             children: [
+              // Available to everyone (incl. scoped-down contractors):
+              // dashboard + their own project / time / expense surfaces.
               { index: true, element: <DashboardPage /> },
-              { path: "contacts", element: <ContactsList /> },
-              { path: "contacts/:id", element: <ContactDetail /> },
-              { path: "companies", element: <CompaniesList /> },
-              { path: "companies/:id", element: <CompanyDetail /> },
-              { path: "deals", element: <DealsList /> },
-              { path: "deals/:id", element: <DealDetail /> },
-              { path: "activities", element: <ActivitiesList /> },
-              { path: "activities/:id", element: <ActivityDetail /> },
-              { path: "quotes", element: <QuotesList /> },
-              { path: "quotes/:id", element: <QuoteDetail /> },
-              { path: "invoices", element: <InvoicesList /> },
-              { path: "invoices/:id", element: <InvoiceDetail /> },
-              { path: "tickets", element: <TicketsList /> },
-              { path: "tickets/:id", element: <TicketDetail /> },
-              { path: "knowledge-base", element: <KnowledgeBaseList /> },
-              { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
-              { path: "inbox", element: <InboxList /> },
-              { path: "inbox/:id", element: <InboxDetail /> },
-              {
-                element: <RequireAdmin />,
-                children: [
-                  { path: "field-definitions", element: <FieldDefinitionsList /> },
-                  { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
-                  { path: "audit", element: <AuditList /> },
-                ],
-              },
-              { path: "reports", element: <ReportsList /> },
-              { path: "reports/:id", element: <ReportDetail /> },
-              { path: "dashboards", element: <DashboardsList /> },
-              { path: "dashboards/:id", element: <DashboardDetail /> },
               { path: "projects", element: <ProjectsList /> },
               { path: "projects/:id", element: <ProjectDetail /> },
               { path: "timesheet", element: <TimesheetPageRoute /> },
               { path: "expenses", element: <ExpensesListRoute /> },
               { path: "expenses/:id", element: <ExpenseDetailRoute /> },
-              { path: "contracts", element: <ContractsList /> },
-              { path: "contracts/:id", element: <ContractDetail /> },
+
+              // Everything below is hidden from contractors. The guard is
+              // defense-in-depth: a contractor deep-linking any of these is
+              // bounced to the dashboard (mirrors the nav filter).
               {
-                element: <RequireAdmin />,
+                element: <RequireNotContractor />,
                 children: [
-                  { path: "contract-templates", element: <ContractTemplatesList /> },
-                  { path: "contract-templates/:id", element: <ContractTemplateDetail /> },
+                  { path: "contacts", element: <ContactsList /> },
+                  { path: "contacts/:id", element: <ContactDetail /> },
+                  { path: "companies", element: <CompaniesList /> },
+                  { path: "companies/:id", element: <CompanyDetail /> },
+                  { path: "deals", element: <DealsList /> },
+                  { path: "deals/:id", element: <DealDetail /> },
+                  { path: "activities", element: <ActivitiesList /> },
+                  { path: "activities/:id", element: <ActivityDetail /> },
+                  { path: "quotes", element: <QuotesList /> },
+                  { path: "quotes/:id", element: <QuoteDetail /> },
+                  { path: "invoices", element: <InvoicesList /> },
+                  { path: "invoices/:id", element: <InvoiceDetail /> },
+                  { path: "tickets", element: <TicketsList /> },
+                  { path: "tickets/:id", element: <TicketDetail /> },
+                  { path: "knowledge-base", element: <KnowledgeBaseList /> },
+                  { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
+                  { path: "inbox", element: <InboxList /> },
+                  { path: "inbox/:id", element: <InboxDetail /> },
+                  { path: "reports", element: <ReportsList /> },
+                  { path: "reports/:id", element: <ReportDetail /> },
+                  { path: "dashboards", element: <DashboardsList /> },
+                  { path: "dashboards/:id", element: <DashboardDetail /> },
+                  { path: "contracts", element: <ContractsList /> },
+                  { path: "contracts/:id", element: <ContractDetail /> },
+                  { path: "recurring-invoices", element: <RecurringInvoicesList /> },
+                  { path: "recurring-invoices/:id", element: <RecurringInvoiceDetail /> },
+                  // Admin-only surfaces (also contractor-hidden by the wrapper).
+                  {
+                    element: <RequireAdmin />,
+                    children: [
+                      { path: "team", element: <TeamList /> },
+                      { path: "team/:id", element: <TeamDetail /> },
+                      { path: "field-definitions", element: <FieldDefinitionsList /> },
+                      { path: "field-definitions/:id", element: <FieldDefinitionDetail /> },
+                      { path: "audit", element: <AuditList /> },
+                      { path: "contract-templates", element: <ContractTemplatesList /> },
+                      { path: "contract-templates/:id", element: <ContractTemplateDetail /> },
+                    ],
+                  },
                 ],
               },
-              { path: "recurring-invoices", element: <RecurringInvoicesList /> },
-              { path: "recurring-invoices/:id", element: <RecurringInvoiceDetail /> },
             ],
           },
         ],
