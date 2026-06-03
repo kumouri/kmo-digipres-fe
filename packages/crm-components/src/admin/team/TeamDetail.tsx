@@ -34,6 +34,7 @@ import {
   teamMemberToFormValues,
   formValuesToTeamMember,
 } from "./TeamMemberForm";
+import { PayoutSummary } from "./PayoutSummary";
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline" | "secondary" | "destructive"> = {
   ACTIVE: "default",
@@ -297,16 +298,7 @@ export function TeamDetail() {
         </TabsContent>
 
         <TabsContent value="payout">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payout</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Contractor payout summaries are coming soon.
-              </p>
-            </CardContent>
-          </Card>
+          {m.id ? <PayoutSummary userId={m.id} /> : null}
         </TabsContent>
       </Tabs>
     </section>

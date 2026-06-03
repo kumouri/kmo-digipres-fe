@@ -121,12 +121,14 @@ export type {
 export {
   TeamList,
   TeamDetail,
+  PayoutSummary,
   TeamMemberForm,
   teamMemberToFormValues,
   formValuesToTeamMember,
   type TeamMemberFormValues,
 } from "./admin/team";
 export { useTeamApi } from "./hooks/useTeamApi";
+export { usePayoutsApi } from "./hooks/usePayoutsApi";
 export { TimesheetPage, TimesheetApprovals, ExpensesList, ExpenseDetail, TimerWidget } from "./admin/time-and-expenses";
 export { useTimeExpensesApi } from "./hooks/useTimeExpensesApi";
 export { useTimesheetsApi } from "./hooks/useTimesheetsApi";
