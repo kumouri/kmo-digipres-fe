@@ -410,3 +410,23 @@ export const USER_ACCOUNT_STATUSES: UserAccountStatus[] = [
 // --- Project assignments -----------------------------------------------------
 
 export type ProjectAssignment = components["schemas"]["ProjectAssignment"];
+
+// =============================================================================
+// Contractor / time-management Phase 3 — Timesheets (submit / approve)
+// =============================================================================
+
+// Admin-facing full record (GET /timesheets, approve/reject return this);
+// contractor-facing trimmed projection (GET /me/contractor/timesheets).
+export type Timesheet = components["schemas"]["Timesheet"];
+export type TimesheetView = components["schemas"]["TimesheetView"];
+
+// A timesheet period's lifecycle: OPEN → SUBMITTED → APPROVED, or
+// SUBMITTED → REJECTED ("Sent back") → OPEN (reopen) / SUBMITTED (resubmit).
+export type TimesheetStatus = "OPEN" | "SUBMITTED" | "APPROVED" | "REJECTED";
+
+export const TIMESHEET_STATUSES: TimesheetStatus[] = [
+  "OPEN",
+  "SUBMITTED",
+  "APPROVED",
+  "REJECTED",
+];

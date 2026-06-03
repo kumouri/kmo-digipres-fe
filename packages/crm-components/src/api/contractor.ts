@@ -1,4 +1,4 @@
-import type { TimeEntry, Expense } from "../types/api";
+import type { TimeEntry, Expense, TimesheetView } from "../types/api";
 import type { components } from "../types/openapi";
 import type { CrmClient } from "./client";
 
@@ -112,6 +112,41 @@ export function stopContractorTimer(
     `/me/contractor/time/timer/stop${qs ? `?${qs}` : ""}`,
     { method: "POST" },
   );
+}
+
+// --- Timesheets (own periods: submit for approval / reopen) -------------------
+
+export function listContractorTimesheets(
+  client: CrmClient,
+): Promise<TimesheetView[]> {
+  return client.api<TimesheetView[]>("/me/contractor/timesheets");
+}
+
+export function getContractorTimesheet(
+  client: CrmClient,
+  id: string,
+): Promise<TimesheetView> {
+  return client.api<TimesheetView>(`/me/contractor/timesheets/${id}`);
+}
+
+// OPEN | REJECTED → SUBMITTED.
+export function submitContractorTimesheet(
+  client: CrmClient,
+  id: string,
+): Promise<TimesheetView> {
+  return client.api<TimesheetView>(`/me/contractor/timesheets/${id}/submit`, {
+    method: "POST",
+  });
+}
+
+// REJECTED → OPEN (so a sent-back period can be edited before resubmitting).
+export function reopenContractorTimesheet(
+  client: CrmClient,
+  id: string,
+): Promise<TimesheetView> {
+  return client.api<TimesheetView>(`/me/contractor/timesheets/${id}/reopen`, {
+    method: "POST",
+  });
 }
 
 // --- Expenses ----------------------------------------------------------------

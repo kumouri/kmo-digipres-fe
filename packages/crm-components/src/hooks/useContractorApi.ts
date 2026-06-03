@@ -38,6 +38,14 @@ export function useContractorApi() {
         contractorApi.startContractorTimer(client, body),
       stopTimer: (endedAt?: string, zoneId?: string) =>
         contractorApi.stopContractorTimer(client, endedAt, zoneId),
+      // Timesheets (own periods: submit for approval / reopen a sent-back one)
+      listTimesheets: () => contractorApi.listContractorTimesheets(client),
+      getTimesheet: (id: string) =>
+        contractorApi.getContractorTimesheet(client, id),
+      submitTimesheet: (id: string) =>
+        contractorApi.submitContractorTimesheet(client, id),
+      reopenTimesheet: (id: string) =>
+        contractorApi.reopenContractorTimesheet(client, id),
       // Expenses (own submissions)
       listExpenses: () => contractorApi.listContractorExpenses(client),
       submitExpense: (body: Expense) =>
