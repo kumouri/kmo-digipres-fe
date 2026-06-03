@@ -10,6 +10,9 @@ import type {
   BookingPublicView,
   CompanyDTO,
   ContactDTO,
+  ContractorClientView,
+  ContractorProjectView,
+  ContractorTaskView,
   Contract,
   ContractTemplate,
   Dashboard,
@@ -989,6 +992,10 @@ const seedProject: Project = {
   description: "Full redesign of the public-facing website.",
   startDate: "2026-05-01",
   targetEndDate: "2026-08-31",
+  // Linked client refs so the contractor's read-only Client card resolves
+  // (primaryContactId → seedContact "Ada Lovelace", companyId → seedCompany).
+  primaryContactId: "33333333-3333-3333-3333-333333333333",
+  companyId: "44444444-4444-4444-4444-444444444444",
   autoFinalizeMilestoneInvoices: false,
   createdAt: "2026-05-01T00:00:00Z",
   updatedAt: "2026-05-01T00:00:00Z",
@@ -1237,6 +1244,12 @@ export const SEED_SPLIT_ENTRY_TUE_ID = "te000000-0000-0000-0000-000000000003";
 export const SEED_SPLIT_GROUP_ID = "sg000000-0000-0000-0000-000000000001";
 export const SEED_EXPENSE_PENDING_ID = "ex000000-0000-0000-0000-000000000001";
 
+// Contractor-owned seed rows (Phase J2). The contractor (SMOKE_CONTRACTOR_USER)
+// is assigned to SEED_PROJECT_ID; these are their OWN time entry + expense, so
+// the scoped /me/contractor/** readers return something for them.
+export const SEED_CONTRACTOR_TIME_ENTRY_ID = "te000000-0000-0000-0000-0000000000c1";
+export const SEED_CONTRACTOR_EXPENSE_ID = "ex000000-0000-0000-0000-0000000000c1";
+
 // Seed time entries: one unbilled billable entry + a deterministic Mon→Tue split pair
 const MON_22 = "2026-05-11T22:00:00Z"; // Mon 22:00 UTC (also local for UTC zone)
 const MON_MIDNIGHT = "2026-05-12T00:00:00Z"; // Tue 00:00 UTC boundary
@@ -1293,6 +1306,24 @@ const seedTimeEntries: TimeEntry[] = [
     splitGroupId: SEED_SPLIT_GROUP_ID,
     createdAt: TUE_02,
     updatedAt: TUE_02,
+  },
+  // Contractor's own time entry on their assigned project (same week as the
+  // admin's unbilled entry above so the default weekly view shows it).
+  {
+    id: SEED_CONTRACTOR_TIME_ENTRY_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_CONTRACTOR_USER.id,
+    projectId: SEED_PROJECT_ID,
+    description: "Contractor build session",
+    startedAt: "2026-05-12T13:00:00Z",
+    endedAt: "2026-05-12T15:00:00Z",
+    durationSeconds: 7200,
+    source: "MANUAL",
+    billable: true,
+    billingStatus: "UNBILLED",
+    rateAmount: 150,
+    createdAt: "2026-05-12T15:00:00Z",
+    updatedAt: "2026-05-12T15:00:00Z",
   },
 ];
 
@@ -1511,7 +1542,29 @@ const seedExpense: Expense = {
   updatedAt: "2026-05-12T12:00:00Z",
 };
 
-const expenses = new Map<string, Expense>([[seedExpense.id!, seedExpense]]);
+// Contractor's own seed expense on their assigned project.
+const seedContractorExpense: Expense = {
+  id: SEED_CONTRACTOR_EXPENSE_ID,
+  tenantId: SMOKE_USER.tenantId,
+  userId: SMOKE_CONTRACTOR_USER.id,
+  projectId: SEED_PROJECT_ID,
+  description: "Parking for client site visit",
+  category: "TRAVEL",
+  amount: 24,
+  currency: "USD",
+  incurredOn: "2026-05-12",
+  markupPercent: 0,
+  billable: true,
+  approvalStatus: "PENDING",
+  billingStatus: "UNBILLED",
+  createdAt: "2026-05-12T16:00:00Z",
+  updatedAt: "2026-05-12T16:00:00Z",
+};
+
+const expenses = new Map<string, Expense>([
+  [seedExpense.id!, seedExpense],
+  [seedContractorExpense.id!, seedContractorExpense],
+]);
 
 export const expenseStore = {
   list(): Expense[] {
@@ -2086,5 +2139,93 @@ export const assignmentStore = {
       updatedAt: new Date().toISOString(),
     });
     return true;
+  },
+};
+
+// --- Contractor self-service surface (Phase J2) ------------------------------
+
+// Maps the full staff Project/Task/Contact records to the trimmed contractor
+// view shapes, scoping reads to the caller's active assignments + own rows. The
+// handler resolves the caller's userId from the bearer token and passes it in;
+// project access is gated on an active assignment so a contractor can never
+// read a project they're not on.
+
+function toProjectView(p: Project): ContractorProjectView {
+  return {
+    id: p.id,
+    code: p.code,
+    name: p.name,
+    status: p.status,
+    description: p.description,
+    startDate: p.startDate,
+    targetEndDate: p.targetEndDate,
+    actualEndDate: p.actualEndDate,
+  };
+}
+
+function toTaskView(t: Task): ContractorTaskView {
+  return {
+    id: t.id,
+    projectId: t.projectId,
+    milestoneId: t.milestoneId,
+    title: t.title,
+    description: t.description,
+    status: t.status,
+    priority: t.priority,
+    dueDate: t.dueDate,
+    orderIndex: t.orderIndex,
+  };
+}
+
+export const contractorStore = {
+  /** Project IDs the contractor is actively assigned to. */
+  assignedProjectIds(userId: string): Set<string> {
+    return new Set(
+      Array.from(assignments.values())
+        .filter((a) => a.userId === userId && a.active !== false)
+        .map((a) => a.projectId!)
+        .filter(Boolean),
+    );
+  },
+  listProjects(userId: string): ContractorProjectView[] {
+    const ids = this.assignedProjectIds(userId);
+    return Array.from(projects.values())
+      .filter((p) => p.id && ids.has(p.id))
+      .map(toProjectView);
+  },
+  getProject(userId: string, projectId: string): ContractorProjectView | undefined {
+    if (!this.assignedProjectIds(userId).has(projectId)) return undefined;
+    const p = projects.get(projectId);
+    return p ? toProjectView(p) : undefined;
+  },
+  listTasks(userId: string, projectId: string): ContractorTaskView[] | undefined {
+    if (!this.assignedProjectIds(userId).has(projectId)) return undefined;
+    return taskStore2.listByProject(projectId).map(toTaskView);
+  },
+  getClient(userId: string, projectId: string): ContractorClientView | undefined {
+    if (!this.assignedProjectIds(userId).has(projectId)) return undefined;
+    const p = projects.get(projectId);
+    if (!p) return undefined;
+    const contact = p.primaryContactId
+      ? contacts.get(p.primaryContactId)
+      : undefined;
+    const company = p.companyId ? companies.get(p.companyId) : undefined;
+    return {
+      contactName: contact?.displayName,
+      contactEmail: contact?.emails?.[0],
+      contactPhone: contact?.phones?.[0]?.number,
+      companyName: company?.name,
+    };
+  },
+  // Time — own entries only.
+  listTime(userId: string): TimeEntry[] {
+    return timeEntryStore.listByUser(userId);
+  },
+  listWeekly(userId: string, from: string, to: string): TimeEntry[] {
+    return timeEntryStore.listWeekly(userId, from, to);
+  },
+  // Expenses — own submissions only.
+  listExpenses(userId: string): Expense[] {
+    return Array.from(expenses.values()).filter((e) => e.userId === userId);
   },
 };

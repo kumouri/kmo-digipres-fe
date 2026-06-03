@@ -53,6 +53,7 @@ import {
   contactStore,
   contractStore,
   contractTemplateStore,
+  contractorStore,
   dashboardStore,
   dealStore,
   expenseStore,
@@ -81,6 +82,39 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api
 function requireAuth(request: Request): boolean {
   const header = request.headers.get("authorization");
   return !!header && header.startsWith("Bearer ");
+}
+
+/** Resolve the calling user from the bearer token (mirrors /auth/me). */
+function userFromToken(request: Request) {
+  const header = request.headers.get("authorization") ?? "";
+  if (header === `Bearer ${SMOKE_STAFF_TOKEN}`) return SMOKE_STAFF_USER;
+  if (header === `Bearer ${SMOKE_CONTRACTOR_TOKEN}`) return SMOKE_CONTRACTOR_USER;
+  return SMOKE_USER;
+}
+
+/** True when the caller is a scoped-down contractor (CONTRACTOR && !ADMIN). */
+function isContractorToken(request: Request): boolean {
+  const roles = userFromToken(request).roles ?? [];
+  return roles.includes("CONTRACTOR") && !roles.includes("ADMIN");
+}
+
+/**
+ * Mirrors the Phase-2 BE: the broad staff readers DENY a CONTRACTOR token with
+ * a 403 + errorCode 4135. Returns the deny response when the caller is a
+ * contractor, otherwise null (proceed). Use on the staff list/read endpoints a
+ * contractor must reach through /me/contractor/** instead.
+ */
+function denyContractor(request: Request): Response | null {
+  if (isContractorToken(request)) {
+    return HttpResponse.json(
+      {
+        message: "Contractors cannot access this resource",
+        errorCode: 4135,
+      },
+      { status: 403 },
+    );
+  }
+  return null;
 }
 
 export const handlers = [
@@ -113,14 +147,7 @@ export const handlers = [
 
   http.get(`${API_BASE}/auth/me`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
-    const header = request.headers.get("authorization") ?? "";
-    const me =
-      header === `Bearer ${SMOKE_STAFF_TOKEN}`
-        ? SMOKE_STAFF_USER
-        : header === `Bearer ${SMOKE_CONTRACTOR_TOKEN}`
-          ? SMOKE_CONTRACTOR_USER
-          : SMOKE_USER;
-    return HttpResponse.json(me);
+    return HttpResponse.json(userFromToken(request));
   }),
 
   http.post(`${API_BASE}/auth/logout`, ({ request }) => {
@@ -133,6 +160,8 @@ export const handlers = [
   // --- Contacts -------------------------------------------------------------
   http.get(`${API_BASE}/contacts`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     return HttpResponse.json(contactStore.list());
   }),
 
@@ -208,6 +237,8 @@ export const handlers = [
   // --- Deals ----------------------------------------------------------------
   http.get(`${API_BASE}/deals`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     return HttpResponse.json(dealStore.list());
   }),
 
@@ -779,11 +810,15 @@ export const handlers = [
 
   http.get(`${API_BASE}/projects`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     return HttpResponse.json(projectStore.list());
   }),
 
   http.get(`${API_BASE}/projects/:id`, ({ request, params }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const found = projectStore.get(params.id as string);
     if (!found) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(found);
@@ -1001,6 +1036,8 @@ export const handlers = [
 
   http.post(`${API_BASE}/time-entries/timer/start`, async ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const body = (await request.json()) as TimeEntry;
     const result = timeEntryStore.startTimer(body);
     if ("code" in result) {
@@ -1014,6 +1051,8 @@ export const handlers = [
 
   http.post(`${API_BASE}/time-entries/timer/stop`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const url = new URL(request.url);
     const userId = url.searchParams.get("userId") ?? SMOKE_USER.id;
     const endedAt = url.searchParams.get("endedAt") ?? undefined;
@@ -1030,6 +1069,8 @@ export const handlers = [
 
   http.get(`${API_BASE}/time-entries/timer/running`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const running = timeEntryStore.getRunningTimer();
     if (!running) return new HttpResponse(null, { status: 204 });
     return HttpResponse.json(running);
@@ -1037,6 +1078,8 @@ export const handlers = [
 
   http.get(`${API_BASE}/time-entries/weekly`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const url = new URL(request.url);
     const userId = url.searchParams.get("userId") ?? SMOKE_USER.id;
     const from = url.searchParams.get("from") ?? "";
@@ -1066,6 +1109,8 @@ export const handlers = [
 
   http.get(`${API_BASE}/time-entries`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     return HttpResponse.json(timeEntryStore.list());
   }),
 
@@ -1078,6 +1123,8 @@ export const handlers = [
 
   http.post(`${API_BASE}/time-entries`, async ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const body = (await request.json()) as TimeEntry;
     const created = timeEntryStore.create(body);
     return HttpResponse.json(created, { status: 201 });
@@ -1143,6 +1190,8 @@ export const handlers = [
 
   http.get(`${API_BASE}/expenses`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     return HttpResponse.json(expenseStore.list());
   }),
 
@@ -1155,6 +1204,8 @@ export const handlers = [
 
   http.post(`${API_BASE}/expenses`, async ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const denied = denyContractor(request);
+    if (denied) return denied;
     const body = (await request.json()) as Expense;
     const created = expenseStore.create(body);
     return HttpResponse.json(created, { status: 201 });
@@ -1372,5 +1423,132 @@ export const handlers = [
       mode: "CHECKOUT_SESSION",
       invoiceId,
     });
+  }),
+
+  // --- Contractor self-service surface (Phase J2) ----------------------------
+  // Implicitly scoped to the caller (resolved from the bearer token). Any
+  // authenticated user may call these; the data is scoped to their assignments
+  // / own rows, so a non-contractor just sees an empty/own slice. The matching
+  // staff readers above deny a CONTRACTOR token (4135) — this is the surface a
+  // contractor uses instead.
+  //
+  // NOTE: more-specific paths must precede the wildcard /:id ones so MSW does
+  // not match the literal segment as an id.
+
+  // Time — specific paths first.
+  http.get(`${API_BASE}/me/contractor/time/weekly`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const url = new URL(request.url);
+    const from = url.searchParams.get("from") ?? "";
+    const to = url.searchParams.get("to") ?? "";
+    return HttpResponse.json(contractorStore.listWeekly(me.id!, from, to));
+  }),
+
+  http.post(`${API_BASE}/me/contractor/time/timer/start`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const body = (await request.json()) as TimeEntry;
+    const result = timeEntryStore.startTimer({ ...body, userId: me.id });
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json(result, { status: 201 });
+  }),
+
+  http.post(`${API_BASE}/me/contractor/time/timer/stop`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const url = new URL(request.url);
+    const endedAt = url.searchParams.get("endedAt") ?? undefined;
+    const zoneId = url.searchParams.get("zoneId") ?? undefined;
+    const result = timeEntryStore.stopTimer(me.id!, endedAt, zoneId);
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.get(`${API_BASE}/me/contractor/time`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    return HttpResponse.json(contractorStore.listTime(me.id!));
+  }),
+
+  http.post(`${API_BASE}/me/contractor/time`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const body = (await request.json()) as TimeEntry;
+    const created = timeEntryStore.create({ ...body, userId: me.id });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API_BASE}/me/contractor/time/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const existing = timeEntryStore.get(params.id as string);
+    // A contractor may only edit their own entries.
+    if (!existing || existing.userId !== me.id)
+      return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as TimeEntry;
+    const updated = timeEntryStore.update(params.id as string, {
+      ...body,
+      userId: me.id,
+    });
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  // Expenses.
+  http.get(`${API_BASE}/me/contractor/expenses`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    return HttpResponse.json(contractorStore.listExpenses(me.id!));
+  }),
+
+  http.post(`${API_BASE}/me/contractor/expenses`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const body = (await request.json()) as Expense;
+    const created = expenseStore.create({ ...body, userId: me.id });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // Projects — specific sub-resources before the wildcard /:id.
+  http.get(`${API_BASE}/me/contractor/projects/:id/tasks`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const tasks = contractorStore.listTasks(me.id!, params.id as string);
+    // Not assigned → 404 (mirrors the BE's not-found-or-forbidden behavior).
+    if (!tasks) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(tasks);
+  }),
+
+  http.get(`${API_BASE}/me/contractor/projects/:id/client`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const client = contractorStore.getClient(me.id!, params.id as string);
+    if (!client) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(client);
+  }),
+
+  http.get(`${API_BASE}/me/contractor/projects/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const project = contractorStore.getProject(me.id!, params.id as string);
+    if (!project) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(project);
+  }),
+
+  http.get(`${API_BASE}/me/contractor/projects`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    return HttpResponse.json(contractorStore.listProjects(me.id!));
   }),
 ];
