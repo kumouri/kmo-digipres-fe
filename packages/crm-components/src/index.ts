@@ -106,10 +106,18 @@ export { ReportsList, ReportDetail, DashboardsList, DashboardDetail } from "./ad
 export { useReportsApi } from "./hooks/useReportsApi";
 export { AskAiDialog } from "./admin/ai";
 export { useAiApi } from "./hooks/useAiApi";
-export { ProjectsList, ProjectDetail, ProjectAssignments } from "./admin/projects";
+export { ProjectsList, ProjectDetail, ProjectAssignments, ContractorTaskList } from "./admin/projects";
 export { useProjectsApi } from "./hooks/useProjectsApi";
 export { useProjectAssignmentsApi } from "./hooks/useProjectAssignmentsApi";
 export type { AssignmentInput } from "./api/project-assignments";
+// Contractor self-service surface (/me/contractor/**) — used by the shared
+// My Projects / My Timesheet / My Expenses pages when the user is a contractor.
+export { useContractorApi } from "./hooks/useContractorApi";
+export type {
+  ContractorProjectView,
+  ContractorTaskView,
+  ContractorClientView,
+} from "./api/contractor";
 export {
   TeamList,
   TeamDetail,

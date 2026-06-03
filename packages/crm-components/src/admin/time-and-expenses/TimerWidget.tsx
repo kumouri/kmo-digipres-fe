@@ -4,11 +4,20 @@ import { toast } from "sonner";
 import { Pause, Play, Timer } from "lucide-react";
 
 import { Button } from "../../primitives/button";
+import { useContractorApi } from "../../hooks/useContractorApi";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
 import type { TimeEntry } from "../../types/api";
 
 interface Props {
   userId: string;
+  /**
+   * When true, the signed-in user is a scoped-down contractor: start/stop hit
+   * /me/contractor/time/timer/* and the running-timer state is derived from the
+   * contractor's own-time list (no dedicated /timer/running on that surface).
+   * The staff /time-entries timer endpoints deny a CONTRACTOR token (4135).
+   * Defaults to false (staff/admin — unchanged behavior).
+   */
+  isContractor?: boolean;
 }
 
 /** Format elapsed seconds as HH:MM:SS */
@@ -27,14 +36,24 @@ function fmtElapsed(secs: number): string {
  * NEVER persists the moving elapsed value — only startedAt is the source of truth.
  * Query key: ["timer","running"]. Stop invalidates ["timer","running"] + ["time-entries"].
  */
-export function TimerWidget({ userId }: Props) {
+export function TimerWidget({ userId, isContractor = false }: Props) {
   const qc = useQueryClient();
-  const api = useTimeExpensesApi();
+  const staffApi = useTimeExpensesApi();
+  const contractorApi = useContractorApi();
   const [elapsed, setElapsed] = useState(0);
 
+  // Namespaced query keys so a contractor's derived running-timer never collides
+  // with the staff poll, and start/stop invalidates the matching time family
+  // (TimesheetPage reads ["contractor","time",…] vs ["time-entries",…]).
+  const runningKey = isContractor
+    ? ["contractor", "timer", "running"]
+    : ["timer", "running"];
+  const timeKey = isContractor ? ["contractor", "time"] : ["time-entries"];
+
   const { data: running, isLoading } = useQuery<TimeEntry | null>({
-    queryKey: ["timer", "running"],
-    queryFn: () => api.getRunningTimer(userId),
+    queryKey: runningKey,
+    queryFn: () =>
+      isContractor ? contractorApi.getRunningTime() : staffApi.getRunningTimer(userId),
     refetchInterval: 30_000, // re-sync every 30s (not a tick — ticks are client-side)
     staleTime: 10_000,
   });
@@ -60,16 +79,20 @@ export function TimerWidget({ userId }: Props) {
   }, [running, computeElapsed]);
 
   const startMutation = useMutation({
-    mutationFn: () =>
-      api.startTimer({
+    mutationFn: () => {
+      const body: TimeEntry = {
         userId,
         startedAt: new Date().toISOString(),
         source: "TIMER",
         billable: true,
-      }),
+      };
+      return isContractor
+        ? contractorApi.startTimer(body)
+        : staffApi.startTimer(body);
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["timer", "running"] });
-      qc.invalidateQueries({ queryKey: ["time-entries"] });
+      qc.invalidateQueries({ queryKey: runningKey });
+      qc.invalidateQueries({ queryKey: timeKey });
       toast.success("Timer started.");
     },
     onError: (e) =>
@@ -77,15 +100,16 @@ export function TimerWidget({ userId }: Props) {
   });
 
   const stopMutation = useMutation({
-    mutationFn: () =>
-      api.stopTimer(
-        userId,
-        new Date().toISOString(),
-        Intl.DateTimeFormat().resolvedOptions().timeZone,
-      ),
+    mutationFn: () => {
+      const endedAt = new Date().toISOString();
+      const zoneId = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return isContractor
+        ? contractorApi.stopTimer(endedAt, zoneId)
+        : staffApi.stopTimer(userId, endedAt, zoneId);
+    },
     onSuccess: (segments) => {
-      qc.invalidateQueries({ queryKey: ["timer", "running"] });
-      qc.invalidateQueries({ queryKey: ["time-entries"] });
+      qc.invalidateQueries({ queryKey: runningKey });
+      qc.invalidateQueries({ queryKey: timeKey });
       if (segments.length > 1) {
         // Split across midnight — surface a note
         toast.success(
