@@ -33,6 +33,9 @@ import type {
   Task,
   TeamMemberRequest,
   TimeEntry,
+  Timesheet,
+  TimesheetStatus,
+  TimesheetView,
   Ticket,
 } from "@kmosf/crm-components";
 import type { components } from "@kmosf/crm-components";
@@ -70,6 +73,7 @@ import {
   teamStore,
   ticketStore,
   timeEntryStore,
+  timesheetStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -96,6 +100,21 @@ function userFromToken(request: Request) {
 function isContractorToken(request: Request): boolean {
   const roles = userFromToken(request).roles ?? [];
   return roles.includes("CONTRACTOR") && !roles.includes("ADMIN");
+}
+
+/** Project a full Timesheet to the trimmed contractor TimesheetView (mirrors BE). */
+function toContractorTimesheetView(t: Timesheet): TimesheetView {
+  return {
+    id: t.id,
+    userId: t.userId,
+    periodStart: t.periodStart,
+    periodEnd: t.periodEnd,
+    status: t.status,
+    submittedAt: t.submittedAt,
+    approvedBy: t.approvedBy,
+    approvedAt: t.approvedAt,
+    note: t.note,
+  };
 }
 
 /**
@@ -1425,6 +1444,54 @@ export const handlers = [
     });
   }),
 
+  // --- Timesheets — admin approvals (Phase J3) -------------------------------
+  // The owner reviews timesheets teammates submitted for approval. Lists by
+  // status (default SUBMITTED), approves, or sends back with a required reason
+  // (?reason=). NOTE: specific action paths before the wildcard /:id.
+
+  http.post(`${API_BASE}/timesheets/:id/approve`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = timesheetStore.approve(params.id as string);
+    if ("code" in result) {
+      const status = result.code === 3611 ? 404 : 409;
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/timesheets/:id/reject`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const reason = url.searchParams.get("reason") ?? "";
+    const result = timesheetStore.reject(params.id as string, reason);
+    if ("code" in result) {
+      const status =
+        result.code === 3615 ? 400 : result.code === 3611 ? 404 : 409;
+      return HttpResponse.json(
+        { message: result.error, errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.get(`${API_BASE}/timesheets`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const status = (url.searchParams.get("status") ?? "SUBMITTED") as TimesheetStatus;
+    return HttpResponse.json(timesheetStore.listByStatus(status));
+  }),
+
+  http.get(`${API_BASE}/timesheets/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = timesheetStore.get(params.id as string);
+    if (!found) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(found);
+  }),
+
   // --- Contractor self-service surface (Phase J2) ----------------------------
   // Implicitly scoped to the caller (resolved from the bearer token). Any
   // authenticated user may call these; the data is scoped to their assignments
@@ -1518,6 +1585,62 @@ export const handlers = [
     const body = (await request.json()) as Expense;
     const created = expenseStore.create({ ...body, userId: me.id });
     return HttpResponse.json(created, { status: 201 });
+  }),
+
+  // Timesheets — own periods (submit for approval / reopen a sent-back one).
+  // Specific action paths before the wildcard /:id.
+  http.post(
+    `${API_BASE}/me/contractor/timesheets/:id/submit`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const me = userFromToken(request);
+      const existing = timesheetStore.get(params.id as string);
+      // A contractor may only act on their own timesheets.
+      if (!existing || existing.userId !== me.id)
+        return new HttpResponse(null, { status: 404 });
+      const result = timesheetStore.submit(params.id as string);
+      if ("code" in result) {
+        return HttpResponse.json(
+          { message: result.error, errorCode: result.code },
+          { status: 409 },
+        );
+      }
+      return HttpResponse.json(toContractorTimesheetView(result));
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/me/contractor/timesheets/:id/reopen`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const me = userFromToken(request);
+      const existing = timesheetStore.get(params.id as string);
+      if (!existing || existing.userId !== me.id)
+        return new HttpResponse(null, { status: 404 });
+      const result = timesheetStore.reopen(params.id as string);
+      if ("code" in result) {
+        return HttpResponse.json(
+          { message: result.error, errorCode: result.code },
+          { status: 409 },
+        );
+      }
+      return HttpResponse.json(toContractorTimesheetView(result));
+    },
+  ),
+
+  http.get(`${API_BASE}/me/contractor/timesheets/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    const existing = timesheetStore.get(params.id as string);
+    if (!existing || existing.userId !== me.id)
+      return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(toContractorTimesheetView(existing));
+  }),
+
+  http.get(`${API_BASE}/me/contractor/timesheets`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const me = userFromToken(request);
+    return HttpResponse.json(timesheetStore.listForUser(me.id!).map(toContractorTimesheetView));
   }),
 
   // Projects — specific sub-resources before the wildcard /:id.

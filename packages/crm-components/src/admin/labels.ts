@@ -145,6 +145,15 @@ export const BILLING_STATUS_LABELS: Record<string, string> = {
   INVOICED: "Invoiced",
 };
 
+// Timesheet period lifecycle. "Sent back" reads gentler + clearer than the raw
+// "Rejected" for a teammate whose week needs another look (brand-voice §3.2).
+export const TIMESHEET_STATUS_LABELS: Record<string, string> = {
+  OPEN: "Open",
+  SUBMITTED: "Submitted",
+  APPROVED: "Approved",
+  REJECTED: "Sent back",
+};
+
 // --- Records (audit / reports / field definitions) --------------------------
 // The CRM "entity types" a record can be — shown to users as plain record
 // names ("entity" is engineer jargon for a non-technical admin).

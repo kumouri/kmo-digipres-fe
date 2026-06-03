@@ -127,8 +127,9 @@ export {
   type TeamMemberFormValues,
 } from "./admin/team";
 export { useTeamApi } from "./hooks/useTeamApi";
-export { TimesheetPage, ExpensesList, ExpenseDetail, TimerWidget } from "./admin/time-and-expenses";
+export { TimesheetPage, TimesheetApprovals, ExpensesList, ExpenseDetail, TimerWidget } from "./admin/time-and-expenses";
 export { useTimeExpensesApi } from "./hooks/useTimeExpensesApi";
+export { useTimesheetsApi } from "./hooks/useTimesheetsApi";
 export { ContractsList, ContractDetail, ContractForm, contractToFormValues, formValuesToContract, type ContractFormValues } from "./admin/contracts";
 export { useContractsApi } from "./hooks/useContractsApi";
 export { ContractTemplatesList, ContractTemplateDetail, ContractTemplateForm, templateToFormValues, formValuesToTemplate, type ContractTemplateFormValues } from "./admin/contract-templates";

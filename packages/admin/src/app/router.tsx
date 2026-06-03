@@ -111,6 +111,9 @@ const ExpensesListInner = lazy(() =>
 const ExpenseDetailInner = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ExpenseDetail })),
 );
+const TimesheetApprovals = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.TimesheetApprovals })),
+);
 const ContractsList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ContractsList })),
 );
@@ -265,6 +268,9 @@ export const router = createBrowserRouter([
                       { path: "audit", element: <AuditList /> },
                       { path: "contract-templates", element: <ContractTemplatesList /> },
                       { path: "contract-templates/:id", element: <ContractTemplateDetail /> },
+                      // Admin timesheet approvals (distinct from the contractor
+                      // surface at /timesheet — singular).
+                      { path: "timesheets", element: <TimesheetApprovals /> },
                     ],
                   },
                 ],
