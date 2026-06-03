@@ -186,7 +186,9 @@ export function AppShell() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            {user?.id && <TimerWidget userId={user.id} />}
+            {user?.id && (
+              <TimerWidget userId={user.id} isContractor={contractor} />
+            )}
             <AskAiDialog />
             <UserMenu />
           </div>

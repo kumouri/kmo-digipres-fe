@@ -8,7 +8,7 @@ import { RequireNotContractor } from "./auth/RequireNotContractor";
 import { RouteFallback } from "./components/RouteFallback";
 import { DashboardPage } from "./pages/DashboardPage";
 import { useAuth } from "./auth/useAuth";
-import { isAdmin } from "./auth/roles";
+import { isAdmin, isContractor } from "./auth/roles";
 
 // Each route below is its own dynamic-imported chunk. The Dashboard stays
 // eager because it's the post-login landing screen — splitting it would just
@@ -96,10 +96,10 @@ const DashboardsList = lazy(() =>
 const DashboardDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.DashboardDetail })),
 );
-const ProjectsList = lazy(() =>
+const ProjectsListInner = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ProjectsList })),
 );
-const ProjectDetail = lazy(() =>
+const ProjectDetailInner = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ProjectDetail })),
 );
 const TimesheetPageInner = lazy(() =>
@@ -136,17 +136,41 @@ const TeamDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamDetail })),
 );
 
-/** Wrapper: provides userId from auth context to TimesheetPage */
-function TimesheetPageRoute() {
-  const { user } = useAuth();
-  return <TimesheetPageInner userId={user?.id ?? ""} />;
+/**
+ * Wrappers: feed role context into the shared CRM components. A scoped-down
+ * contractor (CONTRACTOR && !ADMIN) is denied the broad staff readers on the
+ * backend (GET /projects, /time-entries, /expenses, … → 4135), so these
+ * surfaces switch to the /me/contractor/** endpoints when isContractor is set.
+ * Staff/admin keep the existing behavior unchanged.
+ */
+function ProjectsListRoute() {
+  const { roles } = useAuth();
+  return <ProjectsListInner isContractor={isContractor(roles)} />;
 }
 
-/** Wrapper: provides userId from auth context to ExpensesList */
+function ProjectDetailRoute() {
+  const { roles } = useAuth();
+  return <ProjectDetailInner isContractor={isContractor(roles)} />;
+}
+
+function TimesheetPageRoute() {
+  const { user, roles } = useAuth();
+  return (
+    <TimesheetPageInner
+      userId={user?.id ?? ""}
+      isContractor={isContractor(roles)}
+    />
+  );
+}
+
 function ExpensesListRoute() {
   const { user, roles } = useAuth();
-  void roles; // ExpensesList currently ignores isAdmin; future: pass it
-  return <ExpensesListInner userId={user?.id ?? ""} />;
+  return (
+    <ExpensesListInner
+      userId={user?.id ?? ""}
+      isContractor={isContractor(roles)}
+    />
+  );
 }
 
 /** Wrapper: provides isAdmin from auth context to ExpenseDetail */
@@ -192,8 +216,8 @@ export const router = createBrowserRouter([
               // Available to everyone (incl. scoped-down contractors):
               // dashboard + their own project / time / expense surfaces.
               { index: true, element: <DashboardPage /> },
-              { path: "projects", element: <ProjectsList /> },
-              { path: "projects/:id", element: <ProjectDetail /> },
+              { path: "projects", element: <ProjectsListRoute /> },
+              { path: "projects/:id", element: <ProjectDetailRoute /> },
               { path: "timesheet", element: <TimesheetPageRoute /> },
               { path: "expenses", element: <ExpensesListRoute /> },
               { path: "expenses/:id", element: <ExpenseDetailRoute /> },
