@@ -61,6 +61,7 @@ import {
   dealStore,
   expenseStore,
   fieldDefStore,
+  gbpReviewReplyStore,
   inboxStore,
   invoiceStore,
   kbStore,
@@ -1673,5 +1674,41 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     const me = userFromToken(request);
     return HttpResponse.json(contractorStore.listProjects(me.id!));
+  }),
+
+  // --- Review replies (Google Business Profile) ------------------------------
+  // ADMIN-guarded on the BE. List the drafts, post the (edited) reply to
+  // Google, or skip it. 4032 = not found, 4033 = no longer DRAFTED.
+
+  http.get(`${API_BASE}/gbp/review-replies`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(gbpReviewReplyStore.listDrafted());
+  }),
+
+  http.post(`${API_BASE}/gbp/review-replies/:id/post`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json().catch(() => ({}))) as { reply?: string };
+    const result = gbpReviewReplyStore.post(params.id as string, body.reply);
+    if ("code" in result) {
+      const status = result.code === 4033 ? 409 : 404;
+      return HttpResponse.json(
+        { message: "Reply cannot be posted", errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  http.post(`${API_BASE}/gbp/review-replies/:id/skip`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = gbpReviewReplyStore.skip(params.id as string);
+    if ("code" in result) {
+      const status = result.code === 4033 ? 409 : 404;
+      return HttpResponse.json(
+        { message: "Reply cannot be skipped", errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result);
   }),
 ];
