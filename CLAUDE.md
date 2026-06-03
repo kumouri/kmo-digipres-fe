@@ -53,6 +53,24 @@ Admin UI for the backend's **Google Business Profile review-reply automation** (
 - **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
 - **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
 
+## Contractor & time management — admin UI (SHIPPED 2026-06-03)
+
+Admin UI for the backend **contractor / time-management vertical (BE Phase J1–J4)** — onboarding a 1099 teammate end to end: a staff/contractor directory, project assignment with bill/cost rates, a **scoped Contractor experience**, submit→approve timesheets, and a payout/margin (1099) report. Four FE PRs off four BE PRs: **#43** (J1) · **#44** (J2) · **#45** (J3) · **#47** (J4); branches `contractor-time-mgmt-phase-{1,2,3,4}-fe`; smoke +15 across the four phases.
+
+| Area | Route | API surface |
+|---|---|---|
+| Team directory (admin-only, `<RequireAdmin>`) | `/team`, `/team/:id` | GET/POST/PUT /team; POST /team/:id/disable — invite Staff/Contractor + default bill/cost rates; `TeamMemberView` (no `passwordHash`). Detail tabs: Details / Projects / Timesheets / **Payout** |
+| Project assignment (admin) | "Team" tab on `/projects/:id` | GET/POST/PUT/DELETE /projects/:projectId/assignments (idempotent POST w/ `Idempotency-Key`; per-assignment bill/cost overrides; soft-delete) |
+| Contractor self-surface (scoped) | `/projects`, `/timesheet`, `/expenses` | GET /me/contractor/projects[/:id][/tasks][/client]; /me/contractor/time[/weekly] + timer; /me/contractor/expenses; /me/contractor/timesheets (+submit/reopen) |
+| Timesheet approvals (admin-only, `<RequireAdmin>`) | `/timesheets` | GET /timesheets?status=; POST /timesheets/:id/approve; POST /timesheets/:id/reject (`?reason=`) |
+
+- **Contractor role + gating (J1):** `app/auth/roles.ts` adds `isContractor(roles)` = `CONTRACTOR && !ADMIN` (the owner is never scoped down) + `hasAnyRole`. New `RequireNotContractor` guard wraps every non-contractor route group in `router.tsx` (deep-link → redirect to `/`); `AppShell` `NavItem` gains `hideForContractor`/`contractorLabel` so a contractor's sidebar is exactly **Dashboard · My Projects · My Timesheet · My Expenses** (+ the self-scoped timer widget). Admin/staff nav byte-unchanged.
+- **Role-aware data fetching (J2):** the BE denies a CONTRACTOR token (4135) on the broad staff readers, so the shared My Projects/Timesheet/Expenses pages fetch from `/me/contractor/**` when `isContractor` — an `isContractor` prop fed from the route wrappers (the `ExpenseDetailRoute`-passes-`isAdmin` pattern) selects the hook; **contractor query keys are namespaced `["contractor", …]`** so the two role views never collide in the TanStack cache. `ProjectDetail` for a contractor shows a **read-only client card** (`/client`) in place of the admin Team tab and hides Delete + manage tabs. `api/contractor.ts` + `useContractorApi`.
+- **Timesheet submit/approve (J3):** `TimesheetPage` (contractor) gains a per-week status badge, **Submit for approval** (OPEN/REJECTED→SUBMITTED), read-only gating when SUBMITTED/APPROVED, and a sent-back note panel + **Reopen**. New admin `/timesheets` (`TimesheetApprovals`) DataTable + inline Approve / Send-back (required note), mirroring the expense decision block. `api/timesheets.ts` + `useTimesheetsApi`; `TIMESHEET_STATUS_LABELS` (REJECTED → "Sent back").
+- **Payout & margin (J4):** the **Payout** tab on Team detail (`PayoutSummary`) — a YTD "Paid this year" card (the owe figure) + a per-period `DataTable` (Approved hours / Cost = what you owe / Bill / Margin / Margin %), with an unrated-cost note. `api/payouts.ts` + `usePayoutsApi`; `/reports/payout[/ytd]`.
+- **New labels** in `admin/labels.ts`: `ROLE_LABELS` (ADMIN→"Owner", CONTRACTOR→"Contractor"), `USER_STATUS_LABELS`, `TIMESHEET_STATUS_LABELS`. **New `types/api.ts` aliases:** `TeamMember`/`TeamMemberRequest`/`ProjectAssignment`/`Timesheet`/`TimesheetView`/`PayoutReport`/`PayoutPeriodLine`.
+- **CSS note:** J4 added an explicit `@source "../../../crm-components/src"` to `packages/admin/src/styles/globals.css` (above the vendored token block) — pins Tailwind-4 content detection across the monorepo so the Dialog `position:fixed` + `max-h` clamp emit deterministically (fixed a latent invite-Dialog scroll-containment flake the new files surfaced; doesn't affect the homepage re-sync discipline).
+
 ## Phase F: Contracts (SHIPPED 2026-05-30)
 
 Admin UI for the backend contracts vertical (BE Phase F). PR **#40**; smoke 84→101.
