@@ -36,6 +36,9 @@ import type {
   TeamMember,
   TeamMemberRequest,
   TimeEntry,
+  Timesheet,
+  TimesheetStatus,
+  TimesheetView,
   Ticket,
   TicketComment,
   User,
@@ -2227,5 +2230,198 @@ export const contractorStore = {
   // Expenses — own submissions only.
   listExpenses(userId: string): Expense[] {
     return Array.from(expenses.values()).filter((e) => e.userId === userId);
+  },
+  // Timesheets — own periods only.
+  listTimesheets(userId: string): TimesheetView[] {
+    return timesheetStore
+      .listForUser(userId)
+      .map(toTimesheetView);
+  },
+};
+
+// --- Timesheets (contractor / time-management Phase 3) -----------------------
+//
+// A timesheet is a per-(user, week) period the contractor submits for the
+// owner's approval. Lifecycle: OPEN → SUBMITTED → APPROVED, or
+// SUBMITTED → REJECTED ("Sent back") → OPEN (reopen) / SUBMITTED (resubmit).
+// The store holds the full Timesheet (admin shape); the contractor surface gets
+// the trimmed TimesheetView projection.
+
+// Compute the current calendar week's [Mon, Sun] as YYYY-MM-DD, identical to the
+// FE's getWeekDays(new Date())[0]/[6] + fmtDate (local week, Mon-start, then
+// toISOString().slice(0,10)). The contractor's OPEN seed must line up with the
+// visible week so "Submit for approval" is exercisable in smoke.
+function currentWeekBounds(): { start: string; end: string } {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun, 1=Mon...
+  const diff = day === 0 ? -6 : 1 - day; // shift so Mon is day 0
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  const mon = new Date(d);
+  const sun = new Date(d);
+  sun.setDate(sun.getDate() + 6);
+  const fmt = (x: Date) => x.toISOString().slice(0, 10);
+  return { start: fmt(mon), end: fmt(sun) };
+}
+
+const CURRENT_WEEK = currentWeekBounds();
+
+export const SEED_CONTRACTOR_TIMESHEET_SUBMITTED_ID =
+  "ts000000-0000-0000-0000-0000000000c1";
+export const SEED_CONTRACTOR_TIMESHEET_OPEN_ID =
+  "ts000000-0000-0000-0000-0000000000c2";
+export const SEED_CONTRACTOR_TIMESHEET_REJECTED_ID =
+  "ts000000-0000-0000-0000-0000000000c3";
+
+// A stable sent-back note so the contractor's read-only sent-back panel is
+// assertable in smoke.
+export const SEED_TIMESHEET_SENDBACK_NOTE =
+  "Please add the Thursday client call hours.";
+
+const seedTimesheets: Timesheet[] = [
+  // A prior week the contractor already submitted — drives the admin approvals
+  // page (GET /timesheets?status=SUBMITTED is non-empty).
+  {
+    id: SEED_CONTRACTOR_TIMESHEET_SUBMITTED_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_CONTRACTOR_USER.id,
+    periodStart: "2026-05-11",
+    periodEnd: "2026-05-17",
+    status: "SUBMITTED",
+    submittedAt: "2026-05-18T09:00:00Z",
+    version: 1,
+    createdAt: "2026-05-11T00:00:00Z",
+    updatedAt: "2026-05-18T09:00:00Z",
+  },
+  // An earlier week the owner sent back — drives the contractor's read-only
+  // sent-back note panel + Reopen affordance (self-contained, no cross-identity
+  // store mutation needed in smoke).
+  {
+    id: SEED_CONTRACTOR_TIMESHEET_REJECTED_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_CONTRACTOR_USER.id,
+    periodStart: "2026-05-04",
+    periodEnd: "2026-05-10",
+    status: "REJECTED",
+    submittedAt: "2026-05-11T09:00:00Z",
+    note: SEED_TIMESHEET_SENDBACK_NOTE,
+    version: 2,
+    createdAt: "2026-05-04T00:00:00Z",
+    updatedAt: "2026-05-11T12:00:00Z",
+  },
+  // The current week, still OPEN — so the contractor can submit it from the
+  // visible /timesheet week.
+  {
+    id: SEED_CONTRACTOR_TIMESHEET_OPEN_ID,
+    tenantId: SMOKE_USER.tenantId,
+    userId: SMOKE_CONTRACTOR_USER.id,
+    periodStart: CURRENT_WEEK.start,
+    periodEnd: CURRENT_WEEK.end,
+    status: "OPEN",
+    version: 0,
+    createdAt: CURRENT_WEEK.start + "T00:00:00Z",
+    updatedAt: CURRENT_WEEK.start + "T00:00:00Z",
+  },
+];
+
+const timesheets = new Map<string, Timesheet>(
+  seedTimesheets.map((t) => [t.id!, t]),
+);
+
+function toTimesheetView(t: Timesheet): TimesheetView {
+  return {
+    id: t.id,
+    userId: t.userId,
+    periodStart: t.periodStart,
+    periodEnd: t.periodEnd,
+    status: t.status,
+    submittedAt: t.submittedAt,
+    approvedBy: t.approvedBy,
+    approvedAt: t.approvedAt,
+    note: t.note,
+  };
+}
+
+export const timesheetStore = {
+  listForUser(userId: string): Timesheet[] {
+    return Array.from(timesheets.values())
+      .filter((t) => t.userId === userId)
+      .sort((a, b) => (b.periodStart ?? "").localeCompare(a.periodStart ?? ""));
+  },
+  listByStatus(status: TimesheetStatus): Timesheet[] {
+    return Array.from(timesheets.values())
+      .filter((t) => t.status === status)
+      .sort((a, b) => (b.periodStart ?? "").localeCompare(a.periodStart ?? ""));
+  },
+  get(id: string): Timesheet | undefined {
+    return timesheets.get(id);
+  },
+  // Contractor: OPEN | REJECTED → SUBMITTED.
+  submit(id: string): Timesheet | { error: string; code: number } {
+    const existing = timesheets.get(id);
+    if (!existing) return { error: "Timesheet not found", code: 3611 };
+    if (existing.status !== "OPEN" && existing.status !== "REJECTED") {
+      return { error: "Only an open or sent-back timesheet can be submitted", code: 3612 };
+    }
+    const updated: Timesheet = {
+      ...existing,
+      status: "SUBMITTED",
+      submittedAt: new Date().toISOString(),
+      note: undefined, // clear any prior send-back note on resubmit
+      updatedAt: new Date().toISOString(),
+    };
+    timesheets.set(id, updated);
+    return updated;
+  },
+  // Contractor: REJECTED → OPEN.
+  reopen(id: string): Timesheet | { error: string; code: number } {
+    const existing = timesheets.get(id);
+    if (!existing) return { error: "Timesheet not found", code: 3611 };
+    if (existing.status !== "REJECTED") {
+      return { error: "Only a sent-back timesheet can be reopened", code: 3613 };
+    }
+    const updated: Timesheet = {
+      ...existing,
+      status: "OPEN",
+      updatedAt: new Date().toISOString(),
+    };
+    timesheets.set(id, updated);
+    return updated;
+  },
+  // Admin: SUBMITTED → APPROVED.
+  approve(id: string): Timesheet | { error: string; code: number } {
+    const existing = timesheets.get(id);
+    if (!existing) return { error: "Timesheet not found", code: 3611 };
+    if (existing.status !== "SUBMITTED") {
+      return { error: "Only a submitted timesheet can be approved", code: 3614 };
+    }
+    const updated: Timesheet = {
+      ...existing,
+      status: "APPROVED",
+      approvedBy: SMOKE_USER.id,
+      approvedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    timesheets.set(id, updated);
+    return updated;
+  },
+  // Admin: SUBMITTED → REJECTED with a required reason (stored as `note`).
+  reject(id: string, reason: string): Timesheet | { error: string; code: number } {
+    const existing = timesheets.get(id);
+    if (!existing) return { error: "Timesheet not found", code: 3611 };
+    if (existing.status !== "SUBMITTED") {
+      return { error: "Only a submitted timesheet can be sent back", code: 3614 };
+    }
+    if (!reason || reason.trim() === "") {
+      return { error: "A note is required to send a timesheet back", code: 3615 };
+    }
+    const updated: Timesheet = {
+      ...existing,
+      status: "REJECTED",
+      note: reason,
+      updatedAt: new Date().toISOString(),
+    };
+    timesheets.set(id, updated);
+    return updated;
   },
 };

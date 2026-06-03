@@ -18,7 +18,7 @@ async function login(page: Page) {
 // AC-D9: /timesheet renders the seeded week entries
 test("timesheet renders the week grid and seeded entries", async ({ page }) => {
   await login(page);
-  await page.getByRole("link", { name: "Timesheet" }).click();
+  await page.getByRole("link", { name: "Timesheet", exact: true }).click();
   await expect(page).toHaveURL(/\/timesheet$/);
   await expect(page.getByTestId("timesheet-page")).toBeVisible();
   // The 7-column week grid should be visible
