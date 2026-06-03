@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Clock, FileText, Plus } from "lucide-react";
+import { CheckCircle, Clock, FileText, Plus, RotateCcw } from "lucide-react";
 
 import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
@@ -14,8 +14,24 @@ import {
 } from "../../primitives/dialog";
 import { useContractorApi } from "../../hooks/useContractorApi";
 import { useTimeExpensesApi } from "../../hooks/useTimeExpensesApi";
-import type { TimeEntry } from "../../types/api";
-import { BILLING_STATUS_LABELS, labelFor } from "../labels";
+import type { TimeEntry, TimesheetView } from "../../types/api";
+import {
+  BILLING_STATUS_LABELS,
+  TIMESHEET_STATUS_LABELS,
+  labelFor,
+} from "../labels";
+
+// Badge tone per timesheet period status: SUBMITTED awaits a decision (muted),
+// APPROVED is done (default), REJECTED needs another look (destructive).
+const TIMESHEET_STATUS_VARIANT: Record<
+  string,
+  "default" | "muted" | "outline" | "secondary" | "destructive"
+> = {
+  OPEN: "outline",
+  SUBMITTED: "muted",
+  APPROVED: "default",
+  REJECTED: "destructive",
+};
 
 interface Props {
   userId: string;
@@ -122,6 +138,47 @@ export function TimesheetPage({ userId, isContractor = false }: Props) {
         : staffApi.listWeeklyTimeEntries(userId, from, to),
   });
 
+  // Contractor-only: load the contractor's own timesheet periods so we can show
+  // the visible week's submit/approval state. Match by periodStart === the
+  // visible week's Monday (fmtDate(weekDays[0])). Staff/admin never fetch this.
+  const { data: timesheets = [] } = useQuery({
+    queryKey: ["contractor", "timesheets"],
+    queryFn: () => contractorApi.listTimesheets(),
+    enabled: isContractor,
+  });
+  const weekStart = fmtDate(weekDays[0]);
+  const weekTimesheet: TimesheetView | undefined = timesheets.find(
+    (t) => t.periodStart === weekStart,
+  );
+  const tsStatus = weekTimesheet?.status;
+  // SUBMITTED + APPROVED periods are locked: no logging / timer edits until the
+  // period is reopened (or sent back). OPEN/REJECTED/none stay editable.
+  const periodLocked = tsStatus === "SUBMITTED" || tsStatus === "APPROVED";
+
+  const submitTimesheetMutation = useMutation({
+    mutationFn: (id: string) => contractorApi.submitTimesheet(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contractor", "timesheets"] });
+      qc.invalidateQueries({ queryKey: ["contractor", "time-entries"] });
+      qc.invalidateQueries({ queryKey: ["contractor", "time"] });
+      toast.success("Timesheet submitted for approval.");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Submit failed."),
+  });
+
+  const reopenTimesheetMutation = useMutation({
+    mutationFn: (id: string) => contractorApi.reopenTimesheet(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contractor", "timesheets"] });
+      qc.invalidateQueries({ queryKey: ["contractor", "time-entries"] });
+      qc.invalidateQueries({ queryKey: ["contractor", "time"] });
+      toast.success("Timesheet reopened — you can edit it again.");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Reopen failed."),
+  });
+
   const createMutation = useMutation({
     mutationFn: (body: TimeEntry) =>
       isContractor ? contractorApi.logTime(body) : staffApi.createTimeEntry(body),
@@ -183,15 +240,54 @@ export function TimesheetPage({ userId, isContractor = false }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isContractor && weekTimesheet && (
+            <Badge
+              variant={TIMESHEET_STATUS_VARIANT[tsStatus ?? "OPEN"] ?? "outline"}
+              data-testid="timesheet-status"
+            >
+              {labelFor(TIMESHEET_STATUS_LABELS, tsStatus, "Open")}
+            </Badge>
+          )}
           <Button variant="outline" onClick={prevWeek} data-testid="prev-week">
             ← Prev
           </Button>
           <Button variant="outline" onClick={nextWeek} data-testid="next-week">
             Next →
           </Button>
-          <Button onClick={() => setAddOpen(true)} data-testid="log-time">
-            <Plus /> Log time
-          </Button>
+          {!periodLocked && (
+            <Button onClick={() => setAddOpen(true)} data-testid="log-time">
+              <Plus /> Log time
+            </Button>
+          )}
+          {/* Contractor: submit the visible week for approval (OPEN or sent-back). */}
+          {isContractor &&
+            weekTimesheet &&
+            (tsStatus === "OPEN" || tsStatus === "REJECTED") && (
+              <Button
+                onClick={() =>
+                  weekTimesheet.id &&
+                  submitTimesheetMutation.mutate(weekTimesheet.id)
+                }
+                disabled={submitTimesheetMutation.isPending}
+                data-testid="submit-timesheet"
+              >
+                <CheckCircle className="size-4" /> Submit for approval
+              </Button>
+            )}
+          {/* Contractor: reopen a sent-back week to edit before resubmitting. */}
+          {isContractor && weekTimesheet && tsStatus === "REJECTED" && (
+            <Button
+              variant="outline"
+              onClick={() =>
+                weekTimesheet.id &&
+                reopenTimesheetMutation.mutate(weekTimesheet.id)
+              }
+              disabled={reopenTimesheetMutation.isPending}
+              data-testid="reopen-timesheet"
+            >
+              <RotateCcw className="size-4" /> Reopen
+            </Button>
+          )}
           {!isContractor && unbilledCount > 0 && (
             <Button
               variant="outline"
@@ -203,6 +299,17 @@ export function TimesheetPage({ userId, isContractor = false }: Props) {
           )}
         </div>
       </header>
+
+      {/* Contractor: a sent-back week shows the reviewer's note (why it came
+          back) so they know what to fix before resubmitting. */}
+      {isContractor && tsStatus === "REJECTED" && weekTimesheet?.note && (
+        <div
+          className="rounded-md border border-destructive/50 bg-destructive/5 p-3 text-sm"
+          data-testid="timesheet-sendback-note"
+        >
+          <span className="font-medium">Sent back:</span> {weekTimesheet.note}
+        </div>
+      )}
 
       {/* 7-column week grid */}
       <div
