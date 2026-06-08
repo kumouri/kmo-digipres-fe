@@ -166,6 +166,23 @@ const MarketingReviewQueue = lazy(() =>
     default: m.MarketingReviewQueue,
   })),
 );
+const RiskDayView = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.RiskDayView })),
+);
+const RecallBoard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.RecallBoard })),
+);
+const CallbackInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.CallbackInbox })),
+);
+const FrontDeskReviewInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReviewInbox })),
+);
+const AppointmentConsole = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.AppointmentConsole,
+  })),
+);
 const TeamList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamList })),
 );
@@ -298,6 +315,15 @@ export const router = createBrowserRouter([
                   { path: "concierge", element: <ConciergeInbox /> },
                   { path: "concierge/:id", element: <ConciergeTranscript /> },
                   { path: "marketing-review", element: <MarketingReviewQueue /> },
+                  // FrontDesk IQ health-practices flagship (FD-5b) — staff-visible,
+                  // like the ChairFill / Real Estate surfaces (the BE risk /
+                  // recall / callback / review / appointment routes are STAFF-
+                  // gated). A contractor deep-linking is bounced.
+                  { path: "appointments", element: <AppointmentConsole /> },
+                  { path: "risk-day", element: <RiskDayView /> },
+                  { path: "recall", element: <RecallBoard /> },
+                  { path: "callbacks", element: <CallbackInbox /> },
+                  { path: "review-inbox", element: <FrontDeskReviewInbox /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },
