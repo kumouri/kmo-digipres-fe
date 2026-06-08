@@ -17,6 +17,8 @@ import { DataTable, type Column } from "../../components/DataTable";
 import { useQuotesApi } from "../../hooks/useQuotesApi";
 import type { Quote } from "../../types/api";
 import { QUOTE_STATUS_LABELS, labelFor } from "../labels";
+import { QuoteForm, quoteToFormValues, formValuesToQuote } from "./QuoteForm";
+import type { QuoteFormValues } from "./QuoteForm";
 
 const STATUS_VARIANT: Record<string, "default" | "muted" | "outline"> = {
   DRAFT: "muted",
@@ -66,7 +68,6 @@ export function QuotesList() {
   const qc = useQueryClient();
   const quotesApi = useQuotesApi();
   const [createOpen, setCreateOpen] = useState(false);
-  const [newCurrency, setNewCurrency] = useState("USD");
 
   const { data, isLoading } = useQuery({
     queryKey: ["quotes"],
@@ -74,7 +75,7 @@ export function QuotesList() {
   });
 
   const createMutation = useMutation({
-    mutationFn: quotesApi.createQuote,
+    mutationFn: (body: Quote) => quotesApi.createQuote(body),
     onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ["quotes"] });
       toast.success("Quote created.");
@@ -85,6 +86,12 @@ export function QuotesList() {
       toast.error(err instanceof Error ? err.message : "Create failed.");
     },
   });
+
+  function handleCreate(values: QuoteFormValues) {
+    createMutation.mutate(
+      formValuesToQuote(values, { status: "DRAFT" }),
+    );
+  }
 
   return (
     <section className="flex flex-col gap-4" data-testid="quotes-page">
@@ -118,35 +125,13 @@ export function QuotesList() {
               ready.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium">
-              Currency
-              <input
-                className="mt-1 block w-full rounded border px-2 py-1 text-sm"
-                value={newCurrency}
-                onChange={(e) => setNewCurrency(e.target.value)}
-                data-testid="quote-currency-input"
-              />
-            </label>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                disabled={createMutation.isPending}
-                onClick={() =>
-                  createMutation.mutate({
-                    currency: newCurrency,
-                    status: "DRAFT",
-                    lineItems: [],
-                  })
-                }
-                data-testid="create-quote-submit"
-              >
-                Create quote
-              </Button>
-            </div>
-          </div>
+          <QuoteForm
+            defaultValues={quoteToFormValues(undefined)}
+            onSubmit={handleCreate}
+            submitLabel="Create quote"
+            isSubmitting={createMutation.isPending}
+            onCancel={() => setCreateOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </section>
