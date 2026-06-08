@@ -15,10 +15,12 @@ import type {
   Dashboard,
   DraftReplyBody,
   DealDTO,
+  DisclosureRequest,
   Expense,
   FieldDefinition,
   Invoice,
   KnowledgeBaseArticle,
+  Listing,
   LoginRequest,
   LoginResponse,
   Milestone,
@@ -73,6 +75,7 @@ import {
   payoutStore,
   projectStore,
   quoteStore,
+  realEstateStore,
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
@@ -1827,4 +1830,193 @@ export const handlers = [
     });
     return HttpResponse.json(created, { status: 200 });
   }),
+
+  // --- Real Estate Concierge — flagship (RE-5b) ------------------------------
+  // The four staff surfaces. All routes are STAFF + realestate-module-gated on
+  // the BE and @ConditionalOnProperty-gated, so they're hand-written here (no
+  // generated alias — the ChairFill CF-5b precedent). Contractors never reach
+  // them (the nav + RequireNotContractor guard hide them), so no deny-contractor.
+  // NOTE: the marketing /drafts collection route is registered BEFORE the
+  // /listings/:id parametric route so it isn't shadowed.
+
+  // Listings — list / create / get / update.
+  http.get(`${API_BASE}/realestate/listings`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(realEstateStore.listListings());
+  }),
+  http.post(`${API_BASE}/realestate/listings`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Listing;
+    return HttpResponse.json(realEstateStore.createListing(body), {
+      status: 200,
+    });
+  }),
+
+  // Tenant-wide marketing draft queue + approve / skip. Registered before the
+  // /realestate/listings/:id GET so "/realestate/marketing/drafts" can't be
+  // mistaken for a listing id.
+  http.get(`${API_BASE}/realestate/marketing/drafts`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(realEstateStore.listDrafted());
+  }),
+  http.post(
+    `${API_BASE}/realestate/marketing/drafts/:id/approve`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const updated = realEstateStore.approveDraft(String(params.id));
+      if (!updated)
+        return HttpResponse.json(
+          { message: "Draft not found or not in review", errorCode: 4253 },
+          { status: 404 },
+        );
+      return HttpResponse.json(updated);
+    },
+  ),
+  http.post(
+    `${API_BASE}/realestate/marketing/drafts/:id/skip`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const updated = realEstateStore.skipDraft(String(params.id));
+      if (!updated)
+        return HttpResponse.json(
+          { message: "Draft not found or not in review", errorCode: 4253 },
+          { status: 404 },
+        );
+      return HttpResponse.json(updated);
+    },
+  ),
+
+  // Per-listing disclosures (the grounding corpus) — list / create / update.
+  http.get(
+    `${API_BASE}/realestate/listings/:listingId/disclosures`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(
+        realEstateStore.listDisclosures(String(params.listingId)),
+      );
+    },
+  ),
+  http.post(
+    `${API_BASE}/realestate/listings/:listingId/disclosures`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const body = (await request.json()) as DisclosureRequest;
+      if (!body || !body.text || !body.text.trim()) {
+        return HttpResponse.json(
+          { message: "Disclosure text is required", errorCode: 4253 },
+          { status: 400 },
+        );
+      }
+      const created = realEstateStore.createDisclosure(
+        String(params.listingId),
+        { ...body, text: body.text.trim() },
+      );
+      return HttpResponse.json(created, { status: 200 });
+    },
+  ),
+  http.put(
+    `${API_BASE}/realestate/listings/:listingId/disclosures/:id`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const body = (await request.json()) as DisclosureRequest;
+      const updated = realEstateStore.updateDisclosure(
+        String(params.listingId),
+        String(params.id),
+        body,
+      );
+      if (!updated) return new HttpResponse(null, { status: 404 });
+      return HttpResponse.json(updated);
+    },
+  ),
+
+  // Per-listing marketing: photos (list / upload), generate, drafts history.
+  http.get(
+    `${API_BASE}/realestate/listings/:listingId/marketing/photos`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(
+        realEstateStore.listPhotos(String(params.listingId)),
+      );
+    },
+  ),
+  http.post(
+    `${API_BASE}/realestate/listings/:listingId/marketing/photos`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const form = await request.formData();
+      const image = form.get("image");
+      if (!(image instanceof File)) {
+        return HttpResponse.json(
+          { message: "Listing-photo upload is missing its 'image' part", errorCode: 4253 },
+          { status: 400 },
+        );
+      }
+      const created = realEstateStore.addPhoto(
+        String(params.listingId),
+        image.name || "photo.jpg",
+        image.type || undefined,
+        image.size || undefined,
+      );
+      return HttpResponse.json(created, { status: 200 });
+    },
+  ),
+  http.post(
+    `${API_BASE}/realestate/listings/:listingId/marketing/generate`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(
+        realEstateStore.generate(String(params.listingId)),
+      );
+    },
+  ),
+  http.get(
+    `${API_BASE}/realestate/listings/:listingId/marketing/drafts`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(
+        realEstateStore.listListingDrafts(String(params.listingId)),
+      );
+    },
+  ),
+
+  // A single listing — get / update. Registered AFTER the more specific
+  // /listings/:listingId/... routes above so they take precedence.
+  http.get(`${API_BASE}/realestate/listings/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const listing = realEstateStore.getListing(String(params.id));
+    if (!listing)
+      return HttpResponse.json(
+        { message: "Listing not found", errorCode: 4253 },
+        { status: 404 },
+      );
+    return HttpResponse.json(listing);
+  }),
+  http.put(`${API_BASE}/realestate/listings/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Listing;
+    const updated = realEstateStore.updateListing(String(params.id), body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
+
+  // Concierge conversations — list (optional ?listingId) + detail.
+  http.get(`${API_BASE}/realestate/conversations`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const listingId = url.searchParams.get("listingId") ?? undefined;
+    return HttpResponse.json(realEstateStore.listConversations(listingId));
+  }),
+  http.get(
+    `${API_BASE}/realestate/conversations/:id`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const detail = realEstateStore.getConversation(String(params.id));
+      if (!detail)
+        return HttpResponse.json(
+          { message: "Conversation not found", errorCode: 4270 },
+          { status: 404 },
+        );
+      return HttpResponse.json(detail);
+    },
+  ),
 ];

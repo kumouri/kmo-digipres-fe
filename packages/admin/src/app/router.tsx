@@ -147,6 +147,25 @@ const WaitlistBoard = lazy(() =>
 const SalonReviewInbox = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.SalonReviewInbox })),
 );
+const ListingConsole = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ListingConsole })),
+);
+const ListingDetail = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ListingDetail })),
+);
+const ConciergeInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ConciergeInbox })),
+);
+const ConciergeTranscript = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.ConciergeTranscript,
+  })),
+);
+const MarketingReviewQueue = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.MarketingReviewQueue,
+  })),
+);
 const TeamList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamList })),
 );
@@ -271,6 +290,14 @@ export const router = createBrowserRouter([
                   { path: "no-show-risk", element: <NoShowRiskView /> },
                   { path: "waitlist", element: <WaitlistBoard /> },
                   { path: "salon-reviews", element: <SalonReviewInbox /> },
+                  // Real Estate Concierge flagship (RE-5b) — staff-visible, like
+                  // the ChairFill surfaces (the BE listing/concierge/marketing
+                  // routes are STAFF-gated). A contractor deep-linking is bounced.
+                  { path: "listings", element: <ListingConsole /> },
+                  { path: "listings/:id", element: <ListingDetail /> },
+                  { path: "concierge", element: <ConciergeInbox /> },
+                  { path: "concierge/:id", element: <ConciergeTranscript /> },
+                  { path: "marketing-review", element: <MarketingReviewQueue /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },

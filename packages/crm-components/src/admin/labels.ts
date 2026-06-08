@@ -287,3 +287,73 @@ export const WAITLIST_OFFER_STATUS_LABELS: Record<string, string> = {
   SUPERSEDED: "Filled by someone else",
   EXPIRED: "Expired",
 };
+
+// --- Real Estate Concierge (RE-5b flagship) ---------------------------------
+
+// A listing's sale status. Plain words an agent scans on the console.
+export const LISTING_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Active",
+  PENDING: "Pending",
+  SOLD: "Sold",
+};
+
+// The disclosure category — surfaced verbatim in a citation ("Answered from:
+// {type} — …"). Friendly versions of the raw enum so a citation reads cleanly.
+export const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
+  ROOF: "Roof",
+  FOUNDATION: "Foundation",
+  BASEMENT: "Basement",
+  SYSTEMS_HVAC: "Heating & cooling",
+  ELECTRICAL: "Electrical",
+  PLUMBING: "Plumbing",
+  WATER: "Water",
+  PEST: "Pest",
+  LEAD_PAINT: "Lead paint",
+  FLOOD: "Flood",
+  HOA: "HOA",
+  GENERAL: "General",
+};
+
+// How warm a buyer lead is, read off the buyer's lead score. Plain words an
+// agent uses to triage the pipeline; an unscored buyer is "Unscored".
+export const LEAD_TIER_LABELS: Record<string, string> = {
+  HOT: "Hot",
+  WARM: "Warm",
+  COLD: "Cold",
+};
+
+// The concierge conversation's state. "Asking" reads clearer than the raw enum
+// for an agent skimming the inbox; "Handed off" / "Opted out" stay explicit.
+export const CONVERSATION_STATE_LABELS: Record<string, string> = {
+  ASKING: "Answering questions",
+  QUALIFYING: "Qualifying",
+  OFFERING_SLOTS: "Offering showings",
+  BOOKED: "Showing booked",
+  HANDED_OFF: "Handed to you",
+  OPTED_OUT: "Opted out",
+};
+
+// Which marketing surface a drafted piece is for. The platform names read as
+// people say them (MLS remarks, the social platforms, an email blast).
+export const MARKETING_CHANNEL_LABELS: Record<string, string> = {
+  MLS_REMARKS: "MLS remarks",
+  INSTAGRAM: "Instagram caption",
+  FACEBOOK: "Facebook post",
+  X: "X post",
+  EMAIL_BLAST: "Email blast",
+};
+
+// The marketing draft's review status. A DRAFTED package is waiting on the agent
+// — "Needs review" reads clearer than the raw "Drafted" (the review-replies
+// posture); "Approved" means copy-ready (paste-out, never auto-posted).
+export const MARKETING_DRAFT_STATUS_LABELS: Record<string, string> = {
+  DRAFTED: "Needs review",
+  APPROVED: "Approved",
+  SKIPPED: "Skipped",
+};
+
+// The buyer's buy/sell intent on the qualification panel.
+export const BUYER_INTENT_LABELS: Record<string, string> = {
+  BUY: "Buying",
+  SELL: "Selling",
+};

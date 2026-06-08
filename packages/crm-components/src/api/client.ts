@@ -29,7 +29,12 @@ export function createCrmClient(config: CrmClientConfig): CrmClient {
     const headers = new Headers(init.headers);
     const token = getToken?.();
     if (token) headers.set("Authorization", `Bearer ${token}`);
-    if (init.body && !headers.has("Content-Type")) {
+    // Default a JSON body's Content-Type, but never for FormData: the browser
+    // must set `multipart/form-data` itself (with the boundary) for a file
+    // upload — the realestate listing-photo endpoint's multipart contract.
+    const isFormData =
+      typeof FormData !== "undefined" && init.body instanceof FormData;
+    if (init.body && !isFormData && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
     headers.set("Accept", "application/json");
