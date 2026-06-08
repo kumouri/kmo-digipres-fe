@@ -54,8 +54,10 @@ export function getContractPdfUrl(_client: CrmClient, id: string): string {
 export function spawnContractFromQuote(
   client: CrmClient,
   quoteId: string,
+  templateId: string,
 ): Promise<Contract> {
-  return client.api<Contract>(`/contracts/quotes/${quoteId}/spawn-contract`, {
-    method: "POST",
-  });
+  return client.api<Contract>(
+    `/contracts/quotes/${quoteId}/spawn-contract?templateId=${encodeURIComponent(templateId)}`,
+    { method: "POST" },
+  );
 }

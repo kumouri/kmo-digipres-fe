@@ -1875,7 +1875,7 @@ export const contractStore = {
     contracts.set(id, updated);
     return updated;
   },
-  spawnFromQuote(quote: Quote): Contract {
+  spawnFromQuote(quote: Quote, template?: ContractTemplate): Contract {
     // Check if one already exists for this quoteId (idempotent)
     const existing = Array.from(contracts.values()).find(
       (c) => c.quoteId === quote.id,
@@ -1885,10 +1885,13 @@ export const contractStore = {
     const created: Contract = {
       id,
       tenantId: SMOKE_USER.tenantId,
-      title: `Contract for Quote ${quote.quoteNumber ?? quote.id}`,
-      kind: "SOW",
+      title: template?.defaultTitle
+        ? template.defaultTitle.replace("{{clientName}}", "Client")
+        : `Contract for Quote ${quote.quoteNumber ?? quote.id}`,
+      kind: template?.kind ?? "SOW",
       status: "DRAFT",
       quoteId: quote.id,
+      templateId: template?.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

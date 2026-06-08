@@ -166,3 +166,49 @@ test("editing a template body saves changes", async ({ page }) => {
   await expect(page.getByTestId("template-body")).toContainText("Updated body");
 });
 
+// ---------------------------------------------------------------------------
+// Z3.2: Generate SOW contract from an ACCEPTED quote
+// ---------------------------------------------------------------------------
+
+// Stable ID of the ACCEPTED seed quote (same as quotes.spec.ts ACCEPTED_QUOTE_ID)
+const ACCEPTED_QUOTE_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab";
+
+test("generate-contract button is not shown on a DRAFT quote", async ({ page }) => {
+  await login(page);
+  await page.goto("/quotes");
+  await page.getByTestId("quote-row-number").first().click();
+  await expect(page.getByTestId("quote-detail")).toBeVisible();
+  await expect(page.getByTestId("quote-generate-contract-btn")).not.toBeVisible();
+});
+
+test("generate-contract button is shown on an ACCEPTED quote", async ({ page }) => {
+  await login(page);
+  await page.goto(`/quotes/${ACCEPTED_QUOTE_ID}`);
+  await expect(page.getByTestId("quote-detail")).toBeVisible();
+  await expect(page.getByTestId("quote-generate-contract-btn")).toBeVisible();
+});
+
+test("generate SOW contract: picker lists the seeded SOW template and navigates to the spawned DRAFT", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto(`/quotes/${ACCEPTED_QUOTE_ID}`);
+  await expect(page.getByTestId("quote-detail")).toBeVisible();
+
+  // Open the template-picker dialog
+  await page.getByTestId("quote-generate-contract-btn").click();
+  await expect(page.getByTestId("quote-spawn-contract-template-select")).toBeVisible();
+
+  // The seeded SOW template should appear in the picker
+  await expect(
+    page.getByTestId("quote-spawn-contract-template-select"),
+  ).toContainText("Standard SOW v1");
+
+  // Confirm spawn
+  await page.getByTestId("quote-spawn-contract-confirm").click();
+
+  // Should navigate to /contracts/:id
+  await expect(page).toHaveURL(/\/contracts\//);
+  await expect(page.getByTestId("contract-detail")).toBeVisible();
+});
+
