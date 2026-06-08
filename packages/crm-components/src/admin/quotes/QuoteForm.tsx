@@ -73,6 +73,8 @@ interface QuoteFormProps {
   submitLabel: string;
   isSubmitting?: boolean;
   onCancel?: () => void;
+  /** Optional data-testid for the submit button (e.g. "create-quote-submit") */
+  submitTestId?: string;
 }
 
 export function QuoteForm({
@@ -81,6 +83,7 @@ export function QuoteForm({
   submitLabel,
   isSubmitting,
   onCancel,
+  submitTestId,
 }: QuoteFormProps) {
   const {
     register,
@@ -143,7 +146,11 @@ export function QuoteForm({
             Cancel
           </Button>
         ) : null}
-        <Button type="submit" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          {...(submitTestId ? { "data-testid": submitTestId } : {})}
+        >
           {isSubmitting ? "Saving…" : submitLabel}
         </Button>
       </div>

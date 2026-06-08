@@ -131,6 +131,7 @@ export function QuotesList() {
             submitLabel="Create quote"
             isSubmitting={createMutation.isPending}
             onCancel={() => setCreateOpen(false)}
+            submitTestId="create-quote-submit"
           />
         </DialogContent>
       </Dialog>
