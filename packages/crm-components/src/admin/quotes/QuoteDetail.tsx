@@ -1,14 +1,25 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck } from "lucide-react";
 
 import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../primitives/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../primitives/dialog";
 import { useQuotesApi } from "../../hooks/useQuotesApi";
+import { useInvoicesApi } from "../../hooks/useInvoicesApi";
 import type { QuoteStatus } from "../../types/api";
 import { QUOTE_STATUS_LABELS, labelFor } from "../labels";
+import { QuoteForm, quoteToFormValues, formValuesToQuote } from "./QuoteForm";
+import type { QuoteFormValues } from "./QuoteForm";
 
 const VALID_TRANSITIONS: Record<string, QuoteStatus[]> = {
   DRAFT: ["SENT"],
@@ -23,6 +34,8 @@ export function QuoteDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const quotesApi = useQuotesApi();
+  const invoicesApi = useInvoicesApi();
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quotes", id],
@@ -42,10 +55,39 @@ export function QuoteDetail() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (body: QuoteFormValues) =>
+      quotesApi.updateQuote(id!, formValuesToQuote(body, quote)),
+    onSuccess: (updated) => {
+      qc.setQueryData(["quotes", id], updated);
+      qc.invalidateQueries({ queryKey: ["quotes"] });
+      toast.success("Quote saved.");
+      setEditOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Save failed.");
+    },
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: () => invoicesApi.createInvoiceFromQuote(id!),
+    onSuccess: (invoice) => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice created from quote.");
+      if (invoice.id) navigate(`/invoices/${invoice.id}`);
+    },
+    onError: (err) => {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create invoice.",
+      );
+    },
+  });
+
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
   if (!quote) return <p className="text-muted-foreground">Quote not found.</p>;
 
   const transitions = VALID_TRANSITIONS[quote.status ?? "DRAFT"] ?? [];
+  const isAccepted = quote.status === "ACCEPTED";
 
   return (
     <section className="flex flex-col gap-4" data-testid="quote-detail">
@@ -105,13 +147,13 @@ export function QuoteDetail() {
               </thead>
               <tbody>
                 {(quote.lineItems ?? []).map((li, i) => (
-                  <tr key={i} className="border-b">
+                  <tr key={i} className="border-b" data-testid={`quote-line-item-row-${i}`}>
                     <td className="py-1">{li.description ?? li.sku ?? "—"}</td>
                     <td className="py-1 text-right">{li.quantity ?? 1}</td>
                     <td className="py-1 text-right">
                       {li.unitPrice?.toFixed(2) ?? "0.00"}
                     </td>
-                    <td className="py-1 text-right">
+                    <td className="py-1 text-right" data-testid={`quote-line-item-total-${i}`}>
                       {li.lineTotal?.toFixed(2) ?? "0.00"}
                     </td>
                   </tr>
@@ -122,7 +164,7 @@ export function QuoteDetail() {
         </Card>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {transitions.map((target) => (
           <Button
             key={target}
@@ -137,6 +179,14 @@ export function QuoteDetail() {
 
         <Button
           variant="outline"
+          onClick={() => setEditOpen(true)}
+          data-testid="quote-edit-btn"
+        >
+          Edit
+        </Button>
+
+        <Button
+          variant="outline"
           asChild
           data-testid="quote-pdf-link"
         >
@@ -148,7 +198,38 @@ export function QuoteDetail() {
             <FileText className="size-4" /> Download PDF
           </a>
         </Button>
+
+        {isAccepted && (
+          <Button
+            onClick={() => convertMutation.mutate()}
+            disabled={convertMutation.isPending}
+            data-testid="quote-convert-to-invoice-btn"
+          >
+            <FileCheck className="size-4" />
+            {convertMutation.isPending ? "Creating…" : "Create invoice from quote"}
+          </Button>
+        )}
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit quote</DialogTitle>
+            <DialogDescription>
+              Update this quote's details and line items.
+            </DialogDescription>
+          </DialogHeader>
+          {quote && (
+            <QuoteForm
+              defaultValues={quoteToFormValues(quote)}
+              onSubmit={(values) => updateMutation.mutate(values)}
+              submitLabel="Save quote"
+              isSubmitting={updateMutation.isPending}
+              onCancel={() => setEditOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="flex gap-2">
         <Button variant="ghost" asChild>

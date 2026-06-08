@@ -15,16 +15,9 @@ import {
 import type { RecurringInvoice, LineItem, PaymentTerms } from "../../types/api";
 import { PAYMENT_TERMS } from "../../types/api";
 import { PAYMENT_TERMS_LABELS, labelFor } from "../labels";
+import { lineItemSchema, LineItemsEditor } from "../_shared/LineItemsEditor";
 
 const NONE_VALUE = "__none__";
-
-const lineItemSchema = z.object({
-  description: z.string().default(""),
-  quantity: z.coerce.number().min(0).default(1),
-  unitPrice: z.coerce.number().min(0).default(0),
-  discountPercent: z.coerce.number().min(0).max(100).default(0),
-  taxPercent: z.coerce.number().min(0).max(100).default(0),
-});
 
 const formSchema = z.object({
   templateName: z.string().default(""),
@@ -126,21 +119,6 @@ export function RecurringInvoiceForm({
 
   const paymentTermsValue = watch("paymentTerms");
   const autoFinalizeValue = watch("autoFinalize");
-  const lineItems = watch("lineItems");
-
-  function addLineItem() {
-    setValue("lineItems", [
-      ...lineItems,
-      { description: "", quantity: 1, unitPrice: 0, discountPercent: 0, taxPercent: 0 },
-    ]);
-  }
-
-  function removeLineItem(idx: number) {
-    setValue(
-      "lineItems",
-      lineItems.filter((_, i) => i !== idx),
-    );
-  }
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -244,57 +222,12 @@ export function RecurringInvoiceForm({
       </div>
 
       {/* Line items */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <Label>Line items</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
-            Add line item
-          </Button>
-        </div>
-        {lineItems.map((_, idx) => (
-          <div key={idx} className="flex gap-2 items-end border rounded p-2" data-testid={`line-item-${idx}`}>
-            <div className="flex-1 flex flex-col gap-1">
-              <Label className="text-xs">Description</Label>
-              <Input
-                placeholder="Service description"
-                {...register(`lineItems.${idx}.description`)}
-              />
-            </div>
-            <div className="w-20 flex flex-col gap-1">
-              <Label className="text-xs">Qty</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                {...register(`lineItems.${idx}.quantity`)}
-              />
-            </div>
-            <div className="w-24 flex flex-col gap-1">
-              <Label className="text-xs">Unit price</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                {...register(`lineItems.${idx}.unitPrice`)}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => removeLineItem(idx)}
-              data-testid={`remove-line-item-${idx}`}
-            >
-              Remove
-            </Button>
-          </div>
-        ))}
-        {lineItems.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            No line items yet — add one above.
-          </p>
-        )}
-      </div>
+      <LineItemsEditor
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        fieldName="lineItems"
+      />
 
       <div className="flex justify-end gap-2 border-t pt-4">
         {onCancel ? (
