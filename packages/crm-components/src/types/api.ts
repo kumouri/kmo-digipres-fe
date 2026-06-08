@@ -563,3 +563,192 @@ export interface WorkOrder {
   createdAt?: string | null;
   updatedAt?: string | null;
 }
+
+// =============================================================================
+// ChairFill — salon flagship FE surfaces (CF-5)
+// =============================================================================
+//
+// HAND-WRITTEN types (not generated aliases). Every ChairFill BE controller is
+// @ConditionalOnProperty(kmosf.modules.chairfill)-gated, so the endpoints are
+// ABSENT from the committed openapi.json and the generated openapi.ts has no
+// shape for them (the Home-Services HS-4 precedent). These mirror the BE
+// contracts on `main` by hand:
+//   - NoShowRisk          (module/chairfill/model/NoShowRisk.java)
+//   - Booking risk slice  (module/salonspa/model/Booking.java + the noShowRisk embed)
+//   - WaitlistBoardDTO    (module/chairfill/controller/dto/*)
+//   - the /chairfill/reviews/draft request body (SalonReviewReplyController)
+// Keep these in sync with the BE by hand if those DTOs change.
+//
+// The salon review-reply draft itself lands in the SAME GbpReviewReply queue
+// NMM uses (see GbpReviewReply above), so the review inbox reuses the existing
+// review-replies surface — only the paste-in action is ChairFill-specific.
+
+/** No-show risk tier (BE `NoShowRiskTier`). Thresholds: ≥0.6 HIGH, ≥0.35 MEDIUM. */
+export type NoShowRiskTier = "LOW" | "MEDIUM" | "HIGH";
+
+export const NO_SHOW_RISK_TIERS: NoShowRiskTier[] = ["LOW", "MEDIUM", "HIGH"];
+
+/**
+ * Derived no-show risk stamped on an upcoming salon booking by the nightly
+ * CF-1 scorer. Mirrors the BE `record NoShowRisk`. `riskScore` is P(no-show) in
+ * [0,1]; `riskTier` is the {@link NoShowRiskTier} name; `source` is MODEL |
+ * RULES_FALLBACK | INSUFFICIENT_DATA.
+ */
+export interface NoShowRisk {
+  /** P(no-show) in [0,1] — a HIGH score means likely to no-show. */
+  riskScore: number;
+  /** LOW | MEDIUM | HIGH (the tier name). */
+  riskTier: string;
+  /** MODEL | RULES_FALLBACK | INSUFFICIENT_DATA. */
+  source: string;
+  /** When the score was computed. ISO-8601. */
+  computedAt?: string | null;
+}
+
+/** Where a no-show score came from (BE `NoShowRisk.SOURCE_*`). */
+export type NoShowRiskSource =
+  | "MODEL"
+  | "RULES_FALLBACK"
+  | "INSUFFICIENT_DATA";
+
+/** Salon booking lifecycle (BE `BookingStatus`). */
+export type BookingStatus =
+  | "PENDING_DEPOSIT"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW";
+
+/**
+ * One upcoming salon booking row on the no-show risk view, as returned by
+ * `GET /chairfill/risk/bookings?from&to` (the BE returns the full salon
+ * `Booking`, sorted highest-risk first). Only the fields the risk view reads
+ * are typed precisely; the booking carries a denormalized `serviceMenuItemName`
+ * (so no menu join is needed) and `contactId` (resolved to a name view-side
+ * against the contacts the page already loads). `noShowRisk` is nullable: a
+ * booking scored before the first run, or one with no usable history, may have
+ * no stamped risk.
+ */
+export interface RiskBooking {
+  id: string;
+  contactId?: string | null;
+  staffMemberId?: string | null;
+  serviceMenuItemId?: string | null;
+  /** Snapshot of the service name at booking time (denormalized). */
+  serviceMenuItemName?: string | null;
+  /** Appointment start. ISO-8601. */
+  scheduledStart?: string | null;
+  /** Appointment end. ISO-8601. */
+  scheduledEnd?: string | null;
+  status?: BookingStatus | string | null;
+  depositRequired?: boolean | null;
+  depositPaid?: boolean | null;
+  notes?: string | null;
+  /** The CF-1 no-show-risk stamp (nullable — see above). */
+  noShowRisk?: NoShowRisk | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/** Gap-fill offer lifecycle (BE `WaitlistOffer.Status`). */
+export type WaitlistOfferStatus =
+  | "OFFERED"
+  | "CLAIMED"
+  | "SUPERSEDED"
+  | "EXPIRED";
+
+export const WAITLIST_OFFER_STATUSES: WaitlistOfferStatus[] = [
+  "OFFERED",
+  "CLAIMED",
+  "SUPERSEDED",
+  "EXPIRED",
+];
+
+/**
+ * One OPEN waitlist row on the CF-5 waitlist board. Mirrors the BE
+ * `WaitlistBoardEntryDTO` (CF-5a). A lean projection of an OPEN WaitlistEntry:
+ * who is waiting and for what. `contactId` / `preferredStaffMemberId` are
+ * resolved to names board-side; `serviceMenuItemId` null means "any service".
+ */
+export interface WaitlistBoardEntry {
+  id: string;
+  contactId?: string | null;
+  /** The requested service filter, or null = any service. */
+  serviceMenuItemId?: string | null;
+  /** The requested stylist filter, or null = any stylist. */
+  preferredStaffMemberId?: string | null;
+  /** Lower bound the client will accept, or null. ISO-8601. */
+  earliestStart?: string | null;
+  /** Upper bound the client will accept, or null. ISO-8601. */
+  latestStart?: string | null;
+  /** Only SMS-opted-in entries are offered. */
+  smsOptIn?: boolean | null;
+  /** The client's free-form note, nullable. */
+  notes?: string | null;
+  /** When the client joined the waitlist (newest-first ordering key). ISO-8601. */
+  createdAt?: string | null;
+}
+
+/**
+ * One recent gap-fill offer on the CF-5 waitlist board. Mirrors the BE
+ * `WaitlistOfferDTO` (CF-5a): who was offered which freed slot, at what rank,
+ * and where the offer stands. `contactPhone` + `serviceMenuItemName` are
+ * denormalized at offer time (render directly); `contactId` / `staffMemberId`
+ * resolve to names board-side.
+ */
+export interface WaitlistOffer {
+  id: string;
+  freedBookingId?: string | null;
+  waitlistEntryId?: string | null;
+  contactId?: string | null;
+  /** The phone the offer was texted at (denormalized). */
+  contactPhone?: string | null;
+  staffMemberId?: string | null;
+  serviceMenuItemId?: string | null;
+  /** The service name snapshotted at offer time (denormalized). */
+  serviceMenuItemName?: string | null;
+  /** The freed slot window start. ISO-8601. */
+  slotStart?: string | null;
+  /** The freed slot window end. ISO-8601. */
+  slotEnd?: string | null;
+  /** 0-based rank in the ranked batch (0 = best, most-likely-to-show). */
+  rank?: number | null;
+  /** OFFERED | CLAIMED | SUPERSEDED | EXPIRED. */
+  status?: WaitlistOfferStatus | string | null;
+  /** When the offer SMS was sent (newest-first ordering key). ISO-8601. */
+  sentAt?: string | null;
+  /** After this the offer can no longer be claimed. ISO-8601. */
+  expiresAt?: string | null;
+  createdAt?: string | null;
+}
+
+/**
+ * The one-shot waitlist-board envelope from `GET /chairfill/waitlist/board`:
+ * OPEN entries + recent offers (both newest-first). Mirrors the BE
+ * `WaitlistBoardDTO` (CF-5a). Named `…DTO` (not `WaitlistBoard`) to avoid a
+ * clash with the `WaitlistBoard` admin view component of the same concept.
+ */
+export interface WaitlistBoardDTO {
+  openEntries: WaitlistBoardEntry[];
+  recentOffers: WaitlistOffer[];
+}
+
+/**
+ * The paste-in review body the review inbox POSTs to `/chairfill/reviews/draft`
+ * (BE `SalonReviewReplyController.PasteInReviewRequest`). Only `comment` (the
+ * review text) is required; everything else is optional. The BE drafts an
+ * on-brand salon reply and queues it DRAFTED in the same GbpReviewReply queue
+ * the review inbox lists — so a successful draft returns a {@link GbpReviewReply}.
+ */
+export interface PasteInReviewRequest {
+  /** An optional stable id (e.g. a real GBP review id, if known). */
+  externalReviewId?: string;
+  /** The star rating 1..5. */
+  rating?: number;
+  /** The review text — required (4240 if blank). */
+  comment: string;
+  /** The reviewer's display name. */
+  reviewerName?: string;
+  /** When the review was left. ISO-8601 (defaults to now). */
+  createTime?: string;
+}

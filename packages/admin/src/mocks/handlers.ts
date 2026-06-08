@@ -23,6 +23,7 @@ import type {
   LoginResponse,
   Milestone,
   MoveStageRequest,
+  PasteInReviewRequest,
   Payment,
   Project,
   Quote,
@@ -52,6 +53,8 @@ import {
   attachmentStore,
   auditStore,
   bookingStore,
+  chairFillRiskStore,
+  chairFillWaitlistStore,
   companyStore,
   contactStore,
   contractStore,
@@ -1766,5 +1769,62 @@ export const handlers = [
     const updated = missedCallInboxStore.patch(params.id as string, body);
     if (!updated) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(updated);
+  }),
+
+  // --- ChairFill — salon flagship (CF-5) -------------------------------------
+  // All three surfaces are STAFF + chairfill-module-gated on the BE. The routes
+  // are @ConditionalOnProperty-gated, so they're hand-written here (no generated
+  // alias — the HS-4 precedent). A contractor never reaches them (the nav +
+  // RequireNotContractor guard hide them), so these don't deny-contractor.
+
+  // No-show risk view: upcoming bookings with their risk, highest-risk first.
+  // The BE takes ?from&to; the mock returns the seeded window as-is.
+  http.get(`${API_BASE}/chairfill/risk/bookings`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(chairFillRiskStore.listByRisk());
+  }),
+
+  // Waitlist board: the one-shot envelope (OPEN entries + recent offers).
+  http.get(`${API_BASE}/chairfill/waitlist/board`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const offerLimit = Number(url.searchParams.get("offerLimit")) || 50;
+    return HttpResponse.json(chairFillWaitlistStore.board(offerLimit));
+  }),
+
+  http.get(`${API_BASE}/chairfill/waitlist/entries`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(chairFillWaitlistStore.listEntries());
+  }),
+
+  http.get(`${API_BASE}/chairfill/waitlist/offers`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const limit = Number(url.searchParams.get("limit")) || 50;
+    return HttpResponse.json(chairFillWaitlistStore.listOffers(limit));
+  }),
+
+  // Review paste-in: draft an on-brand salon reply and park it DRAFTED in the
+  // SAME review-replies queue the inbox lists. 4240 if the comment is blank.
+  http.post(`${API_BASE}/chairfill/reviews/draft`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as PasteInReviewRequest;
+    if (!body || !body.comment || !body.comment.trim()) {
+      return HttpResponse.json(
+        {
+          message: "A review text (comment) is required to draft a reply",
+          errorCode: 4240,
+        },
+        { status: 400 },
+      );
+    }
+    const created = gbpReviewReplyStore.draftPasteIn({
+      comment: body.comment.trim(),
+      reviewerName: body.reviewerName,
+      rating: body.rating,
+      externalReviewId: body.externalReviewId,
+      createTime: body.createTime,
+    });
+    return HttpResponse.json(created, { status: 200 });
   }),
 ];
