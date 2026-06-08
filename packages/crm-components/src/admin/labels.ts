@@ -258,3 +258,32 @@ export const JOB_VALUE_BAND_LABELS: Record<string, string> = {
   MEDIUM: "Medium job",
   LARGE: "Large job",
 };
+
+// --- ChairFill — no-show risk + waitlist (salon flagship) -------------------
+// How likely a client is to miss their appointment. Plain words so a front-desk
+// staffer reads the risk at a glance and knows whether to ask for a deposit.
+
+export const NO_SHOW_RISK_TIER_LABELS: Record<string, string> = {
+  HIGH: "High risk",
+  MEDIUM: "Some risk",
+  LOW: "Low risk",
+};
+
+// Where the score came from. "Learned from your history" reads warmer + clearer
+// than the raw "MODEL"; a brand-new client with no history is "Not enough
+// history yet" (and is never punished with a deposit on zero evidence).
+export const NO_SHOW_RISK_SOURCE_LABELS: Record<string, string> = {
+  MODEL: "Learned from your history",
+  RULES_FALLBACK: "Early estimate",
+  INSUFFICIENT_DATA: "Not enough history yet",
+};
+
+// A gap-fill offer's status. Plain, present-tense words a staffer can scan: an
+// OFFERED slot is still out for a reply; CLAIMED means someone grabbed it;
+// SUPERSEDED means a faster YES won it; EXPIRED means the window closed.
+export const WAITLIST_OFFER_STATUS_LABELS: Record<string, string> = {
+  OFFERED: "Waiting on reply",
+  CLAIMED: "Claimed",
+  SUPERSEDED: "Filled by someone else",
+  EXPIRED: "Expired",
+};

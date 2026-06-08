@@ -138,6 +138,15 @@ const ReviewRepliesList = lazy(() =>
 const MissedCallInbox = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.MissedCallInbox })),
 );
+const NoShowRiskView = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.NoShowRiskView })),
+);
+const WaitlistBoard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.WaitlistBoard })),
+);
+const SalonReviewInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.SalonReviewInbox })),
+);
 const TeamList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamList })),
 );
@@ -256,6 +265,12 @@ export const router = createBrowserRouter([
                   { path: "inbox", element: <InboxList /> },
                   { path: "inbox/:id", element: <InboxDetail /> },
                   { path: "missed-calls", element: <MissedCallInbox /> },
+                  // ChairFill salon flagship (CF-5) — staff-visible, like
+                  // missed-calls (the BE board/review-draft routes are
+                  // STAFF-gated). A contractor deep-linking is bounced.
+                  { path: "no-show-risk", element: <NoShowRiskView /> },
+                  { path: "waitlist", element: <WaitlistBoard /> },
+                  { path: "salon-reviews", element: <SalonReviewInbox /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },

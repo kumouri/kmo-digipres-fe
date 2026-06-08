@@ -152,3 +152,14 @@ export { useReviewRepliesApi } from "./hooks/useReviewRepliesApi";
 // are absent from the generated openapi types).
 export { MissedCallInbox } from "./admin/home-services";
 export { useHomeServicesApi } from "./hooks/useHomeServicesApi";
+// ChairFill — salon flagship (CF-5) — three staff surfaces: the no-show risk
+// view, the gap-fill waitlist board, and the salon review inbox (reuses the
+// shared review-replies queue + adds a paste-in). Hand-written client (the BE
+// routes are @ConditionalOnProperty-gated, so they are absent from the
+// generated openapi types — the HS-4 precedent).
+export {
+  NoShowRiskView,
+  WaitlistBoard,
+  SalonReviewInbox,
+} from "./admin/chairfill";
+export { useChairFillApi } from "./hooks/useChairFillApi";

@@ -35,6 +35,7 @@ import type {
   ProjectAssignment,
   Quote,
   RecurringInvoice,
+  RiskBooking,
   SavedReport,
   Task,
   TeamMember,
@@ -46,6 +47,9 @@ import type {
   Ticket,
   TicketComment,
   User,
+  WaitlistBoardDTO,
+  WaitlistBoardEntry,
+  WaitlistOffer,
 } from "@kmosf/crm-components";
 import type { components } from "@kmosf/crm-components";
 
@@ -2084,6 +2088,41 @@ export const gbpReviewReplyStore = {
     reviewReplies.set(id, updated);
     return updated;
   },
+  /**
+   * ChairFill CF-4 paste-in: a staffer pastes a review and the BE drafts an
+   * on-brand salon reply, parking it DRAFTED in THIS shared queue (the same one
+   * the review-replies list shows). Mirrors `POST /chairfill/reviews/draft` —
+   * returns the queued reply; the FE 4240-guards a blank comment before calling.
+   */
+  draftPasteIn(input: {
+    comment: string;
+    reviewerName?: string;
+    rating?: number;
+    externalReviewId?: string;
+    createTime?: string;
+  }): GbpReviewReply {
+    const now = new Date().toISOString();
+    const created: GbpReviewReply = {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      reviewId:
+        input.externalReviewId ?? `paste-in/${Math.random().toString(36).slice(2)}`,
+      rating: input.rating ?? undefined,
+      reviewerName: input.reviewerName,
+      comment: input.comment,
+      reviewCreateTime: input.createTime ?? now,
+      // A canned on-brand salon draft — stands in for the AI's RAG-grounded
+      // reply so the queue shows a ready-to-edit draft in mock mode.
+      draftedReply:
+        "Thank you so much for taking the time to share this! We loved having you in the chair and can't wait to see you again soon. — The team",
+      status: "DRAFTED",
+      receivedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    reviewReplies.set(created.id!, created);
+    return created;
+  },
 };
 
 // --- Team (contractor / time-management Phase 1) -----------------------------
@@ -2851,6 +2890,232 @@ export const missedCallInboxStore = {
       scheduledStart: body.scheduledStart ?? null,
       technicianUserId: body.technicianUserId ?? null,
       updatedAt: new Date().toISOString(),
+    };
+  },
+};
+
+// --- ChairFill — salon flagship (CF-5) --------------------------------------
+//
+// Backs the three CF-5 surfaces in mock mode. The BE endpoints are
+// @ConditionalOnProperty-gated (hand-written client, no generated alias), so
+// these mirror the BE DTOs by hand. Resets per page load.
+//
+// Seeds (so all three surfaces render + actions work):
+//   - No-show risk: a HIGH-risk booking (Ada — resolves to a real name), a
+//     MEDIUM, and a LOW, plus one unscored — newest-risk first like the BE.
+//   - Waitlist board: an OPEN entry (Ada), a couple more OPEN entries, and
+//     recent offers incl. an OFFERED (live) + a CLAIMED one.
+//   - Review paste-in lands a DRAFTED reply in the shared gbpReviewReplyStore
+//     (handled there), so it shows up in the review-replies queue.
+
+// Relative timestamps so the demo always reads "upcoming" / "just now".
+function inHours(h: number): string {
+  return new Date(Date.now() + h * 60 * 60 * 1000).toISOString();
+}
+function agoMinutes(m: number): string {
+  return new Date(Date.now() - m * 60 * 1000).toISOString();
+}
+
+const SEED_SALON_CONTACT_ID = seedContact.id!; // Ada Lovelace (resolves to a name)
+const SEED_SALON_STYLIST_ID = SEED_OWNER_MEMBER_ID; // resolves to the owner's name
+
+export const SEED_RISK_HIGH_BOOKING_ID =
+  "cf000000-0000-0000-0000-0000000000a1";
+
+const seedRiskBookings: RiskBooking[] = [
+  {
+    id: SEED_RISK_HIGH_BOOKING_ID,
+    contactId: SEED_SALON_CONTACT_ID,
+    staffMemberId: SEED_SALON_STYLIST_ID,
+    serviceMenuItemId: "svc-balayage",
+    serviceMenuItemName: "Balayage + cut",
+    scheduledStart: inHours(20),
+    scheduledEnd: inHours(22),
+    status: "CONFIRMED",
+    depositRequired: false,
+    depositPaid: false,
+    noShowRisk: {
+      riskScore: 0.78,
+      riskTier: "HIGH",
+      source: "MODEL",
+      computedAt: agoMinutes(600),
+    },
+  },
+  {
+    id: "cf000000-0000-0000-0000-0000000000a2",
+    contactId: "cf000000-0000-0000-0000-0000000000c2",
+    staffMemberId: SEED_SALON_STYLIST_ID,
+    serviceMenuItemId: "svc-color",
+    serviceMenuItemName: "Single-process color",
+    scheduledStart: inHours(26),
+    scheduledEnd: inHours(27),
+    status: "CONFIRMED",
+    noShowRisk: {
+      riskScore: 0.44,
+      riskTier: "MEDIUM",
+      source: "MODEL",
+      computedAt: agoMinutes(600),
+    },
+  },
+  {
+    id: "cf000000-0000-0000-0000-0000000000a3",
+    contactId: "cf000000-0000-0000-0000-0000000000c3",
+    serviceMenuItemName: "Men's cut",
+    scheduledStart: inHours(30),
+    scheduledEnd: inHours(30.5),
+    status: "PENDING_DEPOSIT",
+    depositRequired: true,
+    depositPaid: true,
+    noShowRisk: {
+      riskScore: 0.12,
+      riskTier: "LOW",
+      source: "RULES_FALLBACK",
+      computedAt: agoMinutes(600),
+    },
+  },
+  {
+    // Brand-new client, no usable history — never punished with a deposit.
+    id: "cf000000-0000-0000-0000-0000000000a4",
+    contactId: "cf000000-0000-0000-0000-0000000000c4",
+    serviceMenuItemName: "Blowout",
+    scheduledStart: inHours(48),
+    scheduledEnd: inHours(49),
+    status: "CONFIRMED",
+    noShowRisk: {
+      riskScore: 0.1,
+      riskTier: "LOW",
+      source: "INSUFFICIENT_DATA",
+      computedAt: agoMinutes(600),
+    },
+  },
+];
+
+const riskBookings = new Map<string, RiskBooking>(
+  seedRiskBookings.map((b) => [b.id, b]),
+);
+
+export const chairFillRiskStore = {
+  /** Upcoming bookings, highest-risk first (mirrors the BE sort; unscored last). */
+  listByRisk(): RiskBooking[] {
+    return Array.from(riskBookings.values()).sort((a, b) => {
+      const ra = a.noShowRisk?.riskScore ?? -1;
+      const rb = b.noShowRisk?.riskScore ?? -1;
+      return rb - ra;
+    });
+  },
+};
+
+const seedWaitlistEntries: WaitlistBoardEntry[] = [
+  {
+    id: "cf000000-0000-0000-0000-0000000000e1",
+    contactId: SEED_SALON_CONTACT_ID, // Ada — resolves to a real name
+    serviceMenuItemId: "svc-balayage",
+    preferredStaffMemberId: SEED_SALON_STYLIST_ID,
+    earliestStart: inHours(12),
+    latestStart: inHours(72),
+    smsOptIn: true,
+    notes: "Any afternoon this week works great.",
+    createdAt: agoMinutes(90),
+  },
+  {
+    id: "cf000000-0000-0000-0000-0000000000e2",
+    contactId: "cf000000-0000-0000-0000-0000000000c5",
+    serviceMenuItemId: null, // any service
+    preferredStaffMemberId: null, // any stylist
+    earliestStart: null,
+    latestStart: null,
+    smsOptIn: true,
+    notes: null,
+    createdAt: agoMinutes(220),
+  },
+  {
+    id: "cf000000-0000-0000-0000-0000000000e3",
+    contactId: "cf000000-0000-0000-0000-0000000000c6",
+    serviceMenuItemId: "svc-color",
+    preferredStaffMemberId: null,
+    earliestStart: inHours(48),
+    latestStart: inHours(120),
+    smsOptIn: false, // not textable — never offered
+    notes: "Prefers a call, evenings only.",
+    createdAt: agoMinutes(400),
+  },
+];
+
+const seedWaitlistOffers: WaitlistOffer[] = [
+  {
+    // Live offer awaiting a reply (the showpiece's live half).
+    id: "cf000000-0000-0000-0000-0000000000f1",
+    freedBookingId: "cf000000-0000-0000-0000-0000000000b9",
+    waitlistEntryId: "cf000000-0000-0000-0000-0000000000e1",
+    contactId: SEED_SALON_CONTACT_ID,
+    contactPhone: "+1 555 0100",
+    staffMemberId: SEED_SALON_STYLIST_ID,
+    serviceMenuItemId: "svc-balayage",
+    serviceMenuItemName: "Balayage + cut",
+    slotStart: inHours(5),
+    slotEnd: inHours(7),
+    rank: 0,
+    status: "OFFERED",
+    sentAt: agoMinutes(8),
+    expiresAt: inHours(1),
+    createdAt: agoMinutes(8),
+  },
+  {
+    // Claimed — someone grabbed an earlier freed slot.
+    id: "cf000000-0000-0000-0000-0000000000f2",
+    freedBookingId: "cf000000-0000-0000-0000-0000000000b8",
+    waitlistEntryId: "cf000000-0000-0000-0000-0000000000e2",
+    contactId: "cf000000-0000-0000-0000-0000000000c5",
+    contactPhone: "+1 555 0177",
+    staffMemberId: SEED_SALON_STYLIST_ID,
+    serviceMenuItemId: "svc-color",
+    serviceMenuItemName: "Single-process color",
+    slotStart: agoMinutes(-180), // ~3h out
+    slotEnd: agoMinutes(-240),
+    rank: 0,
+    status: "CLAIMED",
+    sentAt: agoMinutes(95),
+    expiresAt: agoMinutes(35),
+    createdAt: agoMinutes(95),
+  },
+  {
+    // A sibling offer for the same freed slot — superseded by the faster YES.
+    id: "cf000000-0000-0000-0000-0000000000f3",
+    freedBookingId: "cf000000-0000-0000-0000-0000000000b8",
+    waitlistEntryId: "cf000000-0000-0000-0000-0000000000e3",
+    contactId: "cf000000-0000-0000-0000-0000000000c6",
+    contactPhone: "+1 555 0199",
+    staffMemberId: SEED_SALON_STYLIST_ID,
+    serviceMenuItemId: "svc-color",
+    serviceMenuItemName: "Single-process color",
+    slotStart: agoMinutes(-180),
+    slotEnd: agoMinutes(-240),
+    rank: 1,
+    status: "SUPERSEDED",
+    sentAt: agoMinutes(95),
+    expiresAt: agoMinutes(35),
+    createdAt: agoMinutes(95),
+  },
+];
+
+export const chairFillWaitlistStore = {
+  /** OPEN entries, newest join first (mirrors the BE ordering). */
+  listEntries(): WaitlistBoardEntry[] {
+    return [...seedWaitlistEntries].sort((a, b) =>
+      (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+    );
+  },
+  /** Recent offers (all statuses), newest sent first, capped by `limit`. */
+  listOffers(limit = 50): WaitlistOffer[] {
+    return [...seedWaitlistOffers]
+      .sort((a, b) => (b.sentAt ?? "").localeCompare(a.sentAt ?? ""))
+      .slice(0, limit > 0 ? limit : 50);
+  },
+  /** The one-shot board envelope. */
+  board(offerLimit = 50): WaitlistBoardDTO {
+    return {
+      openEntries: this.listEntries(),
+      recentOffers: this.listOffers(offerLimit),
     };
   },
 };
