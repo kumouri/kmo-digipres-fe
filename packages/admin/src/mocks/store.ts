@@ -13,11 +13,14 @@ import type {
   ContractorClientView,
   ContractorProjectView,
   ContractorTaskView,
+  ConciergeConversationDetail as ConciergeConversationDetailDTO,
+  ConciergeConversationSummary,
   Contract,
   ContractTemplate,
   Dashboard,
   GbpReviewReply,
   DealDTO,
+  DisclosureRequest,
   Expense,
   FieldDefinition,
   FieldDiff,
@@ -25,6 +28,10 @@ import type {
   InboxThread,
   Invoice,
   KnowledgeBaseArticle,
+  Listing,
+  ListingDisclosure,
+  ListingMarketingDraft,
+  ListingPhoto,
   MissedCallInboxItem,
   Milestone,
   Payment,
@@ -3117,5 +3124,630 @@ export const chairFillWaitlistStore = {
       openEntries: this.listEntries(),
       recentOffers: this.listOffers(offerLimit),
     };
+  },
+};
+
+// --- Real Estate Concierge — flagship (RE-5b) -------------------------------
+// The four staff surfaces' mock backing. All routes are STAFF + realestate-
+// module-gated on the BE (and @ConditionalOnProperty, so hand-written here — the
+// ChairFill CF-5b precedent). The store resets per page load.
+//
+// Seeded so the showpiece reads end-to-end:
+//   - One listing (Bella Vita's flagship) with disclosures (indexed) + photos.
+//   - One DRAFTED marketing package with a Fair-Housing flag (the review queue).
+//   - A HOT conversation with a cited transcript + a full qualification + a
+//     linked deal, plus a WARM, a COLD, and an unscored thread (the pipeline).
+
+const RE_LISTING_ID = "re000000-0000-0000-0000-0000000000a1";
+const RE_LISTING_2_ID = "re000000-0000-0000-0000-0000000000a2";
+
+// Buyer contacts + the materialized deal — registered into the shared stores so
+// the concierge detail resolves real names + a real deal link.
+const RE_BUYER_HOT_ID = "re000000-0000-0000-0000-0000000000b1";
+const RE_BUYER_WARM_ID = "re000000-0000-0000-0000-0000000000b2";
+const RE_DEAL_ID = "re000000-0000-0000-0000-0000000000d1";
+
+contactStore.create({
+  id: RE_BUYER_HOT_ID,
+  type: "PERSON",
+  firstName: "Marcus",
+  lastName: "Bell",
+  displayName: "Marcus Bell",
+  emails: ["marcus.bell@example.test"],
+  phones: [{ number: "+1 555 0142", label: "mobile" }],
+  tags: ["buyer", "seed"],
+});
+contactStore.create({
+  id: RE_BUYER_WARM_ID,
+  type: "PERSON",
+  firstName: "Priya",
+  lastName: "Nadar",
+  displayName: "Priya Nadar",
+  emails: ["priya.nadar@example.test"],
+  phones: [{ number: "+1 555 0188", label: "mobile" }],
+  tags: ["buyer", "seed"],
+});
+dealStore.create({
+  id: RE_DEAL_ID,
+  title: "Marcus Bell — 1442 Lindenwood Ave",
+  stage: "QUALIFIED",
+  value: 430000,
+  currency: "USD",
+  primaryContactId: RE_BUYER_HOT_ID,
+});
+
+const reListings = new Map<string, Listing>();
+const reDisclosures = new Map<string, ListingDisclosure[]>();
+const rePhotos = new Map<string, ListingPhoto[]>();
+const reDrafts = new Map<string, ListingMarketingDraft>();
+const reConversations = new Map<string, ConciergeConversationDetailDTO>();
+
+function seedRealEstate(): void {
+  const listing: Listing = {
+    id: RE_LISTING_ID,
+    addressLine: "1442 Lindenwood Ave",
+    city: "O'Fallon",
+    state: "IL",
+    zip: "62269",
+    mlsNumber: "MLS-884213",
+    price: 425000,
+    beds: 4,
+    baths: 2.5,
+    sqft: 2480,
+    status: "ACTIVE",
+    trackedPhone: "+1 555 0142",
+    source: "AGENT_UPLOAD",
+    createdAt: agoMinutes(2880),
+    updatedAt: agoMinutes(120),
+  };
+  const listing2: Listing = {
+    id: RE_LISTING_2_ID,
+    addressLine: "27 Harborview Ct",
+    city: "Edwardsville",
+    state: "IL",
+    zip: "62025",
+    price: 615000,
+    beds: 5,
+    baths: 3,
+    sqft: 3320,
+    status: "PENDING",
+    trackedPhone: "+1 555 0143",
+    source: "AGENT_UPLOAD",
+    createdAt: agoMinutes(4320),
+    updatedAt: agoMinutes(600),
+  };
+  reListings.set(listing.id!, listing);
+  reListings.set(listing2.id!, listing2);
+
+  reDisclosures.set(RE_LISTING_ID, [
+    {
+      id: "re000000-0000-0000-0000-0000000000c1",
+      listingId: RE_LISTING_ID,
+      disclosureType: "ROOF",
+      text: "Roof replaced in 2021 — architectural asphalt shingles, 30-year transferable warranty on file.",
+      indexedAt: agoMinutes(2870),
+      createdAt: agoMinutes(2880),
+    },
+    {
+      id: "re000000-0000-0000-0000-0000000000c2",
+      listingId: RE_LISTING_ID,
+      disclosureType: "BASEMENT",
+      text: "Finished walk-out basement, fully waterproofed in 2019 with an interior French drain and sump pump. No history of water intrusion since.",
+      indexedAt: agoMinutes(2870),
+      createdAt: agoMinutes(2880),
+    },
+    {
+      id: "re000000-0000-0000-0000-0000000000c3",
+      listingId: RE_LISTING_ID,
+      disclosureType: "SYSTEMS_HVAC",
+      text: "Dual-zone HVAC; the furnace and AC were both replaced in 2022 (Carrier, serviced annually).",
+      indexedAt: agoMinutes(2870),
+      createdAt: agoMinutes(2880),
+    },
+    {
+      id: "re000000-0000-0000-0000-0000000000c4",
+      listingId: RE_LISTING_ID,
+      disclosureType: "HOA",
+      text: "HOA is $240/quarter and covers the neighborhood pool, common-area landscaping, and snow removal on shared drives.",
+      indexedAt: agoMinutes(2870),
+      createdAt: agoMinutes(2880),
+    },
+  ]);
+
+  rePhotos.set(RE_LISTING_ID, [
+    {
+      id: "re000000-0000-0000-0000-0000000000e1",
+      listingId: RE_LISTING_ID,
+      attachmentId: "re000000-0000-0000-0000-0000000000f1",
+      storageRef: "tenant/re/1442-front.jpg",
+      filename: "1442-front-elevation.jpg",
+      contentType: "image/jpeg",
+      sizeBytes: 482_000,
+      createdAt: agoMinutes(2875),
+    },
+    {
+      id: "re000000-0000-0000-0000-0000000000e2",
+      listingId: RE_LISTING_ID,
+      attachmentId: "re000000-0000-0000-0000-0000000000f2",
+      storageRef: "tenant/re/1442-kitchen.jpg",
+      filename: "1442-kitchen.jpg",
+      contentType: "image/jpeg",
+      sizeBytes: 661_000,
+      createdAt: agoMinutes(2875),
+    },
+  ]);
+  rePhotos.set(RE_LISTING_2_ID, []);
+
+  // The DRAFTED marketing package — the review queue's showpiece, with a
+  // Fair-Housing flag the agent must eyeball (surfaced, never auto-blocking).
+  const draft: ListingMarketingDraft = {
+    id: "re000000-0000-0000-0000-00000000d101",
+    listingId: RE_LISTING_ID,
+    status: "DRAFTED",
+    pieces: [
+      {
+        channel: "MLS_REMARKS",
+        text: "Beautifully updated 4-bed, 2.5-bath in O'Fallon with a finished walk-out basement, dual-zone HVAC (2022), and a 2021 roof. Bright open kitchen, generous primary suite, and a fenced backyard backing to green space. Neighborhood pool and low-maintenance living via the HOA.",
+      },
+      {
+        channel: "INSTAGRAM",
+        text: "Just listed in O'Fallon ✨ 4 beds · finished walk-out basement · 2021 roof · neighborhood pool. Move-in ready and waiting. DM for a showing! #ofallonil #justlisted",
+      },
+      {
+        channel: "FACEBOOK",
+        text: "New on the market at 1442 Lindenwood Ave — a turnkey 4-bedroom with a finished walk-out basement and a backyard that backs to green space. Updated HVAC and roof mean nothing to do but move in. Message us to tour this week.",
+      },
+      {
+        channel: "EMAIL_BLAST",
+        text: "Just listed: 1442 Lindenwood Ave, O'Fallon — $425,000. Four bedrooms, a finished walk-out basement, and major systems already updated (2021 roof, 2022 HVAC). Reply to schedule a private showing.",
+      },
+    ],
+    photoCaptions: [
+      {
+        photoId: "re000000-0000-0000-0000-0000000000e1",
+        caption: "Two-story brick-and-siding front elevation with a covered porch.",
+        features: ["covered porch", "manicured landscaping", "two-car garage"],
+      },
+      {
+        photoId: "re000000-0000-0000-0000-0000000000e2",
+        caption: "Updated kitchen with quartz counters and stainless appliances.",
+        features: ["quartz counters", "stainless appliances", "island seating"],
+      },
+    ],
+    fairHousingFlags: [
+      {
+        term: "perfect for families",
+        channel: "FACEBOOK",
+        snippet: "a backyard that backs to green space — perfect for families and",
+      },
+    ],
+    fairHousingFlagged: true,
+    generationDegraded: false,
+    createdAt: agoMinutes(95),
+    updatedAt: agoMinutes(95),
+  };
+  reDrafts.set(draft.id!, draft);
+
+  // --- Conversations (the inbox + lead pipeline) ----------------------------
+
+  // HOT — a fully-grounded transcript with citations, a complete qualification,
+  // and the linked deal. The centerpiece of the citation viewer.
+  const hot: ConciergeConversationDetailDTO = {
+    id: "re000000-0000-0000-0000-00000000c001",
+    listingId: RE_LISTING_ID,
+    contactId: RE_BUYER_HOT_ID,
+    dealId: RE_DEAL_ID,
+    meetingId: null,
+    buyerPhone: "+1 555 0142",
+    state: "QUALIFYING",
+    leadTier: "HOT",
+    optedOut: false,
+    qualification: {
+      budget: 430000,
+      timeline: "Looking to close in 45 days",
+      financing: "Pre-approved with a local lender",
+      preApproved: true,
+      intent: "BUY",
+      dealMaterialized: true,
+    },
+    turns: [
+      {
+        role: "BUYER",
+        body: "Hi! Is the roof on 1442 Lindenwood original or has it been replaced?",
+        at: agoMinutes(50),
+        handoff: false,
+        citations: [],
+      },
+      {
+        role: "ASSISTANT",
+        body: "Great question — the roof was replaced in 2021 with architectural asphalt shingles, and there's a 30-year transferable warranty on file.",
+        at: agoMinutes(49),
+        handoff: false,
+        citations: [
+          {
+            disclosureId: "re000000-0000-0000-0000-0000000000c1",
+            disclosureType: "ROOF",
+            contentPreview:
+              "Roof replaced in 2021 — architectural asphalt shingles, 30-year transferable warranty on file.",
+            score: 0.91,
+          },
+        ],
+      },
+      {
+        role: "BUYER",
+        body: "Perfect. Any history of water in the basement? It's finished, right?",
+        at: agoMinutes(44),
+        handoff: false,
+        citations: [],
+      },
+      {
+        role: "ASSISTANT",
+        body: "Yes, it's a finished walk-out basement. It was fully waterproofed in 2019 with an interior French drain and a sump pump, and there's been no water intrusion since.",
+        at: agoMinutes(43),
+        handoff: false,
+        citations: [
+          {
+            disclosureId: "re000000-0000-0000-0000-0000000000c2",
+            disclosureType: "BASEMENT",
+            contentPreview:
+              "Finished walk-out basement, fully waterproofed in 2019 with an interior French drain and sump pump. No history of water intrusion since.",
+            score: 0.88,
+          },
+        ],
+      },
+      {
+        role: "BUYER",
+        body: "Love it. I'm pre-approved and hoping to close in about 45 days — can we set up a showing this week?",
+        at: agoMinutes(40),
+        handoff: false,
+        citations: [],
+      },
+      {
+        role: "ASSISTANT",
+        body: "That's wonderful — I'd love to get you in. Let me hand you to our agent to lock in a time that works. They'll text you shortly!",
+        at: agoMinutes(39),
+        handoff: true,
+        citations: [],
+      },
+    ],
+    lastInboundAt: agoMinutes(40),
+    createdAt: agoMinutes(50),
+    updatedAt: agoMinutes(39),
+  };
+
+  // WARM — a couple of grounded turns, partial qualification, deal not yet made.
+  const warm: ConciergeConversationDetailDTO = {
+    id: "re000000-0000-0000-0000-00000000c002",
+    listingId: RE_LISTING_ID,
+    contactId: RE_BUYER_WARM_ID,
+    dealId: null,
+    meetingId: null,
+    buyerPhone: "+1 555 0188",
+    state: "ASKING",
+    leadTier: "WARM",
+    optedOut: false,
+    qualification: {
+      budget: null,
+      timeline: "Just starting to look, maybe this spring",
+      financing: null,
+      preApproved: null,
+      intent: "BUY",
+      dealMaterialized: false,
+    },
+    turns: [
+      {
+        role: "BUYER",
+        body: "What are the HOA fees on this one?",
+        at: agoMinutes(200),
+        handoff: false,
+        citations: [],
+      },
+      {
+        role: "ASSISTANT",
+        body: "The HOA is $240 a quarter, and it covers the neighborhood pool, common-area landscaping, and snow removal on the shared drives.",
+        at: agoMinutes(199),
+        handoff: false,
+        citations: [
+          {
+            disclosureId: "re000000-0000-0000-0000-0000000000c4",
+            disclosureType: "HOA",
+            contentPreview:
+              "HOA is $240/quarter and covers the neighborhood pool, common-area landscaping, and snow removal on shared drives.",
+            score: 0.84,
+          },
+        ],
+      },
+    ],
+    lastInboundAt: agoMinutes(200),
+    createdAt: agoMinutes(200),
+    updatedAt: agoMinutes(199),
+  };
+
+  // COLD — a single question, no contact resolved to a budget; lower tier.
+  const cold: ConciergeConversationDetailDTO = {
+    id: "re000000-0000-0000-0000-00000000c003",
+    listingId: RE_LISTING_ID,
+    contactId: null,
+    dealId: null,
+    meetingId: null,
+    buyerPhone: "+1 555 0203",
+    state: "ASKING",
+    leadTier: "COLD",
+    optedOut: false,
+    qualification: null,
+    turns: [
+      {
+        role: "BUYER",
+        body: "is this still available",
+        at: agoMinutes(1500),
+        handoff: false,
+        citations: [],
+      },
+      {
+        role: "ASSISTANT",
+        body: "It is! 1442 Lindenwood Ave is active. Would you like to know more or set up a showing?",
+        at: agoMinutes(1499),
+        handoff: false,
+        citations: [],
+      },
+    ],
+    lastInboundAt: agoMinutes(1500),
+    createdAt: agoMinutes(1500),
+    updatedAt: agoMinutes(1499),
+  };
+
+  // UNSCORED — brand-new inbound, no contact / no score yet (the synthetic
+  // "Unscored" pipeline column).
+  const unscored: ConciergeConversationDetailDTO = {
+    id: "re000000-0000-0000-0000-00000000c004",
+    listingId: RE_LISTING_ID,
+    contactId: null,
+    dealId: null,
+    meetingId: null,
+    buyerPhone: "+1 555 0260",
+    state: "ASKING",
+    leadTier: null,
+    optedOut: false,
+    qualification: null,
+    turns: [
+      {
+        role: "BUYER",
+        body: "Does the kitchen have gas or electric?",
+        at: agoMinutes(15),
+        handoff: false,
+        citations: [],
+      },
+      {
+        role: "ASSISTANT",
+        body: "I don't have that detail in the listing's disclosures yet — let me loop in our agent so they can confirm for you.",
+        at: agoMinutes(14),
+        handoff: true,
+        citations: [],
+      },
+    ],
+    lastInboundAt: agoMinutes(15),
+    createdAt: agoMinutes(15),
+    updatedAt: agoMinutes(14),
+  };
+
+  for (const c of [hot, warm, cold, unscored]) {
+    reConversations.set(c.id!, c);
+  }
+}
+
+seedRealEstate();
+
+/** A lean summary projection of a stored conversation (mirrors the BE DTO). */
+function toConversationSummary(
+  c: ConciergeConversationDetailDTO,
+): ConciergeConversationSummary {
+  return {
+    id: c.id,
+    listingId: c.listingId,
+    contactId: c.contactId,
+    dealId: c.dealId,
+    state: c.state,
+    leadTier: c.leadTier,
+    turnCount: c.turns?.length ?? 0,
+    optedOut: c.optedOut,
+    lastActivityAt: c.lastInboundAt ?? c.updatedAt,
+  };
+}
+
+let rePhotoSeq = 100;
+let reDraftSeq = 200;
+
+export const realEstateStore = {
+  // Listings
+  listListings(): Listing[] {
+    return Array.from(reListings.values()).sort((a, b) =>
+      (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+    );
+  },
+  getListing(id: string): Listing | undefined {
+    return reListings.get(id);
+  },
+  createListing(input: Listing): Listing {
+    const id = input.id ?? uuid();
+    const now = new Date().toISOString();
+    const created: Listing = {
+      status: "ACTIVE",
+      source: "AGENT_UPLOAD",
+      ...input,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    reListings.set(id, created);
+    if (!reDisclosures.has(id)) reDisclosures.set(id, []);
+    if (!rePhotos.has(id)) rePhotos.set(id, []);
+    return created;
+  },
+  updateListing(id: string, input: Listing): Listing | undefined {
+    const existing = reListings.get(id);
+    if (!existing) return undefined;
+    const updated: Listing = {
+      ...existing,
+      ...input,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    reListings.set(id, updated);
+    return updated;
+  },
+
+  // Disclosures
+  listDisclosures(listingId: string): ListingDisclosure[] {
+    return reDisclosures.get(listingId) ?? [];
+  },
+  createDisclosure(
+    listingId: string,
+    body: DisclosureRequest,
+  ): ListingDisclosure {
+    const now = new Date().toISOString();
+    const created: ListingDisclosure = {
+      id: uuid(),
+      listingId,
+      disclosureType: body.disclosureType || "GENERAL",
+      text: body.text,
+      sourceDocAttachmentId: body.sourceDocAttachmentId,
+      // Index immediately in the mock so the "Searchable" state shows at once.
+      indexedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const list = reDisclosures.get(listingId) ?? [];
+    list.push(created);
+    reDisclosures.set(listingId, list);
+    return created;
+  },
+  updateDisclosure(
+    listingId: string,
+    id: string,
+    body: DisclosureRequest,
+  ): ListingDisclosure | undefined {
+    const list = reDisclosures.get(listingId) ?? [];
+    const idx = list.findIndex((d) => d.id === id);
+    if (idx < 0) return undefined;
+    const now = new Date().toISOString();
+    const updated: ListingDisclosure = {
+      ...list[idx],
+      disclosureType: body.disclosureType ?? list[idx].disclosureType,
+      text: body.text ?? list[idx].text,
+      sourceDocAttachmentId:
+        body.sourceDocAttachmentId ?? list[idx].sourceDocAttachmentId,
+      indexedAt: now,
+      updatedAt: now,
+    };
+    list[idx] = updated;
+    reDisclosures.set(listingId, list);
+    return updated;
+  },
+
+  // Photos
+  listPhotos(listingId: string): ListingPhoto[] {
+    return rePhotos.get(listingId) ?? [];
+  },
+  addPhoto(
+    listingId: string,
+    filename: string,
+    contentType: string | undefined,
+    sizeBytes: number | undefined,
+  ): ListingPhoto {
+    const created: ListingPhoto = {
+      id: `re-photo-${rePhotoSeq++}`,
+      listingId,
+      attachmentId: uuid(),
+      storageRef: `tenant/re/${filename}`,
+      filename,
+      contentType: contentType ?? "image/jpeg",
+      sizeBytes: sizeBytes ?? 0,
+      createdAt: new Date().toISOString(),
+    };
+    const list = rePhotos.get(listingId) ?? [];
+    list.push(created);
+    rePhotos.set(listingId, list);
+    return created;
+  },
+
+  // Marketing drafts
+  generate(listingId: string): ListingMarketingDraft {
+    const now = new Date().toISOString();
+    const draft: ListingMarketingDraft = {
+      id: `re-draft-${reDraftSeq++}`,
+      listingId,
+      status: "DRAFTED",
+      pieces: [
+        {
+          channel: "MLS_REMARKS",
+          text: "Newly drafted MLS remarks for this listing, grounded in its facts and photos. Review and refine before publishing.",
+        },
+        {
+          channel: "INSTAGRAM",
+          text: "Just listed ✨ Tap for details and DM us for a showing! #justlisted",
+        },
+        {
+          channel: "EMAIL_BLAST",
+          text: "Just listed — reply to schedule a private showing this week.",
+        },
+      ],
+      photoCaptions: [],
+      fairHousingFlags: [],
+      fairHousingFlagged: false,
+      generationDegraded: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    reDrafts.set(draft.id!, draft);
+    return draft;
+  },
+  listListingDrafts(listingId: string): ListingMarketingDraft[] {
+    return Array.from(reDrafts.values())
+      .filter((d) => d.listingId === listingId)
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  },
+  listDrafted(): ListingMarketingDraft[] {
+    return Array.from(reDrafts.values())
+      .filter((d) => d.status === "DRAFTED")
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  },
+  approveDraft(id: string): ListingMarketingDraft | undefined {
+    const existing = reDrafts.get(id);
+    if (!existing || existing.status !== "DRAFTED") return undefined;
+    const updated: ListingMarketingDraft = {
+      ...existing,
+      status: "APPROVED",
+      approvedAt: new Date().toISOString(),
+      approvedByUserId: SMOKE_USER.id,
+      updatedAt: new Date().toISOString(),
+    };
+    reDrafts.set(id, updated);
+    return updated;
+  },
+  skipDraft(id: string): ListingMarketingDraft | undefined {
+    const existing = reDrafts.get(id);
+    if (!existing || existing.status !== "DRAFTED") return undefined;
+    const updated: ListingMarketingDraft = {
+      ...existing,
+      status: "SKIPPED",
+      updatedAt: new Date().toISOString(),
+    };
+    reDrafts.set(id, updated);
+    return updated;
+  },
+
+  // Conversations
+  listConversations(listingId?: string): ConciergeConversationSummary[] {
+    return Array.from(reConversations.values())
+      .filter((c) => !listingId || c.listingId === listingId)
+      .sort((a, b) =>
+        (b.lastInboundAt ?? b.updatedAt ?? "").localeCompare(
+          a.lastInboundAt ?? a.updatedAt ?? "",
+        ),
+      )
+      .map(toConversationSummary);
+  },
+  getConversation(id: string): ConciergeConversationDetailDTO | undefined {
+    return reConversations.get(id);
   },
 };

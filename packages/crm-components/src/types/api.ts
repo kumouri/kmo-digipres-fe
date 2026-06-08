@@ -752,3 +752,335 @@ export interface PasteInReviewRequest {
   /** When the review was left. ISO-8601 (defaults to now). */
   createTime?: string;
 }
+
+// =============================================================================
+// Real Estate Concierge — flagship FE surfaces (RE-5b)
+// =============================================================================
+//
+// HAND-WRITTEN types (not generated aliases). Every Real Estate BE controller is
+// @ConditionalOnProperty(kmosf.modules.realestate)-gated, so the endpoints are
+// ABSENT from the committed openapi.json and the generated openapi.ts has no
+// shape for them (the ChairFill CF-5b / Home-Services HS-4 precedent). These
+// mirror the BE contracts on `main` by hand:
+//   - Listing               (module/realestate/model/Listing.java)
+//   - ListingDisclosure      (module/realestate/model/ListingDisclosure.java)
+//   - ListingPhoto           (module/realestate/model/ListingPhoto.java)
+//   - ListingMarketingDraft  (module/realestate/model/ListingMarketingDraft.java)
+//   - ConciergeConversationSummaryDTO / DetailDTO (…/controller/dto/*)
+// Keep these in sync with the BE by hand if those DTOs change.
+
+/** Listing sale lifecycle (BE `Listing.ListingStatus`). */
+export type ListingStatus = "ACTIVE" | "PENDING" | "SOLD";
+
+export const LISTING_STATUSES: ListingStatus[] = ["ACTIVE", "PENDING", "SOLD"];
+
+/**
+ * One real-estate listing an agent has loaded into the console (BE `Listing`).
+ * The PoC runs entirely on agent-uploaded data — no live MLS/IDX feed — so
+ * `source` defaults to "AGENT_UPLOAD" and `externalId` is reserved. `trackedPhone`
+ * (E.164) is the Twilio number buyers text (the inbound-SMS correlation key).
+ */
+export interface Listing {
+  id?: string;
+  tenantId?: string | null;
+  addressLine?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  /** Optional MLS number (agent-entered; reserved for future IDX matching). */
+  mlsNumber?: string | null;
+  price?: number | null;
+  beds?: number | null;
+  /** Bathrooms (can be a half, e.g. 2.5). */
+  baths?: number | null;
+  sqft?: number | null;
+  status?: ListingStatus | string | null;
+  /** The listing agent's contact (handoff routing / display). Nullable. */
+  agentContactId?: string | null;
+  /** The listing agent's user id (the owner-user the hot-handoff notifies). */
+  ownerUserId?: string | null;
+  /** The tracked Twilio SMS number buyers text (E.164). Unique per tenant. */
+  trackedPhone?: string | null;
+  /** Provenance: "AGENT_UPLOAD" (default) or "IDX" (reserved). */
+  source?: string | null;
+  externalId?: string | null;
+  customFields?: Record<string, unknown> | null;
+  version?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/** Disclosure category (BE `DisclosureType`); anything unknown maps to GENERAL. */
+export type DisclosureType =
+  | "ROOF"
+  | "FOUNDATION"
+  | "BASEMENT"
+  | "SYSTEMS_HVAC"
+  | "ELECTRICAL"
+  | "PLUMBING"
+  | "WATER"
+  | "PEST"
+  | "LEAD_PAINT"
+  | "FLOOD"
+  | "HOA"
+  | "GENERAL";
+
+export const DISCLOSURE_TYPES: DisclosureType[] = [
+  "ROOF",
+  "FOUNDATION",
+  "BASEMENT",
+  "SYSTEMS_HVAC",
+  "ELECTRICAL",
+  "PLUMBING",
+  "WATER",
+  "PEST",
+  "LEAD_PAINT",
+  "FLOOD",
+  "HOA",
+  "GENERAL",
+];
+
+/**
+ * One typed disclosure line/section for a listing (BE `ListingDisclosure`). The
+ * `text` is THE grounding corpus the concierge RAG-answers from; `indexedAt` is
+ * stamped after a successful embed (null until indexed). `sourceDocAttachmentId`
+ * optionally references the original uploaded document.
+ */
+export interface ListingDisclosure {
+  id?: string;
+  tenantId?: string | null;
+  listingId?: string | null;
+  disclosureType?: DisclosureType | string | null;
+  /** The disclosure line/section — the embedded grounding text. */
+  text?: string | null;
+  sourceDocAttachmentId?: string | null;
+  /** When the text was last embedded into the vector index; null if not yet. */
+  indexedAt?: string | null;
+  version?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/**
+ * The agent disclosure request body (BE `ListingDisclosureController.DisclosureRequest`).
+ * `text` is required on create (4253 if blank); an unknown/blank `disclosureType`
+ * maps to GENERAL.
+ */
+export interface DisclosureRequest {
+  disclosureType?: string;
+  text: string;
+  sourceDocAttachmentId?: string;
+}
+
+/**
+ * A photo an agent has uploaded for a listing (BE `ListingPhoto`). The bytes live
+ * in object storage; this row is the per-listing pointer (and links a generic
+ * LISTING Attachment). The marketing studio vision-reads these at generate time.
+ */
+export interface ListingPhoto {
+  id?: string;
+  tenantId?: string | null;
+  listingId?: string | null;
+  /** The generic Attachment (subjectType="LISTING") this photo registers as. */
+  attachmentId?: string | null;
+  /** Object-storage key the bytes were stored under. */
+  storageRef?: string | null;
+  filename?: string | null;
+  contentType?: string | null;
+  sizeBytes?: number | null;
+  version?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/** Marketing surface a piece is drafted for (BE `MarketingChannel`). */
+export type MarketingChannel =
+  | "MLS_REMARKS"
+  | "INSTAGRAM"
+  | "FACEBOOK"
+  | "X"
+  | "EMAIL_BLAST";
+
+export const MARKETING_CHANNELS: MarketingChannel[] = [
+  "MLS_REMARKS",
+  "INSTAGRAM",
+  "FACEBOOK",
+  "X",
+  "EMAIL_BLAST",
+];
+
+/** Marketing draft lifecycle (BE `ListingMarketingDraft.Status`). */
+export type ListingMarketingDraftStatus = "DRAFTED" | "APPROVED" | "SKIPPED";
+
+/** One generated marketing piece for a channel (BE `GeneratedPiece`). */
+export interface MarketingGeneratedPiece {
+  channel?: MarketingChannel | string | null;
+  /** The drafted copy (may be blank if generation degraded for this piece). */
+  text?: string | null;
+}
+
+/** One listing photo's vision-read feature callout (BE `PhotoCaption`). */
+export interface MarketingPhotoCaption {
+  photoId?: string | null;
+  /** The one-line caption the vision model produced (nullable). */
+  caption?: string | null;
+  /** Discrete features the vision model called out. */
+  features?: string[] | null;
+}
+
+/** One Fair-Housing lint hit (BE `FairHousingFlag`). */
+export interface FairHousingFlag {
+  /** The matched banned term/phrase. */
+  term?: string | null;
+  /** The channel whose copy the term appeared in. */
+  channel?: MarketingChannel | string | null;
+  /** A short snippet of the surrounding copy for context. */
+  snippet?: string | null;
+}
+
+/**
+ * One Claude-drafted marketing package for a listing, parked in a draft→approve
+ * queue so it is NEVER auto-published (BE `ListingMarketingDraft`, the GBP
+ * draft→approve posture). Generation produces a DRAFTED draft (MLS remarks +
+ * social captions + email + per-photo callouts + a deterministic Fair-Housing
+ * lint); a staff approve flips it APPROVED (copy-ready, paste-out), a skip
+ * discards it (SKIPPED).
+ */
+export interface ListingMarketingDraft {
+  id?: string;
+  tenantId?: string | null;
+  listingId?: string | null;
+  /** One piece per channel (MLS remarks + social captions + email). */
+  pieces?: MarketingGeneratedPiece[] | null;
+  /** Per-photo feature callouts (empty if no photos / all failed). */
+  photoCaptions?: MarketingPhotoCaption[] | null;
+  /** Deterministic Fair-Housing lint flags across the copy (empty = none). */
+  fairHousingFlags?: FairHousingFlag[] | null;
+  /** Convenience: true iff `fairHousingFlags` is non-empty. */
+  fairHousingFlagged?: boolean | null;
+  /** True iff generation degraded (a partial/empty package was saved DRAFTED). */
+  generationDegraded?: boolean | null;
+  status?: ListingMarketingDraftStatus | string | null;
+  approvedAt?: string | null;
+  approvedByUserId?: string | null;
+  version?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/** A buyer's lead tier (BE Contact `leadScore.tier`). HOT/WARM/COLD; null = unscored. */
+export type LeadTier = "HOT" | "WARM" | "COLD";
+
+/** Concierge conversation lifecycle (BE `ConversationState`). */
+export type ConversationState =
+  | "ASKING"
+  | "QUALIFYING"
+  | "OFFERING_SLOTS"
+  | "BOOKED"
+  | "HANDED_OFF"
+  | "OPTED_OUT";
+
+/** A turn's author (BE `ConciergeTurn.Role`). */
+export type ConciergeTurnRole = "BUYER" | "ASSISTANT";
+
+/** Buyer buy/sell intent (BE `BuyerQualification.Intent`). */
+export type BuyerIntent = "BUY" | "SELL";
+
+/**
+ * One row in the staff-facing concierge conversation list (BE
+ * `ConciergeConversationSummaryDTO`, `GET /realestate/conversations`). A lean
+ * projection: which listing, which buyer, the thread state, how warm the lead is
+ * (`leadTier`, HOT/WARM/COLD — null when unscored / no contact), turn count, and
+ * when it last moved. Ids resolve to names against the collections the FE loads.
+ */
+export interface ConciergeConversationSummary {
+  id?: string;
+  listingId?: string | null;
+  /** The buyer Contact, or null until RE-2 resolves/creates it. */
+  contactId?: string | null;
+  /** The materialized concierge Deal, or null until RE-2 materializes it. */
+  dealId?: string | null;
+  state?: ConversationState | string | null;
+  /** HOT/WARM/COLD, or null when unscored / no contact. */
+  leadTier?: LeadTier | string | null;
+  turnCount?: number | null;
+  /** Whether the buyer texted STOP (TCPA opt-out). */
+  optedOut?: boolean | null;
+  /** When the thread last moved (newest-first ordering key). ISO-8601. */
+  lastActivityAt?: string | null;
+}
+
+/**
+ * One cited disclosure surfaced on an assistant turn (BE
+ * `ConciergeConversationDetailDTO.CitationDTO`). The citation viewer renders
+ * "Answered from: {disclosureType} — '{contentPreview}'" with the score.
+ */
+export interface ConciergeCitation {
+  /** The cited ListingDisclosure id. */
+  disclosureId?: string | null;
+  disclosureType?: DisclosureType | string | null;
+  /** The disclosure text preview (≤500 chars). */
+  contentPreview?: string | null;
+  /** The vector similarity score. */
+  score?: number | null;
+}
+
+/**
+ * One turn of the transcript (BE `ConciergeConversationDetailDTO.TurnDTO`). A
+ * BUYER turn carries the question (empty citations); an ASSISTANT turn carries
+ * the grounded answer (with its citations) or the handoff line (`handoff=true`,
+ * empty citations).
+ */
+export interface ConciergeTurn {
+  role?: ConciergeTurnRole | string | null;
+  body?: string | null;
+  at?: string | null;
+  /** True on the assistant turn that handed off to the agent. */
+  handoff?: boolean | null;
+  citations?: ConciergeCitation[] | null;
+}
+
+/**
+ * The accumulated buyer qualification (BE
+ * `ConciergeConversationDetailDTO.QualificationDTO`). Every field is best-effort /
+ * nullable; fields accumulate turn-to-turn and feed the materialized Deal.
+ */
+export interface BuyerQualification {
+  /** The buyer's budget / target price (USD), or null until revealed. */
+  budget?: number | null;
+  timeline?: string | null;
+  financing?: string | null;
+  /** True when the buyer indicated pre-approval; null when unknown. */
+  preApproved?: boolean | null;
+  intent?: BuyerIntent | string | null;
+  /** True once a Deal has been materialized from the qualification. */
+  dealMaterialized?: boolean | null;
+}
+
+/**
+ * One concierge conversation's full detail (BE
+ * `ConciergeConversationDetailDTO`, `GET /realestate/conversations/{id}`),
+ * backing the transcript + citation viewer + lead panel: the ordered turn
+ * transcript (each assistant turn carrying its grounding citations), the
+ * accumulated qualification, and the linked dealId + resolved leadTier.
+ */
+export interface ConciergeConversationDetail {
+  id?: string;
+  listingId?: string | null;
+  contactId?: string | null;
+  dealId?: string | null;
+  /** The booked showing Meeting, or null until RE-3 books one. */
+  meetingId?: string | null;
+  /** The buyer's E.164 phone (the correlation key) — agent context. */
+  buyerPhone?: string | null;
+  state?: ConversationState | string | null;
+  leadTier?: LeadTier | string | null;
+  optedOut?: boolean | null;
+  /** The accumulated buyer qualification, or null until RE-2 extracts any. */
+  qualification?: BuyerQualification | null;
+  /** The transcript, oldest first, each assistant turn carrying its citations. */
+  turns?: ConciergeTurn[] | null;
+  lastInboundAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}

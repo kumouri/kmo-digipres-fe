@@ -163,3 +163,17 @@ export {
   SalonReviewInbox,
 } from "./admin/chairfill";
 export { useChairFillApi } from "./hooks/useChairFillApi";
+// Real Estate Concierge — flagship (RE-5b) — four staff surfaces: the listing
+// console (list + detail with disclosures, photos, generate marketing), the
+// concierge inbox + lead pipeline, the transcript + citation viewer, and the
+// marketing review queue (draft→approve, never auto-published). Hand-written
+// client (the BE routes are @ConditionalOnProperty-gated, so they are absent
+// from the generated openapi types — the ChairFill CF-5b / HS-4 precedent).
+export {
+  ListingConsole,
+  ListingDetail,
+  ConciergeInbox,
+  ConciergeTranscript,
+  MarketingReviewQueue,
+} from "./admin/realestate";
+export { useRealEstateApi } from "./hooks/useRealEstateApi";
