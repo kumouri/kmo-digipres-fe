@@ -109,10 +109,10 @@ test("STAFF-only user: admin nav hidden and admin routes redirect to dashboard",
 
   // Deep-linking an admin-only route bounces back to the dashboard.
   await page.goto("/field-definitions");
-  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page).toHaveURL("/");
   await expect(page.getByTestId("dashboard")).toBeVisible();
   await page.goto("/audit");
-  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page).toHaveURL("/");
 });
 
 test("CONTRACTOR sees only their own surfaces; other nav hidden; deep-links redirect", async ({
@@ -138,12 +138,12 @@ test("CONTRACTOR sees only their own surfaces; other nav hidden; deep-links redi
 
   // Deep-linking a hidden route bounces back to the dashboard.
   await page.goto("/contacts");
-  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page).toHaveURL("/");
   await expect(page.getByTestId("dashboard")).toBeVisible();
   await page.goto("/team");
-  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page).toHaveURL("/");
   await page.goto("/deals");
-  await expect(page).toHaveURL("http://localhost:5273/");
+  await expect(page).toHaveURL("/");
 });
 
 // --- Mobile navigation -----------------------------------------------------

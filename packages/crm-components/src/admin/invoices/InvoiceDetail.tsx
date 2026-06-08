@@ -125,6 +125,40 @@ export function InvoiceDetail() {
         </CardContent>
       </Card>
 
+      {(invoice.lineItems ?? []).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Line Items</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm" data-testid="invoice-line-items">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="py-1">Description</th>
+                  <th className="py-1 text-right">Qty</th>
+                  <th className="py-1 text-right">Unit Price</th>
+                  <th className="py-1 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(invoice.lineItems ?? []).map((li, i) => (
+                  <tr key={i} className="border-b">
+                    <td className="py-1">{li.description ?? li.sku ?? "—"}</td>
+                    <td className="py-1 text-right">{li.quantity ?? 1}</td>
+                    <td className="py-1 text-right">
+                      {li.unitPrice?.toFixed(2) ?? "0.00"}
+                    </td>
+                    <td className="py-1 text-right">
+                      {li.lineTotal?.toFixed(2) ?? "0.00"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
       {(payments ?? []).length > 0 && (
         <Card>
           <CardHeader>
