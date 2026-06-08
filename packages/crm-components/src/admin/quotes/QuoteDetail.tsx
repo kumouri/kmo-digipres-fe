@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, FileCheck } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck, FilePlus2 } from "lucide-react";
 
 import { Badge } from "../../primitives/badge";
 import { Button } from "../../primitives/button";
@@ -16,6 +16,8 @@ import {
 } from "../../primitives/dialog";
 import { useQuotesApi } from "../../hooks/useQuotesApi";
 import { useInvoicesApi } from "../../hooks/useInvoicesApi";
+import { useContractsApi } from "../../hooks/useContractsApi";
+import { useContractTemplatesApi } from "../../hooks/useContractTemplatesApi";
 import type { QuoteStatus } from "../../types/api";
 import { QUOTE_STATUS_LABELS, labelFor } from "../labels";
 import { QuoteForm, quoteToFormValues, formValuesToQuote } from "./QuoteForm";
@@ -35,7 +37,11 @@ export function QuoteDetail() {
   const qc = useQueryClient();
   const quotesApi = useQuotesApi();
   const invoicesApi = useInvoicesApi();
+  const contractsApi = useContractsApi();
+  const contractTemplatesApi = useContractTemplatesApi();
   const [editOpen, setEditOpen] = useState(false);
+  const [spawnContractOpen, setSpawnContractOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quotes", id],
@@ -79,6 +85,30 @@ export function QuoteDetail() {
     onError: (err) => {
       toast.error(
         err instanceof Error ? err.message : "Failed to create invoice.",
+      );
+    },
+  });
+
+  const { data: allTemplates } = useQuery({
+    queryKey: ["contract-templates"],
+    queryFn: contractTemplatesApi.listContractTemplates,
+  });
+
+  const sowTemplates = (allTemplates ?? []).filter(
+    (t) => t.kind === "SOW" && t.active !== false,
+  );
+
+  const spawnContractMutation = useMutation({
+    mutationFn: () => contractsApi.spawnContractFromQuote(id!, selectedTemplateId),
+    onSuccess: (contract) => {
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+      toast.success("Contract created from quote.");
+      setSpawnContractOpen(false);
+      if (contract.id) navigate(`/contracts/${contract.id}`);
+    },
+    onError: (err) => {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to generate contract.",
       );
     },
   });
@@ -209,6 +239,20 @@ export function QuoteDetail() {
             {convertMutation.isPending ? "Creating…" : "Create invoice from quote"}
           </Button>
         )}
+
+        {isAccepted && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSelectedTemplateId(sowTemplates[0]?.id ?? "");
+              setSpawnContractOpen(true);
+            }}
+            data-testid="quote-generate-contract-btn"
+          >
+            <FilePlus2 className="size-4" />
+            Generate SOW contract
+          </Button>
+        )}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -236,6 +280,54 @@ export function QuoteDetail() {
           <Link to="/quotes">All quotes</Link>
         </Button>
       </div>
+
+      <Dialog open={spawnContractOpen} onOpenChange={setSpawnContractOpen} data-testid="quote-spawn-contract-dialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generate SOW contract</DialogTitle>
+            <DialogDescription>
+              Choose a Statement of Work template to generate a DRAFT contract from this quote.
+            </DialogDescription>
+          </DialogHeader>
+          {sowTemplates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Create an active SOW template first before generating a contract.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <label className="text-sm font-medium">
+                SOW template
+                <select
+                  className="mt-1 block w-full rounded border px-2 py-1 text-sm"
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  data-testid="quote-spawn-contract-template-select"
+                >
+                  {sowTemplates.map((t) =>
+                    t.id ? (
+                      <option key={t.id} value={t.id}>
+                        {t.name ?? t.kind ?? t.id}
+                      </option>
+                    ) : null,
+                  )}
+                </select>
+              </label>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSpawnContractOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  disabled={spawnContractMutation.isPending || !selectedTemplateId}
+                  onClick={() => spawnContractMutation.mutate()}
+                  data-testid="quote-spawn-contract-confirm"
+                >
+                  {spawnContractMutation.isPending ? "Generating…" : "Generate contract"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

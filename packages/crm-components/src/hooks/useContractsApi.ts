@@ -17,8 +17,8 @@ export function useContractsApi() {
         contractsApi.setContractStatus(client, id, target),
       sendContract: (id: string) => contractsApi.sendContract(client, id),
       getContractPdfUrl: (id: string) => contractsApi.getContractPdfUrl(client, id),
-      spawnContractFromQuote: (quoteId: string) =>
-        contractsApi.spawnContractFromQuote(client, quoteId),
+      spawnContractFromQuote: (quoteId: string, templateId: string) =>
+        contractsApi.spawnContractFromQuote(client, quoteId, templateId),
     }),
     [client],
   );

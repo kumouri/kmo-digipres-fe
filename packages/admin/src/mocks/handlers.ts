@@ -1336,14 +1336,19 @@ export const handlers = [
     });
   }),
 
-  // spawn-contract from a quote (idempotent)
+  // spawn-contract from a quote — requires templateId query param; 409 if quote not ACCEPTED
   http.post(`${API_BASE}/contracts/quotes/:quoteId/spawn-contract`, ({ request, params }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const templateId = url.searchParams.get("templateId") ?? "";
+    if (!templateId) return new HttpResponse(null, { status: 400 });
     const quote = quoteStore.get(params.quoteId as string);
     if (!quote) return new HttpResponse(null, { status: 404 });
+    if (quote.status !== "ACCEPTED") return new HttpResponse(null, { status: 409 });
     const existing = contractStore.findByQuoteId(params.quoteId as string);
     if (existing) return HttpResponse.json(existing, { status: 200 });
-    const created = contractStore.spawnFromQuote(quote);
+    const template = contractTemplateStore.get(templateId);
+    const created = contractStore.spawnFromQuote(quote, template ?? undefined);
     return HttpResponse.json(created, { status: 201 });
   }),
 
