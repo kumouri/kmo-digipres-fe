@@ -461,3 +461,105 @@ export const GBP_REVIEW_REPLY_STATUSES: GbpReviewReplyStatus[] = [
   "POSTED",
   "SKIPPED",
 ];
+
+// =============================================================================
+// Home Services — "Front Desk That Never Sleeps" — Missed-Call Inbox (HS-4)
+// =============================================================================
+//
+// HAND-WRITTEN types (not generated aliases). The Home Services BE endpoints
+// are gated behind @ConditionalOnProperty(kmosf.modules.home-services), so they
+// are ABSENT from the committed openapi.json and the generated openapi.ts has no
+// shape for them. These mirror the BE contracts by hand:
+//   - MissedCallInboxItemDTO  (module/homeservices/controller/dto)
+//   - the WorkOrder fields the Schedule / Dismiss PUTs touch
+// Keep these in sync with the BE by hand if those DTOs change.
+
+/**
+ * One card in the Missed-Call Inbox: a voicemail-sourced DRAFT WorkOrder a
+ * dispatcher triages. Mirrors the BE `MissedCallInboxItemDTO` field-for-field.
+ * Caller name + service address are not separate columns — they ride in
+ * `notes` (the BE stamps the symptom, address, and raw transcript there); the
+ * card surfaces them from that text. Equipment-nameplate reads (HS-2) likewise
+ * land in `notes`.
+ */
+export interface MissedCallInboxItem {
+  /** The WorkOrder id (the Schedule / Dismiss actions target this). */
+  id: string;
+  /** Server-assigned `YYYY-MM-NNNN` work-order number. */
+  workOrderNumber?: string | null;
+  /** The trade discipline (= WorkOrder.serviceType), e.g. "HVAC". */
+  trade?: string | null;
+  /** Routing urgency stamped at intake: EMERGENCY | URGENT | ROUTINE | UNTRIAGED. */
+  urgency?: string | null;
+  /** Coarse $-band hint, if any: SMALL | MEDIUM | LARGE. */
+  jobValueBand?: string | null;
+  /** WorkOrder title, `"<TRADE> — <URGENCY>"`. */
+  title?: string | null;
+  /** Symptom + service address + raw transcript (newline-delimited). */
+  notes?: string | null;
+  /** Originating Twilio CallSid (the voicemail-origin marker). */
+  callSid?: string | null;
+  /** When the DRAFT was created (newest-first ordering key). ISO-8601. */
+  createdAt?: string | null;
+}
+
+/** Trade disciplines the multi-trade triage emits (BE `Trade` enum wire values). */
+export type HomeServicesTrade =
+  | "HVAC"
+  | "PLUMBING"
+  | "ELECTRICAL"
+  | "ROOFING"
+  | "PEST"
+  | "GENERAL";
+
+/** Routing urgency. UNTRIAGED is the BE's label when the AI couldn't classify. */
+export type HomeServicesUrgency =
+  | "EMERGENCY"
+  | "URGENT"
+  | "ROUTINE"
+  | "UNTRIAGED";
+
+/**
+ * The partial WorkOrder body the Missed-Call Inbox PUTs to `/work-orders/{id}`.
+ * `WorkOrderService.update` is a sparse patch (only non-null fields apply), so
+ * Schedule sends `{ status, scheduledStart, technicianUserId }` to promote the
+ * DRAFT onto the dated dispatch board, and Dismiss sends `{ status: "CANCELLED" }`
+ * to retire it (recoverable — the record is kept, not deleted).
+ */
+export interface WorkOrderPatch {
+  status?: WorkOrderStatus;
+  /** ISO-8601 instant. */
+  scheduledStart?: string;
+  /** ISO-8601 instant. */
+  scheduledEnd?: string;
+  technicianUserId?: string;
+}
+
+/** WorkOrder lifecycle (BE `WorkOrderStatus`). Inbox cards are DRAFT. */
+export type WorkOrderStatus =
+  | "DRAFT"
+  | "SCHEDULED"
+  | "EN_ROUTE"
+  | "ON_SITE"
+  | "COMPLETED"
+  | "CANCELLED";
+
+/**
+ * The WorkOrder the Schedule / Dismiss PUTs return. Hand-written (field-service
+ * is not otherwise surfaced in the admin, so there is no generated alias). Only
+ * the fields the inbox reads back are typed precisely; the rest are loose.
+ */
+export interface WorkOrder {
+  id: string;
+  workOrderNumber?: string | null;
+  title?: string | null;
+  status?: WorkOrderStatus;
+  serviceType?: string | null;
+  scheduledStart?: string | null;
+  scheduledEnd?: string | null;
+  technicianUserId?: string | null;
+  notes?: string | null;
+  customFields?: Record<string, unknown> | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}

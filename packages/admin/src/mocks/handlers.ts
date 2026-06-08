@@ -66,6 +66,7 @@ import {
   invoiceStore,
   kbStore,
   milestoneStore,
+  missedCallInboxStore,
   payoutStore,
   projectStore,
   quoteStore,
@@ -1735,5 +1736,30 @@ export const handlers = [
       );
     }
     return HttpResponse.json(result);
+  }),
+
+  // --- Home Services: Missed-Call Inbox (HS-4) -------------------------------
+  // The triage queue of voicemail-sourced DRAFT work orders. The Schedule /
+  // Dismiss actions PUT /work-orders/:id with a status transition, which drops
+  // the card off this DRAFT-only list (mirrors the BE's status-filtered query).
+
+  http.get(`${API_BASE}/home-services/missed-call-inbox`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(missedCallInboxStore.list());
+  }),
+
+  // WorkOrder update — the inbox's Schedule (→ SCHEDULED + start + tech) and
+  // Dismiss (→ CANCELLED) both land here. Field-service isn't otherwise
+  // surfaced in the admin, so this is the only /work-orders handler we mock.
+  http.put(`${API_BASE}/work-orders/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as {
+      status?: string;
+      scheduledStart?: string;
+      technicianUserId?: string;
+    };
+    const updated = missedCallInboxStore.patch(params.id as string, body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
   }),
 ];

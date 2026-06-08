@@ -25,6 +25,7 @@ import type {
   InboxThread,
   Invoice,
   KnowledgeBaseArticle,
+  MissedCallInboxItem,
   Milestone,
   Payment,
   PayoutPeriodLine,
@@ -2670,5 +2671,145 @@ export const payoutStore = {
         ? new Date().toISOString()
         : new Date(Date.UTC(year, 11, 31, 23, 59, 59)).toISOString();
     return this.report(userId, from, to);
+  },
+};
+
+// --- Home Services: Missed-Call Inbox (HS-4) --------------------------------
+// Voicemail-sourced DRAFT WorkOrders the dispatcher triages. The list endpoint
+// returns DRAFTs only, so Scheduling (→ SCHEDULED) or Dismissing (→ CANCELLED)
+// a card drops it off the queue — exactly the BE behavior (a status-filtered
+// query). We hold a richer internal record (status + the notes blob built in
+// the BE's exact "Symptom: …\nService address: …\n\nTranscript:\n…" shape so
+// the card's note-parser has real text to work with) and project it to the
+// lean MissedCallInboxItem the BE DTO exposes. Resets per page load.
+
+interface MockMissedCall extends MissedCallInboxItem {
+  status: "DRAFT" | "SCHEDULED" | "CANCELLED";
+}
+
+function missedCallNotes(opts: {
+  symptom: string;
+  address?: string;
+  transcript: string;
+  equipment?: string;
+}): string {
+  let s = "Missed-call voicemail lead (home services).";
+  s += `\nSymptom: ${opts.symptom}`;
+  if (opts.address) s += `\nService address: ${opts.address}`;
+  if (opts.equipment) s += `\nEquipment (from photo): ${opts.equipment}`;
+  s += `\n\nTranscript:\n${opts.transcript}`;
+  return s;
+}
+
+const seedMissedCalls: MockMissedCall[] = [
+  {
+    id: "f0000000-0000-0000-0000-0000000000e1",
+    status: "DRAFT",
+    workOrderNumber: "2026-06-0042",
+    trade: "HVAC",
+    urgency: "EMERGENCY",
+    jobValueBand: "LARGE",
+    title: "HVAC — EMERGENCY",
+    callSid: "CA00000000000000000000000000000001",
+    createdAt: "2026-06-07T03:12:00Z",
+    notes: missedCallNotes({
+      symptom: "No heat, furnace making a loud banging; freezing inside, infant in the home",
+      address: "14 Oak Street",
+      equipment: "Carrier 58STA, serial 4815162342 — likely heat-exchanger fault",
+      transcript:
+        "Hi, this is Maria Lopez at 14 Oak Street. My furnace is making a loud banging " +
+        "and there's no heat at all, it's freezing in here and I have a baby in the house. " +
+        "Please call me back tonight, my number is 314-555-0142.",
+    }),
+  },
+  {
+    id: "f0000000-0000-0000-0000-0000000000e2",
+    status: "DRAFT",
+    workOrderNumber: "2026-06-0043",
+    trade: "PLUMBING",
+    urgency: "URGENT",
+    jobValueBand: "MEDIUM",
+    title: "PLUMBING — URGENT",
+    callSid: "CA00000000000000000000000000000002",
+    createdAt: "2026-06-07T02:40:00Z",
+    notes: missedCallNotes({
+      symptom: "Water heater leaking, pooling in the basement",
+      address: "908 Maple Ave",
+      transcript:
+        "Hey, it's Dan Whitfield over on Maple. My water heater's leaking pretty bad, " +
+        "there's a puddle spreading across the basement floor. I shut the valve but I'd " +
+        "like someone out tomorrow if you can. Thanks.",
+    }),
+  },
+  {
+    id: "f0000000-0000-0000-0000-0000000000e3",
+    status: "DRAFT",
+    workOrderNumber: "2026-06-0044",
+    trade: "ELECTRICAL",
+    urgency: "ROUTINE",
+    jobValueBand: "SMALL",
+    title: "ELECTRICAL — ROUTINE",
+    callSid: "CA00000000000000000000000000000003",
+    createdAt: "2026-06-06T22:05:00Z",
+    notes: missedCallNotes({
+      symptom: "Outlet in the garage stopped working",
+      transcript:
+        "Hi, this is Priya. The outlet in my garage stopped working — no rush, just " +
+        "whenever you have an opening next week is fine. You can reach me at this number.",
+    }),
+  },
+];
+
+const missedCalls = new Map<string, MockMissedCall>(
+  seedMissedCalls.map((m) => [m.id, m]),
+);
+
+export const missedCallInboxStore = {
+  /** The inbox view: DRAFTs only, newest first (mirrors the BE projection). */
+  list(): MissedCallInboxItem[] {
+    return Array.from(missedCalls.values())
+      .filter((m) => m.status === "DRAFT")
+      .sort((a, b) =>
+        (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+      )
+      .map(({ status: _status, ...item }) => item);
+  },
+
+  /** Lookup a work order by id (any status). */
+  get(id: string): MockMissedCall | undefined {
+    return missedCalls.get(id);
+  },
+
+  /**
+   * Apply a WorkOrder PUT patch. The inbox only ever sends `status`
+   * (SCHEDULED on Schedule, CANCELLED on Dismiss) plus the schedule fields;
+   * we record the status transition (which removes it from the inbox view)
+   * and echo the updated record back like the BE's WorkOrderService.update.
+   */
+  patch(
+    id: string,
+    body: {
+      status?: "DRAFT" | "SCHEDULED" | "CANCELLED" | string;
+      scheduledStart?: string;
+      technicianUserId?: string;
+    },
+  ): (MissedCallInboxItem & Record<string, unknown>) | undefined {
+    const existing = missedCalls.get(id);
+    if (!existing) return undefined;
+    if (
+      body.status === "DRAFT" ||
+      body.status === "SCHEDULED" ||
+      body.status === "CANCELLED"
+    ) {
+      existing.status = body.status;
+    }
+    const { status, ...rest } = existing;
+    return {
+      ...rest,
+      status,
+      scheduledStart: body.scheduledStart ?? null,
+      technicianUserId: body.technicianUserId ?? null,
+      updatedAt: new Date().toISOString(),
+    };
   },
 };

@@ -228,3 +228,33 @@ export const REVIEW_REPLY_STATUS_LABELS: Record<string, string> = {
   POSTED: "Posted",
   SKIPPED: "Skipped",
 };
+
+// --- Home Services — Missed-Call Inbox --------------------------------------
+// Trade discipline a triaged voicemail needs. "General" is the catch-all when
+// the AI couldn't pin a specific trade (a lead is never dropped).
+
+export const TRADE_LABELS: Record<string, string> = {
+  HVAC: "HVAC",
+  PLUMBING: "Plumbing",
+  ELECTRICAL: "Electrical",
+  ROOFING: "Roofing",
+  PEST: "Pest control",
+  GENERAL: "General",
+};
+
+// Routing urgency the triage stamps. "Untriaged" reads clearer than a blank
+// for a lead the AI couldn't classify — it still needs a human's eyes.
+export const URGENCY_LABELS: Record<string, string> = {
+  EMERGENCY: "Emergency",
+  URGENT: "Urgent",
+  ROUTINE: "Routine",
+  UNTRIAGED: "Needs triage",
+};
+
+// Coarse job-value hint. Plain words instead of the raw band names so a
+// dispatcher reads the size at a glance.
+export const JOB_VALUE_BAND_LABELS: Record<string, string> = {
+  SMALL: "Small job",
+  MEDIUM: "Medium job",
+  LARGE: "Large job",
+};
