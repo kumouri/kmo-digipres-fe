@@ -1084,3 +1084,208 @@ export interface ConciergeConversationDetail {
   createdAt?: string | null;
   updatedAt?: string | null;
 }
+
+// =============================================================================
+// FrontDesk IQ — Health Practices flagship FE surfaces (FD-5b)
+// =============================================================================
+//
+// HAND-WRITTEN types (not generated aliases). Every FrontDesk IQ BE controller
+// is @ConditionalOnProperty(kmosf.modules.frontdesk)-gated, so the endpoints are
+// ABSENT from the committed openapi.json and the generated openapi.ts has no
+// shape for them (the Real Estate RE-5b / ChairFill CF-5b / Home-Services HS-4
+// precedent). These mirror the BE contracts on `main` by hand:
+//   - Appointment            (module/frontdesk/model/Appointment.java)
+//   - RecallDueDTO           (…/controller/dto/RecallDueDTO.java)
+//   - CallbackInboxItemDTO   (…/controller/dto/CallbackInboxItemDTO.java)
+//   - DraftedReply           (reviews/FrontDeskReviewReplyService.DraftedReply)
+//   - HipaaFlag              (reviews/HipaaReplyLint.HipaaFlag)
+//   - FrontDeskScoringJob    (model/FrontDeskScoringJob.java)
+// Keep these in sync with the BE by hand if those DTOs change. The headline is
+// PHI-free by construction: nothing clinical exists on any of these shapes —
+// only scheduling logistics (visit-type bucket, lead time, insurance-pending,
+// recall timing, an intent bucket — never a diagnosis/procedure/transcript).
+
+/** Appointment scheduling lifecycle (BE `AppointmentStatus`). Carries no clinical meaning. */
+export type AppointmentStatus =
+  | "SCHEDULED"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "NO_SHOW"
+  | "CANCELLED";
+
+export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  "SCHEDULED",
+  "CONFIRMED",
+  "COMPLETED",
+  "NO_SHOW",
+  "CANCELLED",
+];
+
+/**
+ * The scheduling category of an appointment (BE `VisitTypeBucket`). A closed
+ * logistics enum chosen by front-desk staff — NOT a diagnosis or procedure
+ * (fence F1). Consumed only as a model ordinal; never rendered into outbound
+ * patient copy. An unknown wire value maps to OTHER.
+ */
+export type VisitTypeBucket =
+  | "NEW_PATIENT"
+  | "RECALL"
+  | "FOLLOW_UP"
+  | "HYGIENE"
+  | "ANNUAL_WELLNESS"
+  | "OTHER";
+
+export const VISIT_TYPE_BUCKETS: VisitTypeBucket[] = [
+  "NEW_PATIENT",
+  "RECALL",
+  "FOLLOW_UP",
+  "HYGIENE",
+  "ANNUAL_WELLNESS",
+  "OTHER",
+];
+
+/**
+ * A thin, PHI-free appointment for a health practice (BE `Appointment`). The
+ * headline boundary is enforced by what this shape physically cannot hold:
+ * every field is scheduling-logistics metadata — there is deliberately NO
+ * diagnosis / procedure / chief-complaint / provider-name / clinical-note
+ * field (fence F1). `contactId` / `providerId` are opaque ids, never names.
+ * `noShowRisk` is the nightly stamp (null until scored / for terminal rows).
+ */
+export interface Appointment {
+  id?: string;
+  tenantId?: string | null;
+  /** The patient/contact this appointment is for (a CRM Contact id — logistics only). */
+  contactId?: string | null;
+  /** Opaque staff/provider reference — never rendered into patient copy (fence F3). */
+  providerId?: string | null;
+  scheduledStart?: string | null;
+  scheduledEnd?: string | null;
+  status?: AppointmentStatus | string | null;
+  /** New-patient / recall / follow-up / hygiene / annual-wellness / other (logistics, not clinical). */
+  visitTypeBucket?: VisitTypeBucket | string | null;
+  /** Whether insurance verification is still outstanding — a no-show correlate, pure logistics. */
+  insuranceVerificationPending?: boolean | null;
+  /** The contact's most-recent prior-visit timestamp (recall cadence) — a metadata timestamp, not a reason. */
+  lastVisitAt?: string | null;
+  /** How many confirmations/reminders have already been sent (an engagement proxy). */
+  reminderCount?: number | null;
+  /** The nightly no-show-risk stamp (nullable — see `NoShowRisk`). */
+  noShowRisk?: NoShowRisk | null;
+  /** Cal.com booking uid for a live-sync deployment (null for seeded/CSV-imported rows). */
+  calComBookingUid?: string | null;
+  version?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/** No-show-risk retrain job status (BE `FrontDeskScoringJob.JobStatus`). */
+export type FrontDeskScoringJobStatus = "PENDING" | "RUNNING" | "DONE" | "FAILED";
+
+/**
+ * A manual/scheduled no-show-risk retrain run (BE `FrontDeskScoringJob`),
+ * returned by `POST /frontdesk/risk/retrain` so the caller can poll for
+ * completion without blocking the HTTP response.
+ */
+export interface FrontDeskScoringJob {
+  id?: string;
+  tenantId?: string | null;
+  status?: FrontDeskScoringJobStatus | string | null;
+  /** How many upcoming appointments were stamped with a NoShowRisk on this run. */
+  appointmentsScored?: number | null;
+  errorMessage?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  createdAt?: string | null;
+}
+
+/**
+ * One recall-due patient on the recall board (BE `RecallDueDTO`,
+ * `GET /frontdesk/recall`). PHI-free: a lapsed patient keyed off a metadata
+ * timestamp (last visit), never a reason for return (fence F1/F3). `name` is the
+ * one cross-collection enrichment (the resolved Contact's display name —
+ * best-effort, null when the contact is no longer materialized).
+ */
+export interface RecallDueDTO {
+  /** The lapsed patient (resolve to the chart-side record board-side). */
+  contactId?: string | null;
+  /** The contact's display name, or null when not resolvable. */
+  name?: string | null;
+  /** The most-recent prior-visit timestamp — a metadata timestamp, never a clinical reason. ISO-8601. */
+  lastVisitAt?: string | null;
+  /** Whole days between `lastVisitAt` and now (the recall-overdue sort key). */
+  daysSinceLastVisit?: number | null;
+  /** Whether the nightly recall sweep already nudged this contact this period (avoid a double-nudge). */
+  nudgedThisPeriod?: boolean | null;
+}
+
+/**
+ * The logistics routing bucket of an after-hours voicemail callback (the BE's
+ * extracted `intentBucket`). NEVER a diagnosis — a coarse, closed routing
+ * category. An unknown/missing value reads as "Needs a callback".
+ */
+export type CallbackIntentBucket =
+  | "SCHEDULING"
+  | "BILLING"
+  | "PRESCRIPTION_REFILL_REQUEST"
+  | "GENERAL_CALLBACK"
+  | "OTHER";
+
+/**
+ * One after-hours voicemail callback on the callback inbox (BE
+ * `CallbackInboxItemDTO`, `GET /frontdesk/callbacks`). The marquee fence — F2:
+ * this shape is <strong>logistics-only</strong> and has NO `body` / `transcript`
+ * / `recordingUrl` field, so the callback inbox can never surface the spoken
+ * words. The UI shows the intent bucket; there is no transcript to render.
+ */
+export interface CallbackInboxItemDTO {
+  /** The callback Activity id. */
+  activityId?: string | null;
+  /** The caller's Contact (resolve board-side), or null. */
+  contactId?: string | null;
+  /** The caller's name as extracted (logistics only), or null. */
+  callerName?: string | null;
+  /** The number to call back (extracted callback number, else the Twilio caller-ID). */
+  callbackPhone?: string | null;
+  /** The logistics routing bucket — never a diagnosis. */
+  intentBucket?: CallbackIntentBucket | string | null;
+  /** Whether the caller asked to be called back. */
+  callbackRequested?: boolean | null;
+  /** When the callback was logged (newest-first). ISO-8601. */
+  receivedAt?: string | null;
+}
+
+/** Whether a HIPAA-lint flag is a patient-status confirmation or a clinical term (BE `HipaaFlag.Category`). */
+export type HipaaFlagCategory = "PATIENT_STATUS" | "CLINICAL";
+
+/**
+ * One flagged HIPAA-risk term found in a drafted public review reply (BE
+ * `HipaaReplyLint.HipaaFlag`). The deterministic lint surfaces residual
+ * patient-status-confirmation phrases or clinical terms to the staffer who
+ * approves the reply — it does not block, only flags (the F4 backstop).
+ */
+export interface HipaaFlag {
+  /** PATIENT_STATUS (confirms the reviewer was a patient) or CLINICAL (names care). */
+  category?: HipaaFlagCategory | string | null;
+  /** The matched banned term/phrase (lower-case). */
+  term?: string | null;
+  /** A short window of the original (case-preserved) draft around the match, for the staffer. */
+  snippet?: string | null;
+}
+
+/**
+ * A queued FrontDesk review-reply draft + its deterministic HIPAA-lint flags
+ * (BE `FrontDeskReviewReplyService.DraftedReply`, the shape returned by
+ * `POST /frontdesk/reviews/draft`, `GET /frontdesk/reviews`, and approve/skip).
+ * The signature demo: a staffer pastes a public review, the BE drafts a
+ * HIPAA-safe reply (never confirming patient status / naming a procedure), runs
+ * the lint, and parks it DRAFTED; the staffer approves (copy-ready) or skips.
+ * The `reply` is a standard `GbpReviewReply`; `hipaaFlags` is re-computed on
+ * read (empty = clean).
+ */
+export interface DraftedReply {
+  /** The persisted DRAFTED review-reply row. */
+  reply?: GbpReviewReply | null;
+  /** The patient-status / clinical-term flags found in the drafted reply (empty = clean). */
+  hipaaFlags?: HipaaFlag[] | null;
+}

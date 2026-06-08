@@ -4,6 +4,7 @@ import type {
   ActivityDTO,
   AiDraft,
   AiSummary,
+  Appointment,
   AskAiRequest,
   AskResult,
   AuditEventDTO,
@@ -66,6 +67,10 @@ import {
   dealStore,
   expenseStore,
   fieldDefStore,
+  frontDeskAppointmentStore,
+  frontDeskCallbackStore,
+  frontDeskRecallStore,
+  frontDeskReviewStore,
   gbpReviewReplyStore,
   inboxStore,
   invoiceStore,
@@ -2019,4 +2024,121 @@ export const handlers = [
       return HttpResponse.json(detail);
     },
   ),
+
+  // --- FrontDesk IQ — Health Practices flagship (FD-5b) ----------------------
+  // The five staff surfaces. All routes are STAFF + frontdesk-module-gated on
+  // the BE and @ConditionalOnProperty-gated, so they're hand-written here (no
+  // generated alias — the Real Estate RE-5b / ChairFill CF-5b precedent).
+  // Contractors never reach them (the nav + RequireNotContractor guard hide
+  // them), so no deny-contractor. The headline is PHI-free by construction —
+  // no clinical field on any payload, and the callback inbox has NO transcript.
+
+  // Risk-sorted day view: upcoming appointments with their risk, highest-risk
+  // first. The BE takes ?from&to; the mock returns the seeded set as-is.
+  http.get(`${API_BASE}/frontdesk/risk/appointments`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskAppointmentStore.listByRisk());
+  }),
+  // Manual no-show retrain → 202 with the scoring job to poll.
+  http.post(`${API_BASE}/frontdesk/risk/retrain`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskAppointmentStore.retrain(), {
+      status: 202,
+    });
+  }),
+
+  // Recall board: lapsed patients, most overdue first.
+  http.get(`${API_BASE}/frontdesk/recall`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskRecallStore.list());
+  }),
+
+  // Callback inbox: after-hours voicemail callbacks, newest first. Fence F2 —
+  // the rows are logistics-only and carry NO transcript field.
+  http.get(`${API_BASE}/frontdesk/callbacks`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskCallbackStore.list());
+  }),
+
+  // Review inbox (the signature demo). Paste-in → a HIPAA-safe DraftedReply
+  // {reply, hipaaFlags}; 4290 if the comment is blank. List / approve / skip.
+  http.post(`${API_BASE}/frontdesk/reviews/draft`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as PasteInReviewRequest;
+    if (!body || !body.comment || !body.comment.trim()) {
+      return HttpResponse.json(
+        {
+          message: "A review text (comment) is required to draft a reply",
+          errorCode: 4290,
+        },
+        { status: 400 },
+      );
+    }
+    const created = frontDeskReviewStore.draftPasteIn({
+      comment: body.comment.trim(),
+      reviewerName: body.reviewerName,
+      rating: body.rating,
+      externalReviewId: body.externalReviewId,
+      createTime: body.createTime,
+    });
+    return HttpResponse.json(created, { status: 200 });
+  }),
+  http.get(`${API_BASE}/frontdesk/reviews`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskReviewStore.listDrafted());
+  }),
+  http.post(
+    `${API_BASE}/frontdesk/reviews/:id/approve`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = frontDeskReviewStore.approve(String(params.id));
+      if ("code" in result)
+        return HttpResponse.json(
+          { message: "Draft not found or not in review", errorCode: result.code },
+          { status: result.code === 4292 ? 404 : 409 },
+        );
+      return HttpResponse.json(result);
+    },
+  ),
+  http.post(`${API_BASE}/frontdesk/reviews/:id/skip`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = frontDeskReviewStore.skip(String(params.id));
+    if ("code" in result)
+      return HttpResponse.json(
+        { message: "Draft not found or not in review", errorCode: result.code },
+        { status: result.code === 4292 ? 404 : 409 },
+      );
+    return HttpResponse.json(result);
+  }),
+
+  // Appointment console: list / create / get / update. Registered last so the
+  // more-specific /frontdesk/risk/appointments route above isn't shadowed.
+  http.get(`${API_BASE}/frontdesk/appointments`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskAppointmentStore.list());
+  }),
+  http.post(`${API_BASE}/frontdesk/appointments`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Appointment;
+    return HttpResponse.json(frontDeskAppointmentStore.create(body), {
+      status: 200,
+    });
+  }),
+  http.get(`${API_BASE}/frontdesk/appointments/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const appt = frontDeskAppointmentStore.get(String(params.id));
+    if (!appt)
+      return HttpResponse.json(
+        { message: "Appointment not found", errorCode: 4276 },
+        { status: 404 },
+      );
+    return HttpResponse.json(appt);
+  }),
+  http.put(`${API_BASE}/frontdesk/appointments/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as Appointment;
+    const updated = frontDeskAppointmentStore.update(String(params.id), body);
+    if (!updated) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(updated);
+  }),
 ];

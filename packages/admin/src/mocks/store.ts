@@ -4,12 +4,17 @@
 
 import type {
   ActivityDTO,
+  Appointment,
   AuditEventDTO,
   BookSlotRequest,
   BookedMeeting,
   BookingPublicView,
+  CallbackInboxItemDTO,
   CompanyDTO,
   ContactDTO,
+  DraftedReply,
+  FrontDeskScoringJob,
+  RecallDueDTO,
   ContractorClientView,
   ContractorProjectView,
   ContractorTaskView,
@@ -3749,5 +3754,418 @@ export const realEstateStore = {
   },
   getConversation(id: string): ConciergeConversationDetailDTO | undefined {
     return reConversations.get(id);
+  },
+};
+
+// --- FrontDesk IQ — Health Practices flagship (FD-5b) ------------------------
+// Five staff surfaces, all STAFF + frontdesk-module-gated on the BE and
+// @ConditionalOnProperty-gated (so hand-written, no generated alias — the RE-5b
+// / CF-5b / HS-4 precedent):
+//   - Risk-sorted day view  (GET /frontdesk/risk/appointments) — appointments
+//     across HIGH/MED/LOW + unscored tiers, logistics-only (visit bucket, lead
+//     time, insurance-pending), highest-risk first; never a clinical field.
+//   - Recall board          (GET /frontdesk/recall) — lapsed patients, most
+//     overdue first, with the nudged-this-period flag.
+//   - Callback inbox        (GET /frontdesk/callbacks) — after-hours voicemail
+//     callbacks with an intent bucket; fence F2 — NO transcript field at all.
+//   - Review inbox          (POST /frontdesk/reviews/draft, GET /frontdesk/
+//     reviews, .../{id}/approve, .../{id}/skip) — the signature demo: a pasted
+//     review → a HIPAA-safe DraftedReply {reply, hipaaFlags}; one seed carries a
+//     sample lint flag so the HIPAA check renders out of the box.
+//   - Appointment console   (GET/POST /frontdesk/appointments) — create/list to
+//     seed the day view.
+// Patients are real contacts so the day view resolves their names.
+
+const FD_PATIENT_1_ID = "fd000000-0000-0000-0000-0000000000p1";
+const FD_PATIENT_2_ID = "fd000000-0000-0000-0000-0000000000p2";
+const FD_PATIENT_3_ID = "fd000000-0000-0000-0000-0000000000p3";
+const FD_PATIENT_4_ID = "fd000000-0000-0000-0000-0000000000p4";
+
+contactStore.create({
+  id: FD_PATIENT_1_ID,
+  type: "PERSON",
+  firstName: "Eleanor",
+  lastName: "Vance",
+  displayName: "Eleanor Vance",
+  emails: ["eleanor.vance@example.test"],
+  phones: [{ number: "+1 555 0211", label: "mobile" }],
+  tags: ["patient", "seed"],
+});
+contactStore.create({
+  id: FD_PATIENT_2_ID,
+  type: "PERSON",
+  firstName: "Theo",
+  lastName: "Okafor",
+  displayName: "Theo Okafor",
+  emails: ["theo.okafor@example.test"],
+  phones: [{ number: "+1 555 0233", label: "mobile" }],
+  tags: ["patient", "seed"],
+});
+contactStore.create({
+  id: FD_PATIENT_3_ID,
+  type: "PERSON",
+  firstName: "Mara",
+  lastName: "Lindqvist",
+  displayName: "Mara Lindqvist",
+  emails: ["mara.l@example.test"],
+  phones: [{ number: "+1 555 0244", label: "mobile" }],
+  tags: ["patient", "seed"],
+});
+contactStore.create({
+  id: FD_PATIENT_4_ID,
+  type: "PERSON",
+  firstName: "Sang",
+  lastName: "Pham",
+  displayName: "Sang Pham",
+  emails: ["sang.pham@example.test"],
+  phones: [{ number: "+1 555 0255", label: "mobile" }],
+  tags: ["patient", "seed"],
+});
+
+export const SEED_FD_HIGH_APPOINTMENT_ID =
+  "fd000000-0000-0000-0000-0000000000a1";
+
+const seedFrontDeskAppointments: Appointment[] = [
+  {
+    id: SEED_FD_HIGH_APPOINTMENT_ID,
+    tenantId: SMOKE_USER.tenantId,
+    contactId: FD_PATIENT_1_ID, // Eleanor Vance
+    visitTypeBucket: "NEW_PATIENT",
+    scheduledStart: inHours(20),
+    scheduledEnd: inHours(21),
+    status: "SCHEDULED",
+    insuranceVerificationPending: true,
+    reminderCount: 0,
+    noShowRisk: {
+      riskScore: 0.81,
+      riskTier: "HIGH",
+      source: "MODEL",
+      computedAt: agoMinutes(600),
+    },
+  },
+  {
+    id: "fd000000-0000-0000-0000-0000000000a2",
+    tenantId: SMOKE_USER.tenantId,
+    contactId: FD_PATIENT_2_ID, // Theo Okafor
+    visitTypeBucket: "RECALL",
+    scheduledStart: inHours(24),
+    scheduledEnd: inHours(24.5),
+    status: "CONFIRMED",
+    insuranceVerificationPending: false,
+    reminderCount: 1,
+    noShowRisk: {
+      riskScore: 0.47,
+      riskTier: "MEDIUM",
+      source: "MODEL",
+      computedAt: agoMinutes(600),
+    },
+  },
+  {
+    id: "fd000000-0000-0000-0000-0000000000a3",
+    tenantId: SMOKE_USER.tenantId,
+    contactId: FD_PATIENT_3_ID, // Mara Lindqvist
+    visitTypeBucket: "HYGIENE",
+    scheduledStart: inHours(28),
+    scheduledEnd: inHours(28.5),
+    status: "CONFIRMED",
+    insuranceVerificationPending: false,
+    reminderCount: 2,
+    noShowRisk: {
+      riskScore: 0.14,
+      riskTier: "LOW",
+      source: "RULES_FALLBACK",
+      computedAt: agoMinutes(600),
+    },
+  },
+  {
+    // Brand-new patient, no usable history — scored LOW (never punished on zero
+    // evidence; INSUFFICIENT_DATA reads "Not enough history yet").
+    id: "fd000000-0000-0000-0000-0000000000a4",
+    tenantId: SMOKE_USER.tenantId,
+    contactId: FD_PATIENT_4_ID, // Sang Pham
+    visitTypeBucket: "ANNUAL_WELLNESS",
+    scheduledStart: inHours(44),
+    scheduledEnd: inHours(45),
+    status: "SCHEDULED",
+    insuranceVerificationPending: true,
+    reminderCount: 0,
+    noShowRisk: {
+      riskScore: 0.1,
+      riskTier: "LOW",
+      source: "INSUFFICIENT_DATA",
+      computedAt: agoMinutes(600),
+    },
+  },
+];
+
+const frontDeskAppointments = new Map<string, Appointment>(
+  seedFrontDeskAppointments.map((a) => [a.id!, a]),
+);
+
+export const frontDeskAppointmentStore = {
+  /** Every appointment for the tenant (the console list). */
+  list(): Appointment[] {
+    return Array.from(frontDeskAppointments.values());
+  },
+  /** Upcoming appointments, highest-risk first (mirrors the BE sort; unscored last). */
+  listByRisk(): Appointment[] {
+    return Array.from(frontDeskAppointments.values()).sort((a, b) => {
+      const ra = a.noShowRisk?.riskScore ?? -1;
+      const rb = b.noShowRisk?.riskScore ?? -1;
+      return rb - ra;
+    });
+  },
+  get(id: string): Appointment | undefined {
+    return frontDeskAppointments.get(id);
+  },
+  create(body: Appointment): Appointment {
+    const now = new Date().toISOString();
+    const created: Appointment = {
+      ...body,
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      status: body.status ?? "SCHEDULED",
+      visitTypeBucket: body.visitTypeBucket ?? "OTHER",
+      insuranceVerificationPending: body.insuranceVerificationPending ?? false,
+      reminderCount: body.reminderCount ?? 0,
+      // A freshly-created appointment is scored next run — surface a sensible
+      // MEDIUM stamp so the day view shows it ranked rather than unscored.
+      noShowRisk: body.noShowRisk ?? {
+        riskScore: 0.4,
+        riskTier: "MEDIUM",
+        source: "RULES_FALLBACK",
+        computedAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    frontDeskAppointments.set(created.id!, created);
+    return created;
+  },
+  update(id: string, body: Appointment): Appointment | undefined {
+    const existing = frontDeskAppointments.get(id);
+    if (!existing) return undefined;
+    const updated: Appointment = {
+      ...existing,
+      ...body,
+      id,
+      tenantId: existing.tenantId,
+      updatedAt: new Date().toISOString(),
+    };
+    frontDeskAppointments.set(id, updated);
+    return updated;
+  },
+  /** A manual no-show retrain — returns a DONE job (the day view re-fetches after). */
+  retrain(): FrontDeskScoringJob {
+    const now = new Date().toISOString();
+    return {
+      id: uuid(),
+      tenantId: SMOKE_USER.tenantId,
+      status: "DONE",
+      appointmentsScored: frontDeskAppointments.size,
+      startedAt: now,
+      completedAt: now,
+      createdAt: now,
+    };
+  },
+};
+
+// Recall board — lapsed patients, the BE already resolves `name` into the DTO.
+const seedRecallDue: RecallDueDTO[] = [
+  {
+    contactId: "fd000000-0000-0000-0000-0000000000r1",
+    name: "Harriet Stowe",
+    lastVisitAt: new Date(
+      Date.now() - 410 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    daysSinceLastVisit: 410,
+    nudgedThisPeriod: false,
+  },
+  {
+    contactId: "fd000000-0000-0000-0000-0000000000r2",
+    name: "Desmond Tutu",
+    lastVisitAt: new Date(
+      Date.now() - 295 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    daysSinceLastVisit: 295,
+    nudgedThisPeriod: true,
+  },
+  {
+    contactId: "fd000000-0000-0000-0000-0000000000r3",
+    name: "Wendell Berry",
+    lastVisitAt: new Date(
+      Date.now() - 210 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    daysSinceLastVisit: 210,
+    nudgedThisPeriod: false,
+  },
+];
+
+export const frontDeskRecallStore = {
+  /** Lapsed patients, most-overdue first (mirrors the BE sort). */
+  list(): RecallDueDTO[] {
+    return [...seedRecallDue].sort(
+      (a, b) => (b.daysSinceLastVisit ?? 0) - (a.daysSinceLastVisit ?? 0),
+    );
+  },
+};
+
+// Callback inbox — fence F2: logistics-only, NO transcript field anywhere. The
+// intent bucket is the routing hint; there is deliberately no body/recording.
+const seedCallbacks: CallbackInboxItemDTO[] = [
+  {
+    activityId: "fd000000-0000-0000-0000-0000000000k1",
+    contactId: FD_PATIENT_2_ID,
+    callerName: "Theo Okafor",
+    callbackPhone: "+1 555 0233",
+    intentBucket: "SCHEDULING",
+    callbackRequested: true,
+    receivedAt: agoMinutes(45),
+  },
+  {
+    activityId: "fd000000-0000-0000-0000-0000000000k2",
+    contactId: null,
+    callerName: "Unknown caller",
+    callbackPhone: "+1 555 0299",
+    intentBucket: "PRESCRIPTION_REFILL_REQUEST",
+    callbackRequested: true,
+    receivedAt: agoMinutes(120),
+  },
+  {
+    activityId: "fd000000-0000-0000-0000-0000000000k3",
+    contactId: null,
+    callerName: "Bridget Ng",
+    callbackPhone: "+1 555 0277",
+    intentBucket: "BILLING",
+    callbackRequested: false,
+    receivedAt: agoMinutes(360),
+  },
+];
+
+export const frontDeskCallbackStore = {
+  /** After-hours callbacks, newest first (mirrors the BE order). */
+  list(): CallbackInboxItemDTO[] {
+    return [...seedCallbacks].sort((a, b) =>
+      (b.receivedAt ?? "").localeCompare(a.receivedAt ?? ""),
+    );
+  },
+};
+
+// Review inbox — the DraftedReply { reply, hipaaFlags } queue. One seed carries
+// a sample HIPAA-lint flag so the HIPAA check renders out of the box; a paste-in
+// produces a clean (no-flags) HIPAA-safe draft.
+const SEED_FD_REVIEW_ID = "fd000000-0000-0000-0000-0000000000v1";
+
+const frontDeskReviews = new Map<string, DraftedReply>();
+frontDeskReviews.set(SEED_FD_REVIEW_ID, {
+  reply: {
+    id: SEED_FD_REVIEW_ID,
+    tenantId: SMOKE_USER.tenantId,
+    reviewId: "health-pasted/seed-1",
+    rating: 2,
+    reviewerName: "Jordan M.",
+    comment:
+      "Waited 40 minutes past my appointment time and the front desk was hard to reach. Disappointing visit.",
+    // A HIPAA-safe draft (thank / apologize / invite offline) — but it slipped
+    // in "your appointment", which the lint flags as patient-status confirmation
+    // so the staffer can soften it before posting.
+    draftedReply:
+      "Hi Jordan, thank you for taking the time to share this. We're sorry your appointment didn't meet expectations, and we take feedback like this seriously. We'd welcome the chance to make it right — please give our office a call so we can speak with you directly.",
+    status: "DRAFTED",
+    receivedAt: agoMinutes(30),
+    createdAt: agoMinutes(30),
+    updatedAt: agoMinutes(30),
+  },
+  hipaaFlags: [
+    {
+      category: "PATIENT_STATUS",
+      term: "your appointment",
+      snippet: "sorry your appointment didn't meet",
+    },
+  ],
+});
+
+export const frontDeskReviewStore = {
+  /** DRAFTED only, most-recent first (mirrors the BE list contract). */
+  listDrafted(): DraftedReply[] {
+    return Array.from(frontDeskReviews.values())
+      .filter((d) => d.reply?.status === "DRAFTED")
+      .sort((a, b) =>
+        (b.reply?.receivedAt ?? "").localeCompare(a.reply?.receivedAt ?? ""),
+      );
+  },
+  /**
+   * Paste-in: draft a HIPAA-safe reply for a pasted review and queue it DRAFTED.
+   * The canned draft is clean (thank / apologize / invite-offline, no clinical
+   * mention, no patient-status confirmation) → empty hipaaFlags (the all-clear).
+   */
+  draftPasteIn(input: {
+    comment: string;
+    reviewerName?: string;
+    rating?: number;
+    externalReviewId?: string;
+    createTime?: string;
+  }): DraftedReply {
+    const now = new Date().toISOString();
+    const name = input.reviewerName?.trim();
+    const critical = (input.rating ?? 5) <= 3;
+    const draftedReply = critical
+      ? `${name ? `Hi ${name}, thank you` : "Thank you"} for taking the time to share this. We're sorry to hear your experience didn't meet expectations, and we take feedback like this seriously. We'd welcome the chance to learn more and make things right — please give our office a call so we can speak with you directly.`
+      : `${name ? `Thank you so much, ${name}!` : "Thank you so much for the kind words!"} We truly appreciate you taking the time to share this, and we look forward to seeing you again. Please don't hesitate to reach out to our office anytime.`;
+    const created: DraftedReply = {
+      reply: {
+        id: uuid(),
+        tenantId: SMOKE_USER.tenantId,
+        reviewId:
+          input.externalReviewId ??
+          `health-pasted/${Math.random().toString(36).slice(2)}`,
+        rating: input.rating ?? undefined,
+        reviewerName: input.reviewerName,
+        comment: input.comment,
+        reviewCreateTime: input.createTime ?? now,
+        draftedReply,
+        status: "DRAFTED",
+        receivedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+      // The canned draft is HIPAA-safe by construction → no flags (all-clear).
+      hipaaFlags: [],
+    };
+    frontDeskReviews.set(created.reply!.id!, created);
+    return created;
+  },
+  /** Approve → POSTED (copy-ready, no live Google call). 404 if missing, 409 if not DRAFTED. */
+  approve(id: string): DraftedReply | { code: number } {
+    const existing = frontDeskReviews.get(id);
+    if (!existing || !existing.reply) return { code: 4292 };
+    if (existing.reply.status !== "DRAFTED") return { code: 4291 };
+    const updated: DraftedReply = {
+      ...existing,
+      reply: {
+        ...existing.reply,
+        status: "POSTED",
+        postedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    frontDeskReviews.set(id, updated);
+    return updated;
+  },
+  /** Skip → SKIPPED, no Google call. 404 if missing, 409 if not DRAFTED. */
+  skip(id: string): DraftedReply | { code: number } {
+    const existing = frontDeskReviews.get(id);
+    if (!existing || !existing.reply) return { code: 4292 };
+    if (existing.reply.status !== "DRAFTED") return { code: 4291 };
+    const updated: DraftedReply = {
+      ...existing,
+      reply: {
+        ...existing.reply,
+        status: "SKIPPED",
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    frontDeskReviews.set(id, updated);
+    return updated;
   },
 };

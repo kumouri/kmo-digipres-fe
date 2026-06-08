@@ -177,3 +177,19 @@ export {
   MarketingReviewQueue,
 } from "./admin/realestate";
 export { useRealEstateApi } from "./hooks/useRealEstateApi";
+// FrontDesk IQ — Health Practices flagship (FD-5b) — five staff surfaces: the
+// risk-sorted day view, the recall board, the callback inbox (logistics only,
+// never a transcript — fence F2), the HIPAA-safe review inbox (the signature
+// demo: paste a review → a HIPAA-safe draft with the lint flags surfaced →
+// approve copy-ready / skip), and the appointment console (create/list to seed
+// the demo). Hand-written client (the BE routes are @ConditionalOnProperty-
+// gated, so they are absent from the generated openapi types — the Real Estate
+// RE-5b / ChairFill CF-5b / HS-4 precedent).
+export {
+  RiskDayView,
+  RecallBoard,
+  CallbackInbox,
+  ReviewInbox,
+  AppointmentConsole,
+} from "./admin/frontdesk";
+export { useFrontDeskApi } from "./hooks/useFrontDeskApi";

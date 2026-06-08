@@ -357,3 +357,48 @@ export const BUYER_INTENT_LABELS: Record<string, string> = {
   BUY: "Buying",
   SELL: "Selling",
 };
+
+// --- FrontDesk IQ — Health Practices flagship (FD-5b) -----------------------
+// PHI-free by construction. None of these are clinical — they're scheduling
+// logistics a front desk reads at a glance. (Risk tier + source reuse the
+// ChairFill NO_SHOW_RISK_* maps; the review-reply status reuses
+// REVIEW_REPLY_STATUS_LABELS — a DRAFTED reply reads as "Needs review".)
+
+// The appointment's scheduling category. A logistics bucket front-desk staff
+// pick — never a diagnosis or procedure. Plain words for the day view.
+export const VISIT_TYPE_BUCKET_LABELS: Record<string, string> = {
+  NEW_PATIENT: "New patient",
+  RECALL: "Recall / recare",
+  FOLLOW_UP: "Follow-up",
+  HYGIENE: "Hygiene",
+  ANNUAL_WELLNESS: "Annual wellness",
+  OTHER: "Other",
+};
+
+// The appointment's scheduling status (logistics lifecycle, no clinical meaning).
+// "Missed" reads gentler + clearer than the raw "No-show" for a past appointment.
+export const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: "Scheduled",
+  CONFIRMED: "Confirmed",
+  COMPLETED: "Completed",
+  NO_SHOW: "Missed",
+  CANCELLED: "Cancelled",
+};
+
+// The logistics routing bucket of an after-hours voicemail callback. NEVER a
+// diagnosis — a coarse reason-to-route a staffer scans before calling back.
+// An unknown/blank bucket reads as "Needs a callback" (a lead is never dropped).
+export const CALLBACK_INTENT_BUCKET_LABELS: Record<string, string> = {
+  SCHEDULING: "Scheduling",
+  BILLING: "Billing",
+  PRESCRIPTION_REFILL_REQUEST: "Prescription refill",
+  GENERAL_CALLBACK: "General callback",
+  OTHER: "Needs a callback",
+};
+
+// What a HIPAA-lint flag caught on a drafted public reply. Plain words so a
+// staffer understands why the line was flagged before approving the reply.
+export const HIPAA_FLAG_CATEGORY_LABELS: Record<string, string> = {
+  PATIENT_STATUS: "Confirms patient status",
+  CLINICAL: "Names care",
+};
