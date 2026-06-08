@@ -313,8 +313,11 @@ export const bookingStore = {
 
 // --- Quotes -----------------------------------------------------------------
 
+export const SEED_QUOTE_DRAFT_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+export const SEED_QUOTE_ACCEPTED_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab";
+
 const seedQuote: Quote = {
-  id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  id: SEED_QUOTE_DRAFT_ID,
   tenantId: SMOKE_USER.tenantId,
   quoteNumber: "Q-0001",
   status: "DRAFT",
@@ -336,7 +339,42 @@ const seedQuote: Quote = {
   notes: "Seed quote for smoke tests.",
 };
 
-const quotes = new Map<string, Quote>([[seedQuote.id!, seedQuote]]);
+// Stable ACCEPTED quote used by convert-to-invoice smoke specs.
+const seedAcceptedQuote: Quote = {
+  id: SEED_QUOTE_ACCEPTED_ID,
+  tenantId: SMOKE_USER.tenantId,
+  quoteNumber: "Q-0002",
+  status: "ACCEPTED",
+  currency: "USD",
+  lineItems: [
+    {
+      description: "SEO Retainer",
+      quantity: 3,
+      unitPrice: 500,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 1500,
+    },
+    {
+      description: "Content Writing",
+      quantity: 5,
+      unitPrice: 200,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineTotal: 1000,
+    },
+  ],
+  subtotal: 2500,
+  discountTotal: 0,
+  taxTotal: 0,
+  total: 2500,
+  statusChangedAt: "2026-06-01T00:00:00Z",
+};
+
+const quotes = new Map<string, Quote>([
+  [seedQuote.id!, seedQuote],
+  [seedAcceptedQuote.id!, seedAcceptedQuote],
+]);
 
 export const quoteStore = {
   list(): Quote[] {
