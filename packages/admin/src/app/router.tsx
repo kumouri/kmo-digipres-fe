@@ -135,6 +135,9 @@ const RecurringInvoiceDetail = lazy(() =>
 const ReviewRepliesList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ReviewRepliesList })),
 );
+const MissedCallInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.MissedCallInbox })),
+);
 const TeamList = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamList })),
 );
@@ -252,6 +255,7 @@ export const router = createBrowserRouter([
                   { path: "knowledge-base/:id", element: <KnowledgeBaseDetail /> },
                   { path: "inbox", element: <InboxList /> },
                   { path: "inbox/:id", element: <InboxDetail /> },
+                  { path: "missed-calls", element: <MissedCallInbox /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },

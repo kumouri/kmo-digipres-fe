@@ -147,3 +147,8 @@ export {
 export { useRecurringInvoicesApi } from "./hooks/useRecurringInvoicesApi";
 export { ReviewRepliesList } from "./admin/review-replies";
 export { useReviewRepliesApi } from "./hooks/useReviewRepliesApi";
+// Home Services — "Front Desk That Never Sleeps" — Missed-Call Inbox (HS-4).
+// Hand-written client (the BE routes are @ConditionalOnProperty-gated, so they
+// are absent from the generated openapi types).
+export { MissedCallInbox } from "./admin/home-services";
+export { useHomeServicesApi } from "./hooks/useHomeServicesApi";
