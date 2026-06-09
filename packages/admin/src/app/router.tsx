@@ -171,6 +171,11 @@ const NurtureDashboard = lazy(() =>
     default: m.NurtureDashboard,
   })),
 );
+const MidnightResponderPanel = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.MidnightResponderPanel,
+  })),
+);
 const RevenueReviveDashboard = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({
     default: m.RevenueReviveDashboard,
@@ -341,6 +346,13 @@ export const router = createBrowserRouter([
                   // alongside the other RE surfaces (the AR-FE precedent). A
                   // contractor deep-linking is bounced.
                   { path: "database-goldmine", element: <NurtureDashboard /> },
+                  // RE Midnight Responder (T3) — response-latency stats panel
+                  // + tier-routing config card. The BE controllers are STAFF +
+                  // realestate-AND-responder-module-gated; gated behind
+                  // RequireNotContractor grouped with the other RE surfaces
+                  // (the T1 Database Goldmine precedent). A contractor
+                  // deep-linking is bounced.
+                  { path: "midnight-responder", element: <MidnightResponderPanel /> },
                   // AR — Accounts Receivable / Collections module — staff-visible, like
                   // the flagship surfaces (the BE /ar/* routes are STAFF + ar-module-
                   // gated). A contractor deep-linking is bounced.

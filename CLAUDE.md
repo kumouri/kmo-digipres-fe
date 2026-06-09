@@ -53,6 +53,22 @@ Admin UI for the backend's **Google Business Profile review-reply automation** (
 - **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
 - **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
 
+## Real Estate "Midnight Responder" — response-latency stats + tier routing (T3, SHIPPED)
+
+Admin UI for the backend T3 **Midnight Responder** — two panels on the RE console: a **response-latency stats panel** (the "<30 s, 24/7" headline: p50/p95/max received→replied latency + after-hours coverage share) and a **tier-routing config card** (WARM/COLD lead → nurture-campaign mapping, business-hours window, delegate-handoff flag). Branch `re-midnight-responder-fe`; smoke +8 specs (212→220).
+
+| Area | Route | API surface |
+|---|---|---|
+| Midnight Responder (`<RequireNotContractor>`) | `/midnight-responder` | GET /realestate/responder/latency-stats[?zoneId=] → `MidnightResponderLatencyStats`; GET /realestate/responder/config → `MidnightResponderConfig` (4380/404 if not yet configured); PUT /realestate/responder/config body `MidnightResponderConfigDTO{warmCampaignId,coldCampaignId,delegateHandoffToResponder,afterHoursStartHour,afterHoursEndHour}` (all nullable, partial-upsert) → `MidnightResponderConfig`. Campaign dropdowns use the shared GET /nurture/campaigns (via `useRealEstateNurtureApi.listCampaigns()` — same as T1). |
+
+- **Hand-written client** `api/realestate-responder.ts` + hook `useRealEstateResponderApi` — the RE-responder BE controllers are `@ConditionalOnProperty(realestate)`-gated AND require the responder module, so both are **absent from `openapi.json`** (the T1 / AR / proposals precedent). DTOs: `MidnightResponderConfig` (full config row), `MidnightResponderConfigDTO` (all-nullable upsert request), `MidnightResponderLatencyStats` (9-field latency + after-hours record). `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/realestate/MidnightResponderPanel.tsx` — two sections: (1) `LatencyStatsPanel` (TanStack Query → 4 stat cards: p50/p95/max/after-hours; no-data empty state); (2) `TierRoutingCard` (react-hook-form + zod; campaign pickers for WARM + COLD via shared nurture campaign list; business-hours start/end number inputs; delegate-handoff checkbox; partial-upsert PUT on save). 404/4380 on config GET renders a friendly "not configured yet" banner above the blank form (same form, no existing values).
+- **Route guard:** behind `RequireNotContractor` grouped with the other RE surfaces (the T1 NurtureDashboard precedent). The BE endpoints are STAFF-guarded (`RoleGuard.requireRole("STAFF")`, 1800).
+- **MSW**: `midnightResponderStore` (store.ts) seeds a config row + realistic latency stats (p50 18.2 s, p95 27.9 s, max 44.1 s, 42% after-hours). `saveConfig` applies the BE partial-upsert logic (null fields preserve prior values). `clearConfig()` + Playwright `context.route()` interception exercises the 4380 empty-state path. Spec: `tests/re-midnight-responder.spec.ts` (8).
+- **Labels** in `admin/labels.ts`: `RESPONDER_LEAD_TIER_LABELS` (WARM → "Warm leads", COLD → "Long-dormant leads"). Fair-housing-neutral: tier labels describe routing logistics, not buyer characteristics.
+- **Nav item:** `MoonStar` icon, `hideForContractor: true`, inserted after "Database goldmine" in `AppShell.tsx` NAV_ITEMS.
+- **Out of scope:** the live Twilio / A2P 10DLC go-live config (tracked in go-live-requirements.md), per-tenant module enablement.
+
 ## Health "RevenueRevive" — dormant-patient reactivation funnel (T2, SHIPPED)
 
 Admin UI for the backend FD-nurture **funnel ROI dashboard** (`FrontDeskNurtureController`, a thin frontdesk-namespaced facade over the shared E1 nurture engine — the health twin of T1). Pick a reactivation campaign, **segment-and-enroll** lapsed patients, then watch the per-segment funnel fill as cadences fire and replies turn into booked appointments. Branch `health-revenuerevive-fe`; smoke 205→212.

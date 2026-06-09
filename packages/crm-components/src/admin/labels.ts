@@ -479,3 +479,16 @@ export const FD_NURTURE_ENROLLMENT_STATUS_LABELS: Record<string, string> = {
   OPTED_OUT: "Opted out",
   COMPLETED: "Ran its course",
 };
+
+// --- Real Estate "Midnight Responder" — response-latency + tier routing (T3) -
+// Fair-housing-neutral: these labels describe routing logistics, never buyer
+// characteristics. Lead tiers (HOT/WARM/COLD) are the responder engine's
+// engagement-signal scores, not personal attributes.
+
+// How a buyer lead is routed after the responder scores it. Plain words an
+// agent reads at a glance — "Warm nurture campaign" vs "Long-term nurture".
+// HOT is handled by the RE-2 handoff service, so it is not configurable here.
+export const RESPONDER_LEAD_TIER_LABELS: Record<string, string> = {
+  WARM: "Warm leads",
+  COLD: "Long-dormant leads",
+};

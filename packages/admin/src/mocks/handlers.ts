@@ -84,6 +84,7 @@ import {
   quoteStore,
   realEstateStore,
   realEstateNurtureStore,
+  midnightResponderStore,
   frontDeskNurtureStore,
   recurringInvoiceStore,
   savedReportStore,
@@ -2341,4 +2342,59 @@ export const handlers = [
       headers: { "Content-Type": "application/pdf" },
     });
   }),
+
+  // --- Real Estate "Midnight Responder" — T3 --------------------------------
+  // Response-latency stats + tier-routing config. Both controllers are
+  // @ConditionalOnProperty(realestate)-gated AND responder-module-gated, so
+  // they're hand-written here (no generated alias — the T1 / AR / proposals
+  // precedent). A contractor never reaches them (RequireNotContractor guard).
+
+  // TEST-ONLY control endpoint — clears/resets the responder config store.
+  // Only active when VITE_USE_MOCKS=true (MSW is only loaded in that mode).
+  // Used by the smoke test to exercise the 4380 no-config path without relying
+  // on fragile Playwright network interception (which can't override MSW SW).
+  http.post(`${API_BASE}/realestate/responder/config/test-clear`, () => {
+    midnightResponderStore.clearConfig();
+    return new HttpResponse(null, { status: 204 });
+  }),
+  http.post(`${API_BASE}/realestate/responder/config/test-reset`, () => {
+    midnightResponderStore.resetConfig();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // GET /realestate/responder/latency-stats — the "<30 s, 24/7" demo headline.
+  http.get(`${API_BASE}/realestate/responder/latency-stats`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(midnightResponderStore.getLatencyStats());
+  }),
+
+  // GET /realestate/responder/config — 4380 (404) if not configured yet.
+  http.get(`${API_BASE}/realestate/responder/config`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = midnightResponderStore.getConfig();
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.message, errorCode: result.code },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  // PUT /realestate/responder/config — upsert (partial: null fields preserved).
+  http.put(
+    `${API_BASE}/realestate/responder/config`,
+    async ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const body = (await request.json()) as {
+        warmCampaignId: string | null;
+        coldCampaignId: string | null;
+        delegateHandoffToResponder: boolean | null;
+        afterHoursStartHour: number | null;
+        afterHoursEndHour: number | null;
+      };
+      const saved = midnightResponderStore.saveConfig(body);
+      return HttpResponse.json(saved);
+    },
+  ),
 ];
