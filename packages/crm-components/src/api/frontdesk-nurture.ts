@@ -25,7 +25,7 @@ import type { CrmClient } from "./client";
 // cross this boundary — only logistics signals (recency, contact frequency).
 // The same DormancyBucket/NurtureEnrollmentStatus/SegmentationResult types from
 // the RE T1 client are reused here because the underlying shared E1 nurture
-// engine is vertical-agnostic; only the base-path prefix differs.
+// engine is vertical-agnostic; only the analytics + enroll path prefixes differ.
 
 // ---------------------------------------------------------------------------
 // DTOs — mirror the shared BE records exactly (same engine as T1)
@@ -136,17 +136,16 @@ export interface FdNurtureCampaign {
 // ---------------------------------------------------------------------------
 
 /**
- * List the tenant's health nurture campaigns via the FrontDesk-namespaced
- * campaign list endpoint. Both the shared E1 NurtureCampaignController
- * (/nurture/campaigns) and this FD-namespaced variant (/frontdesk/nurture/campaigns)
- * return the same NurtureCampaign shape; using the FD-prefixed path ensures the
- * mock can serve only health campaigns to this dashboard (in production, the
- * per-tenant module-guard achieves the same isolation).
+ * List the tenant's nurture campaigns via the shared E1 CRUD controller
+ * (GET /nurture/campaigns). Matches the RE T1 pattern exactly — both verticals
+ * use the same shared endpoint because the underlying NurtureCampaignController
+ * is vertical-agnostic. Per-vertical campaign filtering is deferred to GATE 2
+ * (NurtureCampaign has no vertical tag yet).
  */
 export function listFdNurtureCampaigns(
   client: CrmClient,
 ): Promise<FdNurtureCampaign[]> {
-  return client.api<FdNurtureCampaign[]>("/frontdesk/nurture/campaigns");
+  return client.api<FdNurtureCampaign[]>("/nurture/campaigns");
 }
 
 /**

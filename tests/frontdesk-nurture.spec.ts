@@ -35,6 +35,21 @@ test.beforeEach(async ({ context }) => {
   await context.clearCookies();
 });
 
+// The shared /nurture/campaigns mock returns the RE + FD union (matching the
+// real shared E1 endpoint — NurtureCampaign carries no vertical tag yet, GATE 2
+// adds one). So in MOCK mode the dashboard's auto-select lands on the first
+// (RE) campaign; pick the health campaign explicitly. In production a clinic
+// tenant only carries its own campaigns, so auto-select is correct there.
+async function selectHealthCampaign(page: Page) {
+  await expect(page.getByTestId("fd-nurture-controls")).toBeVisible();
+  await page.getByTestId("fd-nurture-campaign-select").click();
+  await page
+    .getByTestId("fd-nurture-campaign-option")
+    .filter({ hasText: "Lapsed-patient reactivation" })
+    .click();
+  await expect(page.getByTestId("fd-nurture-funnel")).toBeVisible();
+}
+
 // ---------------------------------------------------------------------------
 // (a) Dashboard funnel
 // ---------------------------------------------------------------------------
@@ -54,8 +69,8 @@ test("the dashboard renders the headline funnel and a row per dormancy segment",
   await expect(page).toHaveURL(/\/revenue-revive$/);
   await expect(page.getByTestId("fd-nurture-dashboard-page")).toBeVisible();
 
-  // The active campaign auto-selects → its funnel renders.
-  await expect(page.getByTestId("fd-nurture-funnel")).toBeVisible();
+  // Pick the health campaign (see selectHealthCampaign) → its funnel renders.
+  await selectHealthCampaign(page);
 
   // Headline funnel cards.
   await expect(page.getByTestId("fd-nurture-stat-enrolled")).toBeVisible();
@@ -77,7 +92,7 @@ test("each segment row shows its dormancy band label and day window", async ({
 }) => {
   await login(page);
   await page.goto("/revenue-revive");
-  await expect(page.getByTestId("fd-nurture-funnel")).toBeVisible();
+  await selectHealthCampaign(page);
 
   // Friendly band labels — no raw "A".."D" leaking as the only text.
   await expect(page.getByText("Recently dormant")).toBeVisible();
@@ -100,6 +115,7 @@ test("the reply-to-booking view summarizes the re-engaged patients", async ({
 }) => {
   await login(page);
   await page.goto("/revenue-revive");
+  await selectHealthCampaign(page);
   await expect(page.getByTestId("fd-nurture-reply-booking")).toBeVisible();
 
   // Seeded replied = 5+4+1+0 = 10; booked = 3. The summary calls both out.
@@ -120,7 +136,7 @@ test("segment-and-enroll surfaces the run result and fills the funnel", async ({
 }) => {
   await login(page);
   await page.goto("/revenue-revive");
-  await expect(page.getByTestId("fd-nurture-funnel")).toBeVisible();
+  await selectHealthCampaign(page);
 
   // Booked starts at 3.
   await expect(page.getByTestId("fd-nurture-stat-booked-value")).toHaveText("3");

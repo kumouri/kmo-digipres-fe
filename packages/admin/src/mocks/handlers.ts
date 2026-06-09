@@ -2040,10 +2040,17 @@ export const handlers = [
   // segments). NOTE: the analytics + segment-and-enroll routes are registered
   // before nothing parametric collides here (distinct prefixes).
 
-  // Campaign list (the shared E1 CRUD controller) — used by the RE T1 dashboard.
+  // Campaign list (the shared E1 CRUD controller) — used by both the RE T1 and
+  // health T2 dashboards. Returns the union of all vertical stores; per-vertical
+  // campaign filtering is deferred to GATE 2 (NurtureCampaign has no vertical
+  // tag yet). In production, one tenant's /nurture/campaigns returns all that
+  // tenant's nurture campaigns regardless of the vertical that created them.
   http.get(`${API_BASE}/nurture/campaigns`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
-    return HttpResponse.json(realEstateNurtureStore.listCampaigns());
+    return HttpResponse.json([
+      ...realEstateNurtureStore.listCampaigns(),
+      ...frontDeskNurtureStore.listCampaigns(),
+    ]);
   }),
 
   // Per-segment funnel ROI. 4301 → not found (404).
@@ -2080,17 +2087,10 @@ export const handlers = [
   ),
 
   // --- Health "RevenueRevive" — dormant-patient reactivation funnel (T2) -----
-  // The frontdesk-namespaced nurture routes are under /frontdesk/nurture/campaigns/*.
-  // The campaign list uses the FD-prefixed endpoint (/frontdesk/nurture/campaigns)
-  // so the mock can serve only health campaigns (in production, per-tenant module
-  // gating achieves the same isolation). Both are ADMIN + frontdesk-AND-nurture-
+  // The campaign list is served by the shared /nurture/campaigns handler above
+  // (union of RE + FD stores). The FD-specific routes below are the analytics +
+  // segment-and-enroll endpoints only. Both are ADMIN + frontdesk-AND-nurture-
   // module-gated on the BE. PHI-free by construction.
-
-  // FD campaign list — returns only the health reactivation campaigns.
-  http.get(`${API_BASE}/frontdesk/nurture/campaigns`, ({ request }) => {
-    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
-    return HttpResponse.json(frontDeskNurtureStore.listCampaigns());
-  }),
 
   // Per-segment funnel ROI. 4301 → not found (404).
   http.get(
