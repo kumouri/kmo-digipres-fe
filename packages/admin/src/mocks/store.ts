@@ -3,6 +3,8 @@
 // online. Not exported to the prod bundle.
 
 import type {
+  ArAgingReport,
+  PromiseToPay,
   ActivityDTO,
   Appointment,
   AuditEventDTO,
@@ -4167,5 +4169,127 @@ export const frontDeskReviewStore = {
     };
     frontDeskReviews.set(id, updated);
     return updated;
+  },
+};
+
+// --- AR — Accounts Receivable / Collections module --------------------------
+// Aging dashboard + promise-to-pay mock backing. All routes are STAFF +
+// ar-module-gated on the BE (@ConditionalOnProperty, so hand-written here —
+// the FrontDesk FD-5b / ChairFill CF-5b / HS-4 precedent). The store resets
+// per page load.
+//
+// Seeded to showcase the "here's $X past due you didn't know about" demo moment:
+//   - CURRENT: 0 outstanding (nothing due yet)
+//   - D1_7:   2 invoices / $3,450.00 (fresh late)
+//   - D8_14:  1 invoice  / $1,200.00
+//   - D15_30: 3 invoices / $7,800.00
+//   - D30_PLUS: 2 invoices / $12,500.00 (the red bucket — most urgent)
+// grandTotalPastDue = 3450 + 1200 + 7800 + 12500 = 24950
+//
+// Two seeded promises-to-pay — one ACTIVE and one KEPT — wired to a seeded
+// OVERDUE invoice so the promise panel renders with realistic data.
+
+const AR_OVERDUE_INVOICE_ID = "ar000000-0000-0000-0000-000000000001";
+const AR_OVERDUE_INVOICE_2_ID = "ar000000-0000-0000-0000-000000000002";
+
+// Register two OVERDUE invoices into the shared invoice store so they show in
+// the invoice picker.
+invoiceStore.create({
+  id: AR_OVERDUE_INVOICE_ID,
+  invoiceNumber: "INV-1042",
+  status: "OVERDUE",
+  currency: "USD",
+  total: 3450,
+  dueAt: agoMinutes(7 * 24 * 60), // 7 days ago
+});
+invoiceStore.create({
+  id: AR_OVERDUE_INVOICE_2_ID,
+  invoiceNumber: "INV-1031",
+  status: "OVERDUE",
+  currency: "USD",
+  total: 12500,
+  dueAt: agoMinutes(35 * 24 * 60), // 35 days ago
+});
+
+const SEED_AR_AGING_REPORT: ArAgingReport = {
+  buckets: [
+    { label: "CURRENT",  count: 0, totalBalance: 0 },
+    { label: "D1_7",     count: 2, totalBalance: 3450.0 },
+    { label: "D8_14",    count: 1, totalBalance: 1200.0 },
+    { label: "D15_30",   count: 3, totalBalance: 7800.0 },
+    { label: "D30_PLUS", count: 2, totalBalance: 12500.0 },
+  ],
+  grandTotalPastDue: 24950.0,
+  primaryCurrency: "USD",
+};
+
+const seedPromises: PromiseToPay[] = [
+  {
+    id: "ar000000-0000-0000-0000-00000000p001",
+    invoiceId: AR_OVERDUE_INVOICE_ID,
+    promisedDate: "2026-06-15",
+    promisedAmount: 3450,
+    status: "ACTIVE",
+    note: "Called 2026-06-09, will pay by end of week.",
+    createdAt: agoMinutes(60),
+  },
+  {
+    id: "ar000000-0000-0000-0000-00000000p002",
+    invoiceId: AR_OVERDUE_INVOICE_2_ID,
+    promisedDate: "2026-06-01",
+    promisedAmount: 12500,
+    status: "BROKEN",
+    note: "Missed the agreed date — follow up needed.",
+    createdAt: agoMinutes(14 * 24 * 60),
+  },
+];
+
+const arPromises = new Map<string, PromiseToPay>(
+  seedPromises.map((p) => [p.id, p]),
+);
+
+export const arStore = {
+  /** The AR-aging report (static seed — mirrors the BE's tenant-scoped report). */
+  getAgingReport(): ArAgingReport {
+    return SEED_AR_AGING_REPORT;
+  },
+
+  /** Promises to pay for a given invoice, newest first. */
+  listPromises(invoiceId: string): PromiseToPay[] {
+    return Array.from(arPromises.values())
+      .filter((p) => p.invoiceId === invoiceId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  /** Record a new promise to pay. 4601 if invoice absent, 4602 on invalid input. */
+  recordPromise(body: {
+    invoiceId: string;
+    promisedDate: string;
+    promisedAmount?: number;
+    note?: string;
+  }): PromiseToPay | { code: number; message: string } {
+    if (!body.invoiceId) {
+      return { code: 4601, message: "Invoice not found" };
+    }
+    if (!body.promisedDate || !/^\d{4}-\d{2}-\d{2}$/.test(body.promisedDate)) {
+      return { code: 4602, message: "Invalid date format — expected YYYY-MM-DD" };
+    }
+    if (
+      body.promisedAmount !== undefined &&
+      (isNaN(body.promisedAmount) || body.promisedAmount < 0)
+    ) {
+      return { code: 4602, message: "Amount must be a positive number" };
+    }
+    const created: PromiseToPay = {
+      id: `ar000000-0000-0000-0000-${Date.now().toString(16).padStart(12, "0")}`,
+      invoiceId: body.invoiceId,
+      promisedDate: body.promisedDate,
+      promisedAmount: body.promisedAmount,
+      status: "ACTIVE",
+      note: body.note,
+      createdAt: new Date().toISOString(),
+    };
+    arPromises.set(created.id, created);
+    return created;
   },
 };

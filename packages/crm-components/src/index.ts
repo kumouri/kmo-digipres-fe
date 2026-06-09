@@ -193,3 +193,17 @@ export {
   AppointmentConsole,
 } from "./admin/frontdesk";
 export { useFrontDeskApi } from "./hooks/useFrontDeskApi";
+// AR — Accounts Receivable / Collections module — aging dashboard + promise-to-
+// pay. Hand-written client (the BE routes are @ConditionalOnProperty-gated, so
+// they are absent from the generated openapi types — the FrontDesk FD-5b /
+// ChairFill CF-5b / HS-4 precedent).
+export { ArAgingDashboard } from "./admin/ar";
+export { useArApi } from "./hooks/useArApi";
+export type {
+  ArAgingReport,
+  ArAgingBucket,
+  ArAgingBucketLabel,
+  PromiseToPay,
+  PromiseToPayStatus,
+  RecordPromiseRequest,
+} from "./api/ar";

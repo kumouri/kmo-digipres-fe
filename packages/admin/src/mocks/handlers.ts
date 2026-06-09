@@ -52,6 +52,7 @@ import {
   SMOKE_TOKEN,
   SMOKE_USER,
   activityStore,
+  arStore,
   assignmentStore,
   attachmentStore,
   auditStore,
@@ -2140,5 +2141,47 @@ export const handlers = [
     const updated = frontDeskAppointmentStore.update(String(params.id), body);
     if (!updated) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(updated);
+  }),
+
+  // --- AR — Accounts Receivable / Collections module -------------------------
+  // All three surfaces are STAFF + ar-module-gated on the BE. The routes are
+  // @ConditionalOnProperty-gated, so they're hand-written here (no generated
+  // alias — the FrontDesk FD-5b / ChairFill CF-5b precedent). A contractor
+  // never reaches them (the nav + RequireNotContractor guard hide them), so
+  // these don't deny-contractor.
+
+  // Aging report: outstanding balance bucketed by days-past-due.
+  http.get(`${API_BASE}/ar/aging`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(arStore.getAgingReport());
+  }),
+
+  // Promises to pay for a given invoice, newest first.
+  http.get(`${API_BASE}/ar/promises`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const invoiceId = url.searchParams.get("invoiceId") ?? "";
+    return HttpResponse.json(arStore.listPromises(invoiceId));
+  }),
+
+  // Record a new promise to pay. 4601 → invoice not found (404), 4602 → bad
+  // input (400) — mirrors the BE error-code contract.
+  http.post(`${API_BASE}/ar/promises`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as {
+      invoiceId: string;
+      promisedDate: string;
+      promisedAmount?: number;
+      note?: string;
+    };
+    const result = arStore.recordPromise(body);
+    if ("code" in result) {
+      const status = result.code === 4601 ? 404 : 400;
+      return HttpResponse.json(
+        { message: result.message, errorCode: result.code },
+        { status },
+      );
+    }
+    return HttpResponse.json(result, { status: 201 });
   }),
 ];

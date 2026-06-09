@@ -189,6 +189,11 @@ const TeamList = lazy(() =>
 const TeamDetail = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.TeamDetail })),
 );
+const ArAgingDashboard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.ArAgingDashboard,
+  })),
+);
 
 /**
  * Wrappers: feed role context into the shared CRM components. A scoped-down
@@ -315,6 +320,10 @@ export const router = createBrowserRouter([
                   { path: "concierge", element: <ConciergeInbox /> },
                   { path: "concierge/:id", element: <ConciergeTranscript /> },
                   { path: "marketing-review", element: <MarketingReviewQueue /> },
+                  // AR — Accounts Receivable / Collections module — staff-visible, like
+                  // the flagship surfaces (the BE /ar/* routes are STAFF + ar-module-
+                  // gated). A contractor deep-linking is bounced.
+                  { path: "ar-aging", element: <ArAgingDashboard /> },
                   // FrontDesk IQ health-practices flagship (FD-5b) — staff-visible,
                   // like the ChairFill / Real Estate surfaces (the BE risk /
                   // recall / callback / review / appointment routes are STAFF-

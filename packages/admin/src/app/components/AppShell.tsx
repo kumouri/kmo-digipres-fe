@@ -35,6 +35,7 @@ import {
   Sparkles,
   Target,
   TicketIcon,
+  TrendingDown,
   Users,
 } from "lucide-react";
 
@@ -71,6 +72,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/activities", label: "Activities", icon: Activity, hideForContractor: true },
   { to: "/quotes", label: "Quotes", icon: FileText, hideForContractor: true },
   { to: "/invoices", label: "Invoices", icon: Receipt, hideForContractor: true },
+  { to: "/ar-aging", label: "AR aging", icon: TrendingDown, hideForContractor: true },
   { to: "/tickets", label: "Tickets", icon: TicketIcon, hideForContractor: true },
   { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen, hideForContractor: true },
   { to: "/inbox", label: "Inbox", icon: Inbox, hideForContractor: true },
