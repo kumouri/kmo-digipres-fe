@@ -150,6 +150,9 @@ const WaitlistBoard = lazy(() =>
 const SalonReviewInbox = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.SalonReviewInbox })),
 );
+const ReviewBoostBoard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.ReviewBoostBoard })),
+);
 const ListingConsole = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ListingConsole })),
 );
@@ -348,6 +351,13 @@ export const router = createBrowserRouter([
                   { path: "no-show-risk", element: <NoShowRiskView /> },
                   { path: "waitlist", element: <WaitlistBoard /> },
                   { path: "salon-reviews", element: <SalonReviewInbox /> },
+                  // Salon "ReviewBoost" (T6) — per-stylist review-insights board
+                  // + config status card. The BE ReviewBoostController is ADMIN +
+                  // chairfill-AND-salon-spa-module-gated; gated behind
+                  // RequireNotContractor grouped with the other ChairFill surfaces
+                  // (the T4 SwitchboardPanel precedent). Read-only surface: no
+                  // write endpoint exists.
+                  { path: "review-boost", element: <ReviewBoostBoard /> },
                   // Real Estate Concierge flagship (RE-5b) — staff-visible, like
                   // the ChairFill surfaces (the BE listing/concierge/marketing
                   // routes are STAFF-gated). A contractor deep-linking is bounced.

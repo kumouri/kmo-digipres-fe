@@ -59,6 +59,7 @@ import {
   auditStore,
   bookingStore,
   callbackStore,
+  reviewBoostStore,
   chairFillRiskStore,
   chairFillWaitlistStore,
   companyStore,
@@ -2519,4 +2520,26 @@ export const handlers = [
       return HttpResponse.json(saved);
     },
   ),
+
+  // ---------------------------------------------------------------------------
+  // Salon "ReviewBoost" (T6) — per-stylist review insights + config status
+  // ---------------------------------------------------------------------------
+  //
+  // GET /chairfill/reviewboost/insights — the salon review-insights board.
+  // GET /chairfill/reviewboost/config   — ReviewBoost wiring read-back (read-only).
+  //
+  // Both are ADMIN + chairfill-AND-salon-spa-module-gated on the BE.
+  // There is NO write/PUT endpoint — T6 is a pure read surface.
+
+  // GET /chairfill/reviewboost/insights
+  http.get(`${API_BASE}/chairfill/reviewboost/insights`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(reviewBoostStore.getInsights());
+  }),
+
+  // GET /chairfill/reviewboost/config
+  http.get(`${API_BASE}/chairfill/reviewboost/config`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(reviewBoostStore.getConfig());
+  }),
 ];

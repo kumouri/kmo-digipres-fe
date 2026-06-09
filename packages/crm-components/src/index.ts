@@ -175,8 +175,22 @@ export {
   NoShowRiskView,
   WaitlistBoard,
   SalonReviewInbox,
+  ReviewBoostBoard,
 } from "./admin/chairfill";
 export { useChairFillApi } from "./hooks/useChairFillApi";
+// Salon "ReviewBoost" (T6) — per-stylist review-insights board + config status
+// card. Hand-written client (the BE ReviewBoostController is
+// @ConditionalOnProperty-gated for both the chairfill AND salon-spa modules,
+// so all routes are absent from the generated openapi types — the T4
+// SwitchboardController / T3 MidnightResponderController precedent). Read-only
+// surface: GET /chairfill/reviewboost/insights + GET /chairfill/reviewboost/config.
+// There is NO write endpoint — T6 mints no config model.
+export { useSalonReviewBoostApi } from "./hooks/useSalonReviewBoostApi";
+export type {
+  SalonReviewBoard,
+  StylistReviewStats,
+  ReviewBoostConfig,
+} from "./api/salon-reviewboost";
 // Real Estate Concierge — flagship (RE-5b) — four staff surfaces: the listing
 // console (list + detail with disclosures, photos, generate marketing), the
 // concierge inbox + lead pipeline, the transcript + citation viewer, and the

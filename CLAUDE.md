@@ -53,6 +53,22 @@ Admin UI for the backend's **Google Business Profile review-reply automation** (
 - **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
 - **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
 
+## Salon "ReviewBoost" — per-stylist review insights board + config status card (T6, SHIPPED)
+
+Admin UI for the backend T6 **ReviewBoost** — the salon's review-health companion to the CF-5 review inbox: a **per-stylist review-insights board** (headline review stats / sentiment breakdown / sortable per-stylist request-funnel table) + a **config status card** (read-only display of the ReviewBoost wiring flags). Branch `salon-reviewboost-fe`; smoke +10 specs.
+
+| Area | Route | API surface |
+|---|---|---|
+| ReviewBoost board (`<RequireNotContractor>`) | `/review-boost` | GET /chairfill/reviewboost/insights → `SalonReviewBoardDTO` (reviewCount, averageRating, positiveCount, neutralCount, negativeCount, unclassifiedCount, totalRequestsSent, totalRequestsResponded, overallResponseRate, stylists: StylistReviewStatsDTO[]); GET /chairfill/reviewboost/config → `ReviewBoostConfigDTO` (reviewLinkConfigured, reviewLink, senderEnabled, sentimentRefineEnabled, negativeAlertEnabled) |
+
+- **Hand-written client** `api/salon-reviewboost.ts` + hook `useSalonReviewBoostApi` — the ReviewBoostController is `@ConditionalOnProperty(chairfill)`-gated AND requires `@ConditionalOnBean(SalonBookingService)`, so all routes are **absent from `openapi.json`** (the T4 SwitchboardController precedent). Both endpoints are **read-only** — there is NO write/PUT endpoint; T6 mints no config model. `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/chairfill/ReviewBoostBoard.tsx` — two sections: (1) `InsightsPanel` (TanStack Query → 4 headline stat cards: count/avg/sent/rate; sentiment breakdown pos/neu/neg/unclassified; sortable `StylistTable` per stylist: requests-sent / responded / response-rate; zero-reviews empty state); (2) `ConfigStatusCard` (read-only: review link configured? green check or red X; three flag rows: senderEnabled / sentimentRefineEnabled / negativeAlertEnabled — each shows "On" or "Off (default)"; hint to enable via go-live config). Route: `/review-boost`.
+- **Route guard:** behind `RequireNotContractor` grouped with the other ChairFill/salon surfaces (the T4 SwitchboardPanel precedent). The BE endpoints are ADMIN-gated (`RoleGuard.requireRole("ADMIN")`, 1800).
+- **New labels** in `admin/labels.ts`: `REVIEW_BOOST_FLAG_LABELS` (human names for the three flags), `REVIEW_BOOST_FLAG_ON`, `REVIEW_BOOST_FLAG_OFF`.
+- **MSW**: `reviewBoostStore` (store.ts) seeds a board with 3 stylists (Mia Torres 28 req / Jordan Kim 14 req / Alex Rivera 3 req — uneven counts so rows differ) + 18 tenant reviews (14 positive / 3 neutral / 1 negative, avg 4.6) + a config row (review link set, all flags off). Spec: `tests/salon-reviewboost.spec.ts` (10).
+- **Nav item:** `Star` icon, `hideForContractor: true`, inserted after "Salon reviews" in `AppShell.tsx` NAV_ITEMS.
+- **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md). No config-save UI — T6 is a pure read surface.
+
 ## Home Services "Instant Callback" — revenue-ranked dispatcher queue + recovery stats (T5, SHIPPED)
 
 Admin UI for the backend T5 **Instant Callback** — the dispatcher surface on the Home Services console: a **revenue-ranked callback queue** (one-click Dispatch per card), a **recovery-stats panel** (offered/accepted/dispatched + two conversion rates), and a **config card** (the per-tenant SMS copy book). Branch `home-instant-callback-fe`; smoke +12 specs (230→242).
