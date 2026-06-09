@@ -152,6 +152,20 @@ export { useReviewRepliesApi } from "./hooks/useReviewRepliesApi";
 // are absent from the generated openapi types).
 export { MissedCallInbox } from "./admin/home-services";
 export { useHomeServicesApi } from "./hooks/useHomeServicesApi";
+// Home Services T5 "Instant Callback" — revenue-ranked callback dispatcher
+// queue + recovery stats + config card. Hand-written client (the BE
+// CallbackController is @ConditionalOnProperty-gated for both the home-services
+// AND responder modules, so all routes are absent from the generated openapi
+// types — the T4 SwitchboardController / T3 MidnightResponderController
+// precedent).
+export { CallbackQueue } from "./admin/home-services";
+export { useHomeCallbackApi } from "./hooks/useHomeCallbackApi";
+export type {
+  CallbackCardDTO,
+  CallbackRecoveryStats,
+  CallbackConfig,
+  CallbackConfigRequest,
+} from "./api/home-callback";
 // ChairFill — salon flagship (CF-5) — three staff surfaces: the no-show risk
 // view, the gap-fill waitlist board, and the salon review inbox (reuses the
 // shared review-replies queue + adds a paste-in). Hand-written client (the BE

@@ -259,6 +259,22 @@ export const JOB_VALUE_BAND_LABELS: Record<string, string> = {
   LARGE: "Large job",
 };
 
+// --- Home Services T5 "Instant Callback" — callback queue labels ------------
+// The status of a callback request. Plain present-tense words a dispatcher
+// reads at a glance when working through the ranked queue.
+export const CALLBACK_STATUS_LABELS: Record<string, string> = {
+  REQUESTED: "Waiting",
+  DISPATCHED: "Dispatched",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+// Callback mode: did the caller want immediate or scheduled?
+export const CALLBACK_MODE_LABELS: Record<string, string> = {
+  IMMEDIATE: "Call me now",
+  SCHEDULED: "Call me later",
+};
+
 // --- ChairFill — no-show risk + waitlist (salon flagship) -------------------
 // How likely a client is to miss their appointment. Plain words so a front-desk
 // staffer reads the risk at a glance and knows whether to ask for a deposit.

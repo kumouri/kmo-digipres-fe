@@ -58,6 +58,7 @@ import {
   attachmentStore,
   auditStore,
   bookingStore,
+  callbackStore,
   chairFillRiskStore,
   chairFillWaitlistStore,
   companyStore,
@@ -2447,4 +2448,75 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     return HttpResponse.json(switchboardStore.getDeflectionStats());
   }),
+
+  // --- Home Services T5 "Instant Callback" — T5 --------------------------------
+  // Revenue-ranked callback queue + dispatch + recovery stats + config.
+  // The CallbackController is @ConditionalOnProperty(home-services)-gated AND
+  // requires the responder module, so all routes are hand-written here (no
+  // generated alias — the T4 SwitchboardController / T3 precedent).
+  // Queue / dispatch / recovery-stats are staff-accessible; config is ADMIN-only.
+
+  // TEST-ONLY control endpoints — clear config / reset cards.
+  http.post(`${API_BASE}/home-services/callbacks/config/test-clear`, () => {
+    callbackStore.clearConfig();
+    return new HttpResponse(null, { status: 204 });
+  }),
+  http.post(`${API_BASE}/home-services/callbacks/test-reset-cards`, () => {
+    callbackStore.resetCards();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // GET /home-services/callbacks — revenue-ranked open queue.
+  http.get(`${API_BASE}/home-services/callbacks`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(callbackStore.listQueue());
+  }),
+
+  // POST /home-services/callbacks/{id}/dispatch — @IdempotentRoute.
+  http.post(
+    `${API_BASE}/home-services/callbacks/:id/dispatch`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const id = params.id as string;
+      const result = callbackStore.dispatch(id);
+      if ("code" in result) {
+        const httpStatus = result.code === 4400 ? 404 : 409;
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status: httpStatus },
+        );
+      }
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // GET /home-services/callbacks/recovery-stats — funnel counters.
+  http.get(`${API_BASE}/home-services/callbacks/recovery-stats`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(callbackStore.getRecoveryStats());
+  }),
+
+  // GET /home-services/callbacks/config — 4401/404 if not yet configured.
+  http.get(`${API_BASE}/home-services/callbacks/config`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = callbackStore.getConfig();
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.message, errorCode: result.code },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  // PUT /home-services/callbacks/config — upsert.
+  http.put(
+    `${API_BASE}/home-services/callbacks/config`,
+    async ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const body = (await request.json()) as Parameters<typeof callbackStore.saveConfig>[0];
+      const saved = callbackStore.saveConfig(body);
+      return HttpResponse.json(saved);
+    },
+  ),
 ];
