@@ -83,6 +83,7 @@ import {
   projectStore,
   quoteStore,
   realEstateStore,
+  realEstateNurtureStore,
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
@@ -2024,6 +2025,56 @@ export const handlers = [
           { status: 404 },
         );
       return HttpResponse.json(detail);
+    },
+  ),
+
+  // --- Real Estate "Database Goldmine" — dormant-lead nurture (T1) ------------
+  // The dashboard reads the campaign list (shared nurture CRUD controller) + the
+  // per-segment funnel, and triggers segment-and-enroll. The RE-nurture routes
+  // are ADMIN + realestate-AND-nurture-module-gated and @ConditionalOnProperty-
+  // gated, so they're hand-written here (no generated alias — the RE-5b / AR /
+  // proposals precedent). A contractor never reaches them (the nav +
+  // RequireNotContractor guard hide them), so these don't deny-contractor.
+  // Shared nurture error codes: 4301 (not found), 4302 (inactive), 4303 (no
+  // segments). NOTE: the analytics + segment-and-enroll routes are registered
+  // before nothing parametric collides here (distinct prefixes).
+
+  // Campaign list (the shared E1 CRUD controller).
+  http.get(`${API_BASE}/nurture/campaigns`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(realEstateNurtureStore.listCampaigns());
+  }),
+
+  // Per-segment funnel ROI. 4301 → not found (404).
+  http.get(
+    `${API_BASE}/realestate/nurture/campaigns/:id/analytics`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = realEstateNurtureStore.getAnalytics(String(params.id));
+      if ("code" in result) {
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // Trigger segment-and-enroll. 4302 → inactive (409), 4301 → not found (404).
+  http.post(
+    `${API_BASE}/realestate/nurture/campaigns/:id/segment-and-enroll`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = realEstateNurtureStore.segmentAndEnroll(String(params.id));
+      if ("code" in result) {
+        const status = result.code === 4302 ? 409 : 404;
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status },
+        );
+      }
+      return HttpResponse.json(result, { status: 200 });
     },
   ),
 

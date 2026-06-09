@@ -4,6 +4,9 @@
 
 import type {
   ArAgingReport,
+  NurtureCampaign,
+  NurtureCampaignAnalytics,
+  SegmentationResult,
   ProposalDraftResult,
   SowDraft,
   PromiseToPay,
@@ -4296,6 +4299,188 @@ export const arStore = {
     arPromises.set(created.id, created);
     return created;
   },
+};
+
+// ---------------------------------------------------------------------------
+// Real Estate "Database Goldmine" — dormant-lead nurture (T1) — seed store
+// ---------------------------------------------------------------------------
+//
+// A single seeded RE reactivation campaign (A–D dormancy segments) + a mutable
+// per-segment funnel. segmentAndEnroll() simulates a realistic run: it enrolls a
+// batch of newly-dormant contacts into the in-flight columns AND advances a
+// couple toward replied/booked, so the demo funnel visibly fills on the trigger
+// (the 60-second "watch the cadence fire + a reply book a showing" beat).
+
+const RE_NURTURE_CAMPAIGN_ID = "9c000000-0000-0000-0000-0000000000c1";
+const RE_TENANT_ID = "22222222-2222-2222-2222-222222222222";
+
+const SEED_RE_NURTURE_CAMPAIGN: NurtureCampaign = {
+  id: RE_NURTURE_CAMPAIGN_ID,
+  tenantId: RE_TENANT_ID,
+  name: "Past-buyer reactivation",
+  description:
+    "Win back contacts who've gone quiet — a multi-touch SMS+email cadence " +
+    "tiered by how long they've been dormant.",
+  active: true,
+  segments: [
+    { bucket: "A", minDaysSinceLastActivity: 90, maxDaysSinceLastActivity: 180, minLifetimeValue: null, maxLifetimeValue: null },
+    { bucket: "B", minDaysSinceLastActivity: 180, maxDaysSinceLastActivity: 365, minLifetimeValue: null, maxLifetimeValue: null },
+    { bucket: "C", minDaysSinceLastActivity: 365, maxDaysSinceLastActivity: 730, minLifetimeValue: null, maxLifetimeValue: null },
+    { bucket: "D", minDaysSinceLastActivity: 730, maxDaysSinceLastActivity: null, minLifetimeValue: null, maxLifetimeValue: null },
+  ],
+  maxTouchesPerContactPerWindow: 2,
+  createdAt: agoMinutes(60 * 24 * 30),
+  updatedAt: agoMinutes(60 * 2),
+};
+
+// A second, paused campaign — exercises the picker + the 4302 (inactive) path.
+const RE_NURTURE_CAMPAIGN_2_ID = "9c000000-0000-0000-0000-0000000000c2";
+const SEED_RE_NURTURE_CAMPAIGN_2: NurtureCampaign = {
+  id: RE_NURTURE_CAMPAIGN_2_ID,
+  tenantId: RE_TENANT_ID,
+  name: "Open-house no-shows (paused)",
+  description: "Re-engage buyers who registered for an open house but never came.",
+  active: false,
+  segments: [
+    { bucket: "A", minDaysSinceLastActivity: 30, maxDaysSinceLastActivity: 120, minLifetimeValue: null, maxLifetimeValue: null },
+  ],
+  maxTouchesPerContactPerWindow: 2,
+  createdAt: agoMinutes(60 * 24 * 10),
+  updatedAt: agoMinutes(60 * 24 * 5),
+};
+
+type SegCounts = NurtureCampaignAnalytics["perBucket"]["A"];
+
+function emptySeg(): NonNullable<SegCounts> {
+  return {
+    total: 0,
+    enrolled: 0,
+    active: 0,
+    replied: 0,
+    booked: 0,
+    optedOut: 0,
+    completed: 0,
+    exited: 0,
+  };
+}
+
+// The mutable funnel for the primary campaign — seeded with a realistic mid-run
+// state (some sent, a few replies, one booked) so the dashboard reads as a live
+// campaign before the agent even triggers a run.
+const reNurtureBuckets: Record<"A" | "B" | "C" | "D", NonNullable<SegCounts>> = {
+  A: { total: 42, enrolled: 6, active: 28, replied: 4, booked: 2, optedOut: 1, completed: 1, exited: 0 },
+  B: { total: 31, enrolled: 4, active: 21, replied: 3, booked: 1, optedOut: 2, completed: 0, exited: 0 },
+  C: { total: 18, enrolled: 2, active: 13, replied: 1, booked: 0, optedOut: 1, completed: 1, exited: 0 },
+  D: { total: 9, enrolled: 1, active: 7, replied: 0, booked: 0, optedOut: 1, completed: 0, exited: 0 },
+};
+let reNurtureSent = 188;
+
+function reNurtureAnalytics(): NurtureCampaignAnalytics {
+  const sum = (k: keyof NonNullable<SegCounts>) =>
+    reNurtureBuckets.A[k] +
+    reNurtureBuckets.B[k] +
+    reNurtureBuckets.C[k] +
+    reNurtureBuckets.D[k];
+  return {
+    campaignId: RE_NURTURE_CAMPAIGN_ID,
+    name: SEED_RE_NURTURE_CAMPAIGN.name,
+    total: sum("total"),
+    enrolled: sum("enrolled"),
+    active: sum("active"),
+    replied: sum("replied"),
+    booked: sum("booked"),
+    optedOut: sum("optedOut"),
+    completed: sum("completed"),
+    exited: sum("exited"),
+    sent: reNurtureSent,
+    perBucket: {
+      A: { ...reNurtureBuckets.A },
+      B: { ...reNurtureBuckets.B },
+      C: { ...reNurtureBuckets.C },
+      D: { ...reNurtureBuckets.D },
+    },
+  };
+}
+
+export const realEstateNurtureStore = {
+  /** The tenant's nurture campaigns (active first). */
+  listCampaigns(): NurtureCampaign[] {
+    return [SEED_RE_NURTURE_CAMPAIGN, SEED_RE_NURTURE_CAMPAIGN_2];
+  },
+
+  /** Per-segment funnel for a campaign. 4301 if unknown. */
+  getAnalytics(
+    campaignId: string,
+  ): NurtureCampaignAnalytics | { code: number; message: string } {
+    if (campaignId === RE_NURTURE_CAMPAIGN_ID) return reNurtureAnalytics();
+    if (campaignId === RE_NURTURE_CAMPAIGN_2_ID) {
+      // The paused campaign has nobody enrolled yet — an all-zero funnel.
+      return {
+        campaignId,
+        name: SEED_RE_NURTURE_CAMPAIGN_2.name,
+        total: 0,
+        enrolled: 0,
+        active: 0,
+        replied: 0,
+        booked: 0,
+        optedOut: 0,
+        completed: 0,
+        exited: 0,
+        sent: 0,
+        perBucket: { A: emptySeg() },
+      };
+    }
+    return { code: 4301, message: "Nurture campaign not found" };
+  },
+
+  /**
+   * Simulate segment-and-enroll. 4302 if paused, 4301 if unknown. On the active
+   * campaign: enroll a fresh batch (lands in `enrolled`/`active`) and advance a
+   * couple toward replied/booked so the funnel visibly moves — the demo beat.
+   */
+  segmentAndEnroll(
+    campaignId: string,
+  ): SegmentationResult | { code: number; message: string } {
+    if (campaignId === RE_NURTURE_CAMPAIGN_2_ID) {
+      return {
+        code: 4302,
+        message: "Nurture campaign is inactive — cannot segment/enroll",
+      };
+    }
+    if (campaignId !== RE_NURTURE_CAMPAIGN_ID) {
+      return { code: 4301, message: "Nurture campaign not found" };
+    }
+
+    // A realistic run: 5 freshly-dormant matches enrolled into bucket A,
+    // and 1 prior in-flight lead replies + books (the cadence paying off).
+    const newlyEnrolled = 5;
+    reNurtureBuckets.A.total += newlyEnrolled;
+    reNurtureBuckets.A.enrolled += newlyEnrolled;
+
+    // One active A lead replies; one prior reply converts to a booked showing.
+    if (reNurtureBuckets.A.active > 0) {
+      reNurtureBuckets.A.active -= 1;
+      reNurtureBuckets.A.replied += 1;
+    }
+    if (reNurtureBuckets.A.replied > 0) {
+      reNurtureBuckets.A.replied -= 1;
+      reNurtureBuckets.A.booked += 1;
+    }
+    reNurtureSent += newlyEnrolled; // step-0 touch fires for each fresh enroll
+
+    return {
+      campaignId,
+      evaluated: 214,
+      matched: newlyEnrolled + 3, // 3 matched but were already enrolled
+      enrolled: newlyEnrolled,
+      skippedOptedOut: 2,
+      alreadyEnrolled: 3,
+    };
+  },
+
+  /** The seeded active campaign id, for the smoke test to reference. */
+  seedCampaignId: RE_NURTURE_CAMPAIGN_ID,
+  seedPausedCampaignId: RE_NURTURE_CAMPAIGN_2_ID,
 };
 
 // ---------------------------------------------------------------------------
