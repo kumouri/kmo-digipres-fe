@@ -481,9 +481,11 @@ export const invoiceStore = {
       ...input,
       id,
       tenantId: SMOKE_USER.tenantId,
-      invoiceNumber: `INV-${String(invoices.size + 1).padStart(4, "0")}`,
-      status: "DRAFT",
-      balance: input.total ?? 0,
+      // Preserve caller-supplied invoiceNumber / status (e.g. AR seed invoices)
+      // so seeded OVERDUE invoices show up in the AR invoice picker.
+      invoiceNumber: input.invoiceNumber ?? `INV-${String(invoices.size + 1).padStart(4, "0")}`,
+      status: input.status ?? "DRAFT",
+      balance: input.balance ?? input.total ?? 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
