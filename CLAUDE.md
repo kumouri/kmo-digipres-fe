@@ -53,6 +53,22 @@ Admin UI for the backend's **Google Business Profile review-reply automation** (
 - **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
 - **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
 
+## Health "Switchboard AI" — logistics config card + call-deflection stats (T4, SHIPPED)
+
+Admin UI for the backend T4 **Switchboard AI** — two panels on the FrontDesk console: a **call-deflection stats panel** (PHI-free counters: logistics-handled / clinical-tripwire / unmatched-handoff / deflection-rate) and a **logistics config card** (the per-tenant answer book: hours, location, booking/reschedule instructions, intake-form link, review link, clinical tripwire reply). Branch `health-switchboard-ai-fe`; smoke +10 specs (220→230).
+
+| Area | Route | API surface |
+|---|---|---|
+| Switchboard AI (`<RequireNotContractor>`) | `/switchboard` | GET /frontdesk/switchboard/config → `SwitchboardConfig` (4391/404 if not yet configured); PUT /frontdesk/switchboard/config body `SwitchboardController.ConfigRequest{hoursText,locationText,acceptingNewPatients,acceptingNewPatientsText,bookingInstructions,rescheduleInstructions,intakeFormUrl,reviewLinkUrl,answerOverrides,safeTripwireReply}` → `SwitchboardConfig`; GET /frontdesk/switchboard/deflection-stats → `SwitchboardDeflectionStats{logistics,tripwire,handoff,total,deflectionRate}`. |
+
+- **Hand-written client** `api/frontdesk-switchboard.ts` + hook `useFrontDeskSwitchboardApi` — the SwitchboardController is `@ConditionalOnProperty(frontdesk)`-gated AND requires the responder module, so all routes are **absent from `openapi.json`** (the T3 Midnight Responder / T2 RevenueRevive precedent). DTOs: `SwitchboardConfig` (full config row), `SwitchboardConfigRequest` (upsert request — all fields nullable), `SwitchboardDeflectionStats` (5-field PHI-free counter record). `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/frontdesk/SwitchboardPanel.tsx` — two sections: (1) `DeflectionStatsPanel` (TanStack Query → 4 stat cards: logistics/tripwire/handoff/rate; no-data empty state); (2) `LogisticsConfigCard` (react-hook-form + zod; text inputs for hours/location/booking/reschedule/intake-form/review-link; accepting-new-patients checkbox; safeTripwireReply textarea; PUT on save). 404/4391 on config GET renders a friendly "not configured yet" banner above the blank form.
+- **Route guard:** behind `RequireNotContractor` grouped with the other FrontDesk IQ surfaces (the T2 RevenueReviveDashboard precedent). The BE endpoints are ADMIN-guarded (`RoleGuard.requireRole("ADMIN")`, 1800).
+- **PHI-free by construction:** config fields hold only logistics answers (hours, location, booking links) — no patient names, diagnoses, or clinical data. The clinical tripwire reply is validated to stay generic by the BE.
+- **MSW**: `switchboardStore` (store.ts) seeds a config row (hours/location/booking/reschedule/intake/review links) + realistic deflection stats (312 logistics / 47 tripwire / 28 handoff / ~81% rate). `saveConfig` mirrors BE upsert logic. `clearConfig()` exercises the 4391 empty-state path. Spec: `tests/health-switchboard.spec.ts` (10).
+- **Nav item:** `PhoneCall` icon, `hideForContractor: true`, inserted after "Revenue revive" in `AppShell.tsx` NAV_ITEMS.
+- **Out of scope:** per-tenant module enablement, Twilio / A2P 10DLC go-live config (tracked in go-live-requirements.md), `answerOverrides` per-intent override UI (the map is passed-through as null/empty; advanced override authoring is deferred).
+
 ## Real Estate "Midnight Responder" — response-latency stats + tier routing (T3, SHIPPED)
 
 Admin UI for the backend T3 **Midnight Responder** — two panels on the RE console: a **response-latency stats panel** (the "<30 s, 24/7" headline: p50/p95/max received→replied latency + after-hours coverage share) and a **tier-routing config card** (WARM/COLD lead → nurture-campaign mapping, business-hours window, delegate-handoff flag). Branch `re-midnight-responder-fe`; smoke +8 specs (212→220).

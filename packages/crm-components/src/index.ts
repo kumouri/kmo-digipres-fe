@@ -222,8 +222,21 @@ export {
   ReviewInbox,
   AppointmentConsole,
   RevenueReviveDashboard,
+  SwitchboardPanel,
 } from "./admin/frontdesk";
 export { useFrontDeskApi } from "./hooks/useFrontDeskApi";
+// Health "Switchboard AI" (T4) — logistics config card + call-deflection stats.
+// Hand-written client (the BE routes are @ConditionalOnProperty-gated for both
+// the frontdesk AND responder modules, so they are absent from the generated
+// openapi types — the T3 Midnight Responder / T2 RevenueRevive precedent).
+// PHI-free by construction: config holds only logistics answers (hours,
+// location, booking/reschedule instructions, links) — no clinical content.
+export { useFrontDeskSwitchboardApi } from "./hooks/useFrontDeskSwitchboardApi";
+export type {
+  SwitchboardConfig,
+  SwitchboardConfigRequest,
+  SwitchboardDeflectionStats,
+} from "./api/frontdesk-switchboard";
 // Health "RevenueRevive" (T2) — dormant-patient reactivation funnel. Hand-written
 // client (the BE routes are @ConditionalOnProperty(frontdesk)-gated AND the
 // shared nurture controller is nurture-module-gated, so both are absent from the
