@@ -358,6 +358,29 @@ export const BUYER_INTENT_LABELS: Record<string, string> = {
   SELL: "Selling",
 };
 
+// --- AR — Accounts Receivable / Collections module --------------------------
+// Aging bucket labels. The raw bucket names are internal codes; a plain-English
+// range ("8–14 days past due") reads at a glance for an office manager or owner.
+// CURRENT means nothing is owed yet — show it as such.
+
+export const AR_AGING_BUCKET_LABELS: Record<string, string> = {
+  CURRENT: "Not yet due",
+  D1_7: "1–7 days past due",
+  D8_14: "8–14 days past due",
+  D15_30: "15–30 days past due",
+  D30_PLUS: "30+ days past due",
+};
+
+// A customer's promise-to-pay status. Plain verbs an owner can scan: ACTIVE is
+// still outstanding ("Promised"); KEPT means they paid ("Paid"); BROKEN means
+// they missed it ("Missed"); CANCELLED means the promise was withdrawn.
+export const PROMISE_TO_PAY_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Promised",
+  KEPT: "Paid",
+  BROKEN: "Missed",
+  CANCELLED: "Cancelled",
+};
+
 // --- FrontDesk IQ — Health Practices flagship (FD-5b) -----------------------
 // PHI-free by construction. None of these are clinical — they're scheduling
 // logistics a front desk reads at a glance. (Risk tier + source reuse the

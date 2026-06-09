@@ -279,8 +279,11 @@ test("moving a deal to NEGOTIATION via the pipeline buttons updates the column",
   const negotiation = page.getByTestId("pipeline-column-NEGOTIATION");
   await expect(qualified).toContainText("Analytical Engine retainer");
 
-  await qualified.getByTestId("move-deal").click();
-  await qualified.getByTestId("move-to-NEGOTIATION").click();
+  const dealCard = qualified
+    .getByTestId("deal-card")
+    .filter({ hasText: "Analytical Engine retainer" });
+  await dealCard.getByTestId("move-deal").click();
+  await dealCard.getByTestId("move-to-NEGOTIATION").click();
 
   await expect(negotiation).toContainText("Analytical Engine retainer");
 });
@@ -344,8 +347,11 @@ test("moving a deal to LOST requires a reason and reflects on detail", async ({ 
   await page.goto("/deals");
   const qualified = page.getByTestId("pipeline-column-QUALIFIED");
 
-  await qualified.getByTestId("move-deal").click();
-  await qualified.getByTestId("move-to-LOST").click();
+  const dealCard = qualified
+    .getByTestId("deal-card")
+    .filter({ hasText: "Analytical Engine retainer" });
+  await dealCard.getByTestId("move-deal").click();
+  await dealCard.getByTestId("move-to-LOST").click();
 
   // Confirm button is disabled until a reason is typed.
   const confirm = page.getByTestId("confirm-lost");
