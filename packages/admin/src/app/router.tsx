@@ -194,6 +194,11 @@ const ArAgingDashboard = lazy(() =>
     default: m.ArAgingDashboard,
   })),
 );
+const ProposalStudio = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.ProposalStudio,
+  })),
+);
 
 /**
  * Wrappers: feed role context into the shared CRM components. A scoped-down
@@ -324,6 +329,10 @@ export const router = createBrowserRouter([
                   // the flagship surfaces (the BE /ar/* routes are STAFF + ar-module-
                   // gated). A contractor deep-linking is bounced.
                   { path: "ar-aging", element: <ArAgingDashboard /> },
+                  // Proposals / SOW Studio — staff-visible (the BE /proposals/*
+                  // routes are STAFF + proposals-module-gated). A contractor
+                  // deep-linking is bounced.
+                  { path: "proposals", element: <ProposalStudio /> },
                   // FrontDesk IQ health-practices flagship (FD-5b) — staff-visible,
                   // like the ChairFill / Real Estate surfaces (the BE risk /
                   // recall / callback / review / appointment routes are STAFF-

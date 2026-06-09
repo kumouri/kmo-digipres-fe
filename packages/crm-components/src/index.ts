@@ -207,3 +207,14 @@ export type {
   PromiseToPayStatus,
   RecordPromiseRequest,
 } from "./api/ar";
+// Proposals / SOW Studio — AI-drafted priced SOW from discovery notes. Hand-
+// written client (the BE routes are @ConditionalOnProperty-gated, so they are
+// absent from the generated openapi types — the AR / FrontDesk / ChairFill
+// precedent).
+export { ProposalStudio } from "./admin/proposals";
+export { useProposalsApi } from "./hooks/useProposalsApi";
+export type {
+  ProposalDraftResult,
+  ProposalDraftRequest,
+  SowDraft,
+} from "./api/proposals";

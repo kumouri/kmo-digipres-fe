@@ -381,6 +381,17 @@ export const PROMISE_TO_PAY_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
+// --- Proposals / SOW Studio -------------------------------------------------
+// The four narrative sections of an AI-drafted SOW. Plain words a business
+// owner scans before sending a proposal — not engineering jargon.
+
+export const PROPOSAL_SECTION_LABELS: Record<string, string> = {
+  scope: "Scope of work",
+  deliverables: "Deliverables",
+  assumptions: "Assumptions",
+  timeline: "Timeline",
+};
+
 // --- FrontDesk IQ — Health Practices flagship (FD-5b) -----------------------
 // PHI-free by construction. None of these are clinical — they're scheduling
 // logistics a front desk reads at a glance. (Risk tier + source reuse the

@@ -53,6 +53,7 @@ import {
   SMOKE_USER,
   activityStore,
   arStore,
+  proposalStore,
   assignmentStore,
   attachmentStore,
   auditStore,
@@ -2183,5 +2184,63 @@ export const handlers = [
       );
     }
     return HttpResponse.json(result, { status: 201 });
+  }),
+
+  // --- Proposals / SOW Studio -----------------------------------------------
+  // All three surfaces are STAFF + proposals-module-gated on the BE. The
+  // routes are @ConditionalOnProperty-gated, so they're hand-written here (no
+  // generated alias — the AR / FrontDesk FD-5b / ChairFill CF-5b precedent).
+  // A contractor never reaches them (the nav + RequireNotContractor guard hide
+  // them), so these don't deny-contractor.
+
+  // POST /proposals/draft — idempotent draft from discovery notes.
+  http.post(`${API_BASE}/proposals/draft`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = (await request.json()) as { notes?: string };
+    if (!body.notes || !body.notes.trim()) {
+      return HttpResponse.json(
+        { message: "Notes are required", errorCode: 4621 },
+        { status: 400 },
+      );
+    }
+    if (body.notes.length > 8000) {
+      return HttpResponse.json(
+        { message: "Notes exceed maximum length", errorCode: 4621 },
+        { status: 400 },
+      );
+    }
+    const result = proposalStore.draft(body.notes);
+    return HttpResponse.json(result, { status: 201 });
+  }),
+
+  // GET /proposals/:id — fetch a drafted SOW by its Quote ID.
+  http.get(`${API_BASE}/proposals/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = proposalStore.get(params.id as string);
+    if (!found) {
+      return HttpResponse.json(
+        { message: "Quote not found", errorCode: 2200 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(found);
+  }),
+
+  // GET /proposals/:id/pdf — return a minimal fake PDF blob.
+  http.get(`${API_BASE}/proposals/:id/pdf`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const found = proposalStore.get(params.id as string);
+    if (!found) {
+      return HttpResponse.json(
+        { message: "Quote not found", errorCode: 2200 },
+        { status: 404 },
+      );
+    }
+    // Return a minimal valid PDF-header blob (enough to trigger a download).
+    const fakePdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]); // "%PDF-"
+    return new HttpResponse(fakePdf, {
+      status: 200,
+      headers: { "Content-Type": "application/pdf" },
+    });
   }),
 ];

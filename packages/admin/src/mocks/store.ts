@@ -4,6 +4,8 @@
 
 import type {
   ArAgingReport,
+  ProposalDraftResult,
+  SowDraft,
   PromiseToPay,
   ActivityDTO,
   Appointment,
@@ -4294,4 +4296,154 @@ export const arStore = {
     arPromises.set(created.id, created);
     return created;
   },
+};
+
+// ---------------------------------------------------------------------------
+// Proposals / SOW Studio — seed store
+// ---------------------------------------------------------------------------
+
+// A realistic seeded draft result. The quote has three priced line items and
+// a total; the SowDraft has all four prose sections AI-drafted.
+const SEED_PROPOSAL_ID = "pp000000-0000-0000-0000-000000000001";
+const SEED_SOW_ID = "sw000000-0000-0000-0000-000000000001";
+
+const SEED_PROPOSAL: ProposalDraftResult = {
+  quote: {
+    id: SEED_PROPOSAL_ID,
+    tenantId: "22222222-2222-2222-2222-222222222222",
+    quoteNumber: "Q-2026-042",
+    status: "DRAFT",
+    currency: "USD",
+    lineItems: [
+      {
+        sku: "DISCOVERY",
+        description: "Discovery & requirements workshop (2 days)",
+        quantity: 2,
+        unitPrice: 1500,
+        discountPercent: 0,
+        taxPercent: 0,
+        lineTotal: 3000,
+      },
+      {
+        sku: "DEV-CUSTOM",
+        description: "Custom software development (120 hrs @ $150/hr)",
+        quantity: 120,
+        unitPrice: 150,
+        discountPercent: 0,
+        taxPercent: 0,
+        lineTotal: 18000,
+      },
+      {
+        sku: "HOSTING-MO",
+        description: "Hosting & support retainer (monthly, 12 months)",
+        quantity: 12,
+        unitPrice: 350,
+        discountPercent: 0,
+        taxPercent: 0,
+        lineTotal: 4200,
+      },
+    ],
+    subtotal: 25200,
+    discountTotal: 0,
+    taxTotal: 0,
+    total: 25200,
+    notes: null,
+    terms: null,
+    issuedAt: new Date().toISOString().slice(0, 10),
+    expiresAt: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    version: 0,
+    customFields: {},
+  } as unknown as ProposalDraftResult["quote"],
+  sowDraft: {
+    id: SEED_SOW_ID,
+    tenantId: "22222222-2222-2222-2222-222222222222",
+    quoteId: SEED_PROPOSAL_ID,
+    scope:
+      "This engagement delivers a custom AI-powered CRM integration for Bella Vita " +
+      "covering lead capture from the website contact form, automated follow-up sequences, " +
+      "and a staff dashboard for managing open opportunities. The scope includes a two-day " +
+      "discovery workshop, full-stack development of the integration layer, and a twelve-month " +
+      "hosting and support retainer.",
+    deliverables:
+      "1. Discovery workshop summary and finalized requirements document\n" +
+      "2. Production-deployed lead-capture integration (website → CRM)\n" +
+      "3. Automated follow-up email sequences (3-touch, configurable)\n" +
+      "4. Staff dashboard with opportunity pipeline view\n" +
+      "5. Admin documentation and 1-hour walkthrough session\n" +
+      "6. Twelve months of hosting, monitoring, and bug-fix support",
+    assumptions:
+      "• Client provides timely access to existing website codebase and hosting credentials\n" +
+      "• Feedback turnaround within 3 business days at each review checkpoint\n" +
+      "• Scope does not include mobile app development or third-party API licenses\n" +
+      "• Email follow-up sequences are marketing/operational (not transactional healthcare)\n" +
+      "• Hosting assumes ≤ 10,000 monthly active leads; overages billed at $0.002/lead",
+    timeline:
+      "Week 1–2: Discovery workshop + requirements sign-off\n" +
+      "Week 3–6: Development sprint (lead capture + CRM integration)\n" +
+      "Week 7–8: Dashboard build + internal QA\n" +
+      "Week 9: Client UAT + feedback\n" +
+      "Week 10: Revisions + production deployment\n" +
+      "Week 11: Walkthrough session + go-live\n" +
+      "Month 2–13: Ongoing hosting & support retainer",
+    aiApplied: true,
+    version: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } satisfies SowDraft,
+};
+
+// In-memory map keyed by quote ID.
+const proposalMap = new Map<string, ProposalDraftResult>();
+proposalMap.set(SEED_PROPOSAL_ID, SEED_PROPOSAL);
+
+export const proposalStore = {
+  /**
+   * Simulate POST /proposals/draft — create a new draft from notes.
+   * Returns a realistic result (ai=true) regardless of the note content.
+   */
+  draft(_notes: string): ProposalDraftResult {
+    const id = `pp${Date.now().toString(16).padStart(14, "0").slice(-14)}-0000-0000-0000-000000000099`;
+    const now = new Date().toISOString();
+    const result: ProposalDraftResult = {
+      quote: {
+        id,
+        tenantId: SEED_PROPOSAL.quote.tenantId,
+        quoteNumber: `Q-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`,
+        status: "DRAFT",
+        currency: "USD",
+        lineItems: SEED_PROPOSAL.quote.lineItems,
+        subtotal: SEED_PROPOSAL.quote.subtotal,
+        discountTotal: 0,
+        taxTotal: 0,
+        total: SEED_PROPOSAL.quote.total,
+        notes: null,
+        terms: null,
+        issuedAt: now.slice(0, 10),
+        expiresAt: null,
+        createdAt: now,
+        updatedAt: now,
+        version: 0,
+        customFields: {},
+      } as unknown as ProposalDraftResult["quote"],
+      sowDraft: {
+        ...SEED_PROPOSAL.sowDraft!,
+        id: `sw${Date.now().toString(16).padStart(14, "0").slice(-14)}-0000-0000-0000-000000000099`,
+        quoteId: id,
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
+    proposalMap.set(id, result);
+    return result;
+  },
+
+  /** GET /proposals/{id} — fetch by quote ID. */
+  get(id: string): ProposalDraftResult | undefined {
+    return proposalMap.get(id);
+  },
+
+  /** The seeded proposal ID, for the smoke test to reference. */
+  seedId: SEED_PROPOSAL_ID,
 };
