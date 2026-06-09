@@ -181,6 +181,11 @@ const RevenueReviveDashboard = lazy(() =>
     default: m.RevenueReviveDashboard,
   })),
 );
+const SwitchboardPanel = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.SwitchboardPanel,
+  })),
+);
 const RiskDayView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.RiskDayView })),
 );
@@ -376,6 +381,13 @@ export const router = createBrowserRouter([
                   // RequireNotContractor grouped with the other FrontDesk IQ
                   // surfaces (the T1 RE Database Goldmine precedent). PHI-free.
                   { path: "revenue-revive", element: <RevenueReviveDashboard /> },
+                  // Health "Switchboard AI" (T4) — logistics config card + call-
+                  // deflection stats panel. The BE SwitchboardController is ADMIN
+                  // + frontdesk-AND-responder-module-gated; gated behind
+                  // RequireNotContractor grouped with the other FrontDesk IQ
+                  // surfaces (the T2 RevenueRevive precedent). PHI-free by
+                  // construction: config holds only logistics answers.
+                  { path: "switchboard", element: <SwitchboardPanel /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },

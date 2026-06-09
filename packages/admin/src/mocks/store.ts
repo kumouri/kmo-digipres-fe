@@ -6,6 +6,8 @@ import type {
   ArAgingReport,
   MidnightResponderConfig,
   MidnightResponderLatencyStats,
+  SwitchboardConfig,
+  SwitchboardDeflectionStats,
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
@@ -4957,6 +4959,115 @@ export const midnightResponderStore = {
       version: 0,
       createdAt: agoMinutes(60 * 24 * 7),
       updatedAt: agoMinutes(60 * 2),
+    };
+  },
+};
+
+// =============================================================================
+// Health "Switchboard AI" (T4) — logistics config + deflection stats store
+// =============================================================================
+
+const SWITCHBOARD_CONFIG_ID = "aa000001-0000-0000-0000-000000000001";
+const SWITCHBOARD_TENANT_ID = SMOKE_USER.tenantId;
+
+/** The mutable config row (one per tenant). null = not yet configured (4391). */
+let switchboardConfigRow: SwitchboardConfig | null = {
+  id: SWITCHBOARD_CONFIG_ID,
+  tenantId: SWITCHBOARD_TENANT_ID,
+  hoursText: "Mon–Thu 8am–5pm, Fri 8am–2pm",
+  locationText: "456 Wellness Blvd, Suite 100 — parking in the rear lot",
+  acceptingNewPatients: true,
+  acceptingNewPatientsText: null,
+  bookingInstructions: "Call us at (555) 867-5309 or book online at our website",
+  rescheduleInstructions: "Call us at (555) 867-5309 at least 24 hours in advance",
+  intakeFormUrl: "https://practice.example.com/intake",
+  reviewLinkUrl: "https://g.page/example-practice/review",
+  answerOverrides: {},
+  safeTripwireReply: null,
+  version: 0,
+  createdAt: agoMinutes(60 * 24 * 14),
+  updatedAt: agoMinutes(60 * 3),
+};
+
+/** Seed deflection stats — realistic demo numbers. */
+const SEED_DEFLECTION_STATS: SwitchboardDeflectionStats = {
+  logistics: 312,
+  tripwire: 47,
+  handoff: 28,
+  total: 387,
+  deflectionRate: 0.8062, // 312 / 387 = ~80.6%
+};
+
+export const switchboardStore = {
+  /**
+   * GET /frontdesk/switchboard/config — returns the config or signals 4391.
+   */
+  getConfig(): SwitchboardConfig | { code: number; message: string } {
+    if (!switchboardConfigRow) {
+      return { code: 4391, message: "Switchboard config not found for this tenant" };
+    }
+    return { ...switchboardConfigRow };
+  },
+
+  /**
+   * PUT /frontdesk/switchboard/config — upsert.
+   * Mirrors the BE ConfigRequest.applyTo / toNewEntity logic.
+   */
+  saveConfig(body: Omit<SwitchboardConfig, "id" | "tenantId" | "version" | "createdAt" | "updatedAt">): SwitchboardConfig {
+    const existing = switchboardConfigRow;
+    const now = new Date().toISOString();
+    if (existing) {
+      switchboardConfigRow = {
+        ...existing,
+        ...body,
+        acceptingNewPatients: body.acceptingNewPatients ?? existing.acceptingNewPatients,
+        answerOverrides: body.answerOverrides ?? {},
+        version: existing.version + 1,
+        updatedAt: now,
+      };
+    } else {
+      switchboardConfigRow = {
+        id: SWITCHBOARD_CONFIG_ID,
+        tenantId: SWITCHBOARD_TENANT_ID,
+        ...body,
+        acceptingNewPatients: body.acceptingNewPatients ?? true,
+        answerOverrides: body.answerOverrides ?? {},
+        version: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+    return { ...switchboardConfigRow };
+  },
+
+  /** GET /frontdesk/switchboard/deflection-stats — returns the seeded stats. */
+  getDeflectionStats(): SwitchboardDeflectionStats {
+    return { ...SEED_DEFLECTION_STATS };
+  },
+
+  /** Clear the config row — exercises the 4391 empty-state path. */
+  clearConfig() {
+    switchboardConfigRow = null;
+  },
+
+  /** Restore the default seeded config row. */
+  resetConfig() {
+    switchboardConfigRow = {
+      id: SWITCHBOARD_CONFIG_ID,
+      tenantId: SWITCHBOARD_TENANT_ID,
+      hoursText: "Mon–Thu 8am–5pm, Fri 8am–2pm",
+      locationText: "456 Wellness Blvd, Suite 100 — parking in the rear lot",
+      acceptingNewPatients: true,
+      acceptingNewPatientsText: null,
+      bookingInstructions: "Call us at (555) 867-5309 or book online at our website",
+      rescheduleInstructions: "Call us at (555) 867-5309 at least 24 hours in advance",
+      intakeFormUrl: "https://practice.example.com/intake",
+      reviewLinkUrl: "https://g.page/example-practice/review",
+      answerOverrides: {},
+      safeTripwireReply: null,
+      version: 0,
+      createdAt: agoMinutes(60 * 24 * 14),
+      updatedAt: agoMinutes(60 * 3),
     };
   },
 };

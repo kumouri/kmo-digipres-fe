@@ -86,6 +86,7 @@ import {
   realEstateNurtureStore,
   midnightResponderStore,
   frontDeskNurtureStore,
+  switchboardStore,
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
@@ -2397,4 +2398,53 @@ export const handlers = [
       return HttpResponse.json(saved);
     },
   ),
+
+  // --- Health "Switchboard AI" — T4 -----------------------------------------
+  // Logistics config card + call-deflection stats. Both controllers are
+  // @ConditionalOnProperty(frontdesk)-gated AND responder-module-gated, so
+  // they're hand-written here (no generated alias — the T3 precedent).
+  // A contractor never reaches them (RequireNotContractor guard). PHI-free.
+
+  // TEST-ONLY control endpoint — clears/resets the switchboard config store.
+  // Only active when VITE_USE_MOCKS=true (MSW is only loaded in that mode).
+  // Used by the smoke test to exercise the 4391 no-config path without
+  // relying on fragile Playwright network interception.
+  http.post(`${API_BASE}/frontdesk/switchboard/config/test-clear`, () => {
+    switchboardStore.clearConfig();
+    return new HttpResponse(null, { status: 204 });
+  }),
+  http.post(`${API_BASE}/frontdesk/switchboard/config/test-reset`, () => {
+    switchboardStore.resetConfig();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // GET /frontdesk/switchboard/config — 4391 (404) if not configured yet.
+  http.get(`${API_BASE}/frontdesk/switchboard/config`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const result = switchboardStore.getConfig();
+    if ("code" in result) {
+      return HttpResponse.json(
+        { message: result.message, errorCode: result.code },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
+
+  // PUT /frontdesk/switchboard/config — upsert.
+  http.put(
+    `${API_BASE}/frontdesk/switchboard/config`,
+    async ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const body = (await request.json()) as Parameters<typeof switchboardStore.saveConfig>[0];
+      const saved = switchboardStore.saveConfig(body);
+      return HttpResponse.json(saved);
+    },
+  ),
+
+  // GET /frontdesk/switchboard/deflection-stats — PHI-free counters.
+  http.get(`${API_BASE}/frontdesk/switchboard/deflection-stats`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(switchboardStore.getDeflectionStats());
+  }),
 ];
