@@ -194,6 +194,19 @@ export type {
   NurtureCampaign,
   NurtureSegmentDefinition,
 } from "./api/realestate-nurture";
+// Real Estate "Midnight Responder" (T3) — the response-latency stats panel
+// (the "<30 s, 24/7" headline) + tier-routing config card (warm/cold nurture-
+// campaign mapping). Hand-written client (the BE controllers are
+// @ConditionalOnProperty-gated for both the realestate AND responder modules,
+// so they are absent from the generated openapi types — the T1 / AR /
+// proposals precedent).
+export { MidnightResponderPanel } from "./admin/realestate";
+export { useRealEstateResponderApi } from "./hooks/useRealEstateResponderApi";
+export type {
+  MidnightResponderConfig,
+  MidnightResponderConfigDTO,
+  MidnightResponderLatencyStats,
+} from "./api/realestate-responder";
 // FrontDesk IQ — Health Practices flagship (FD-5b) — five staff surfaces: the
 // risk-sorted day view, the recall board, the callback inbox (logistics only,
 // never a transcript — fence F2), the HIPAA-safe review inbox (the signature

@@ -4,6 +4,8 @@
 
 import type {
   ArAgingReport,
+  MidnightResponderConfig,
+  MidnightResponderLatencyStats,
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
@@ -4817,4 +4819,144 @@ export const proposalStore = {
 
   /** The seeded proposal ID, for the smoke test to reference. */
   seedId: SEED_PROPOSAL_ID,
+};
+
+// ---------------------------------------------------------------------------
+// Real Estate "Midnight Responder" — response-latency + tier routing (T3)
+// ---------------------------------------------------------------------------
+//
+// A seeded config (warm→Past-buyer reactivation, cold→Open-house no-shows) +
+// a realistic set of latency stats (p50 ~18 s, p95 ~28 s, 42% after-hours
+// coverage). The config-save round-trips (PUT) and updates the in-memory row.
+// A 4380 (no-config) path is exercisable by calling getConfig() on an empty
+// store — simulated by setting midnight_responder_configured = false before
+// the first load via clearConfig() in the smoke test.
+
+// Use the same stable IDs as the RE nurture store.
+const RE_RESPONDER_TENANT_ID = "22222222-2222-2222-2222-222222222222";
+const RE_RESPONDER_CAMPAIGN_WARM_ID = "9c000000-0000-0000-0000-0000000000c1"; // Past-buyer reactivation
+const RE_RESPONDER_CAMPAIGN_COLD_ID = "9c000000-0000-0000-0000-0000000000c2"; // Open-house no-shows (paused)
+const RE_RESPONDER_CONFIG_ID = "rd000000-0000-0000-0000-0000000000d1";
+
+/** The mutable config row (one per tenant). null = not yet configured (4380). */
+let responderConfigRow: MidnightResponderConfig | null = {
+  id: RE_RESPONDER_CONFIG_ID,
+  tenantId: RE_RESPONDER_TENANT_ID,
+  warmCampaignId: RE_RESPONDER_CAMPAIGN_WARM_ID,
+  coldCampaignId: RE_RESPONDER_CAMPAIGN_COLD_ID,
+  delegateHandoffToResponder: false,
+  afterHoursStartHour: 8,
+  afterHoursEndHour: 18,
+  version: 0,
+  createdAt: agoMinutes(60 * 24 * 7),
+  updatedAt: agoMinutes(60 * 2),
+};
+
+/** Seed latency stats — realistic demo numbers (fast, high after-hours share). */
+const SEED_LATENCY_STATS: MidnightResponderLatencyStats = {
+  repliedTurns: 847,
+  p50LatencyMs: 18200,   // 18.2 s median
+  p95LatencyMs: 27900,   // 27.9 s p95 — well under 30 s
+  maxLatencyMs: 44100,   // 44.1 s worst-ever
+  afterHoursTurns: 356,
+  totalBuyerTurns: 847,
+  afterHoursShare: 0.4203, // ~42% after-hours — the "24/7" headline
+  afterHoursStartHour: 8,
+  afterHoursEndHour: 18,
+};
+
+export const midnightResponderStore = {
+  /**
+   * GET /realestate/responder/latency-stats — returns the seeded stats,
+   * with the after-hours window updated to match the current config row
+   * (if configured).
+   */
+  getLatencyStats(): MidnightResponderLatencyStats {
+    const startHour = responderConfigRow?.afterHoursStartHour ?? 8;
+    const endHour = responderConfigRow?.afterHoursEndHour ?? 18;
+    return { ...SEED_LATENCY_STATS, afterHoursStartHour: startHour, afterHoursEndHour: endHour };
+  },
+
+  /**
+   * GET /realestate/responder/config — returns the config or signals 4380.
+   */
+  getConfig(): MidnightResponderConfig | { code: number; message: string } {
+    if (!responderConfigRow) {
+      return { code: 4380, message: "Midnight Responder config not found for this tenant" };
+    }
+    return { ...responderConfigRow };
+  },
+
+  /**
+   * PUT /realestate/responder/config — upsert (partial: null fields preserved).
+   * Mirrors the BE applyTo / toNewEntity logic. Campaign id validation is
+   * skipped in the mock (the BE 4381 path is covered by the "unknown id"
+   * error handling in the component; we don't re-validate here).
+   */
+  saveConfig(body: {
+    warmCampaignId: string | null;
+    coldCampaignId: string | null;
+    delegateHandoffToResponder: boolean | null;
+    afterHoursStartHour: number | null;
+    afterHoursEndHour: number | null;
+  }): MidnightResponderConfig {
+    const existing = responderConfigRow;
+    const now = new Date().toISOString();
+    if (existing) {
+      responderConfigRow = {
+        ...existing,
+        warmCampaignId: body.warmCampaignId !== null ? body.warmCampaignId : existing.warmCampaignId,
+        coldCampaignId: body.coldCampaignId !== null ? body.coldCampaignId : existing.coldCampaignId,
+        delegateHandoffToResponder:
+          body.delegateHandoffToResponder !== null
+            ? body.delegateHandoffToResponder
+            : existing.delegateHandoffToResponder,
+        afterHoursStartHour:
+          body.afterHoursStartHour !== null
+            ? body.afterHoursStartHour
+            : existing.afterHoursStartHour,
+        afterHoursEndHour:
+          body.afterHoursEndHour !== null
+            ? body.afterHoursEndHour
+            : existing.afterHoursEndHour,
+        version: existing.version + 1,
+        updatedAt: now,
+      };
+    } else {
+      responderConfigRow = {
+        id: RE_RESPONDER_CONFIG_ID,
+        tenantId: RE_RESPONDER_TENANT_ID,
+        warmCampaignId: body.warmCampaignId,
+        coldCampaignId: body.coldCampaignId,
+        delegateHandoffToResponder: body.delegateHandoffToResponder ?? false,
+        afterHoursStartHour: body.afterHoursStartHour ?? 8,
+        afterHoursEndHour: body.afterHoursEndHour ?? 18,
+        version: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+    return { ...responderConfigRow };
+  },
+
+  /** Clear the config row — exercises the 4380 empty-state path. */
+  clearConfig() {
+    responderConfigRow = null;
+  },
+
+  /** Restore the default seeded config row. */
+  resetConfig() {
+    responderConfigRow = {
+      id: RE_RESPONDER_CONFIG_ID,
+      tenantId: RE_RESPONDER_TENANT_ID,
+      warmCampaignId: RE_RESPONDER_CAMPAIGN_WARM_ID,
+      coldCampaignId: RE_RESPONDER_CAMPAIGN_COLD_ID,
+      delegateHandoffToResponder: false,
+      afterHoursStartHour: 8,
+      afterHoursEndHour: 18,
+      version: 0,
+      createdAt: agoMinutes(60 * 24 * 7),
+      updatedAt: agoMinutes(60 * 2),
+    };
+  },
 };
