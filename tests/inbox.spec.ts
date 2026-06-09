@@ -14,7 +14,7 @@ async function login(page: Page) {
 // AC-B6: list renders seeded thread
 test("inbox list renders the seeded thread", async ({ page }) => {
   await login(page);
-  await page.getByRole("link", { name: "Inbox" }).click();
+  await page.getByRole("link", { name: "Inbox", exact: true }).click();
   await expect(page).toHaveURL(/\/inbox$/);
   await expect(page.getByTestId("inbox-page")).toBeVisible();
   await expect(page.getByTestId("inbox-thread-subject").first()).toContainText(
