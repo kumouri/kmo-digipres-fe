@@ -460,3 +460,22 @@ export const HIPAA_FLAG_CATEGORY_LABELS: Record<string, string> = {
   PATIENT_STATUS: "Confirms patient status",
   CLINICAL: "Names care",
 };
+
+// --- Health "RevenueRevive" — dormant-patient reactivation funnel (T2) ------
+// PHI-free by design: these labels are logistics-only — no clinical status,
+// diagnosis, or procedure names. The enrolled patient's place in the funnel
+// (FdNurtureEnrollmentStatus) is the same logistics lifecycle as T1; shared
+// DORMANCY_BUCKET_LABELS (A–D) are reused unchanged (same engine, same tiers).
+// A front desk manager reads these at a glance in the reactivation dashboard.
+
+// One enrolled contact's lifecycle in the reactivation funnel. Plain words so
+// a practice manager scans the funnel without needing to decode acronyms.
+export const FD_NURTURE_ENROLLMENT_STATUS_LABELS: Record<string, string> = {
+  ENROLLED: "Just enrolled",
+  ACTIVE: "Being reached",
+  REPLIED: "Replied",
+  BOOKED: "Appointment booked",
+  EXITED: "Exited",
+  OPTED_OUT: "Opted out",
+  COMPLETED: "Ran its course",
+};

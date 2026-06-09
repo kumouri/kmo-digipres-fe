@@ -208,8 +208,24 @@ export {
   CallbackInbox,
   ReviewInbox,
   AppointmentConsole,
+  RevenueReviveDashboard,
 } from "./admin/frontdesk";
 export { useFrontDeskApi } from "./hooks/useFrontDeskApi";
+// Health "RevenueRevive" (T2) — dormant-patient reactivation funnel. Hand-written
+// client (the BE routes are @ConditionalOnProperty(frontdesk)-gated AND the
+// shared nurture controller is nurture-module-gated, so both are absent from the
+// generated openapi types — the T1 RE NurtureDashboard precedent). PHI-free by
+// construction: segments on logistics signals only.
+export { useFrontDeskNurtureApi } from "./hooks/useFrontDeskNurtureApi";
+export type {
+  FdDormancyBucket,
+  FdNurtureEnrollmentStatus,
+  FdNurtureCampaignAnalytics,
+  FdNurtureSegmentCounts,
+  FdSegmentationResult,
+  FdNurtureCampaign,
+  FdNurtureSegmentDefinition,
+} from "./api/frontdesk-nurture";
 // AR — Accounts Receivable / Collections module — aging dashboard + promise-to-
 // pay. Hand-written client (the BE routes are @ConditionalOnProperty-gated, so
 // they are absent from the generated openapi types — the FrontDesk FD-5b /

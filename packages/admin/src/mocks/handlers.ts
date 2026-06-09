@@ -84,6 +84,7 @@ import {
   quoteStore,
   realEstateStore,
   realEstateNurtureStore,
+  frontDeskNurtureStore,
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
@@ -2039,7 +2040,7 @@ export const handlers = [
   // segments). NOTE: the analytics + segment-and-enroll routes are registered
   // before nothing parametric collides here (distinct prefixes).
 
-  // Campaign list (the shared E1 CRUD controller).
+  // Campaign list (the shared E1 CRUD controller) — used by the RE T1 dashboard.
   http.get(`${API_BASE}/nurture/campaigns`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     return HttpResponse.json(realEstateNurtureStore.listCampaigns());
@@ -2067,6 +2068,52 @@ export const handlers = [
     ({ request, params }) => {
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       const result = realEstateNurtureStore.segmentAndEnroll(String(params.id));
+      if ("code" in result) {
+        const status = result.code === 4302 ? 409 : 404;
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status },
+        );
+      }
+      return HttpResponse.json(result, { status: 200 });
+    },
+  ),
+
+  // --- Health "RevenueRevive" — dormant-patient reactivation funnel (T2) -----
+  // The frontdesk-namespaced nurture routes are under /frontdesk/nurture/campaigns/*.
+  // The campaign list uses the FD-prefixed endpoint (/frontdesk/nurture/campaigns)
+  // so the mock can serve only health campaigns (in production, per-tenant module
+  // gating achieves the same isolation). Both are ADMIN + frontdesk-AND-nurture-
+  // module-gated on the BE. PHI-free by construction.
+
+  // FD campaign list — returns only the health reactivation campaigns.
+  http.get(`${API_BASE}/frontdesk/nurture/campaigns`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(frontDeskNurtureStore.listCampaigns());
+  }),
+
+  // Per-segment funnel ROI. 4301 → not found (404).
+  http.get(
+    `${API_BASE}/frontdesk/nurture/campaigns/:id/analytics`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = frontDeskNurtureStore.getAnalytics(String(params.id));
+      if ("code" in result) {
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // Trigger segment-and-enroll. 4302 → inactive (409), 4301 → not found (404).
+  http.post(
+    `${API_BASE}/frontdesk/nurture/campaigns/:id/segment-and-enroll`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = frontDeskNurtureStore.segmentAndEnroll(String(params.id));
       if ("code" in result) {
         const status = result.code === 4302 ? 409 : 404;
         return HttpResponse.json(

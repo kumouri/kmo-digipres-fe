@@ -7,6 +7,9 @@ import type {
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
+  FdNurtureCampaign,
+  FdNurtureCampaignAnalytics,
+  FdSegmentationResult,
   ProposalDraftResult,
   SowDraft,
   PromiseToPay,
@@ -4481,6 +4484,189 @@ export const realEstateNurtureStore = {
   /** The seeded active campaign id, for the smoke test to reference. */
   seedCampaignId: RE_NURTURE_CAMPAIGN_ID,
   seedPausedCampaignId: RE_NURTURE_CAMPAIGN_2_ID,
+};
+
+// ---------------------------------------------------------------------------
+// Health "RevenueRevive" — dormant-patient reactivation (T2) — seed store
+// ---------------------------------------------------------------------------
+//
+// Mirrors the RE T1 store structure exactly. A single seeded health reactivation
+// campaign (A–D dormancy segments) + a mutable per-segment funnel.
+// segmentAndEnroll() simulates a realistic run: enrolls a batch of newly-lapsed
+// patients into the in-flight columns AND advances one toward replied/booked, so
+// the demo funnel visibly fills on the trigger (the 60-second demo beat).
+// PHI-free: only logistics signals — days since last visit, visit frequency.
+
+const FD_NURTURE_CAMPAIGN_ID = "fd000000-0000-0000-0000-0000000000f1";
+const FD_TENANT_ID = "22222222-2222-2222-2222-222222222222";
+
+const SEED_FD_NURTURE_CAMPAIGN: FdNurtureCampaign = {
+  id: FD_NURTURE_CAMPAIGN_ID,
+  tenantId: FD_TENANT_ID,
+  name: "Lapsed-patient reactivation",
+  description:
+    "Win back patients who've gone quiet — a multi-touch outreach cadence " +
+    "tiered by how long they've been away.",
+  active: true,
+  segments: [
+    { bucket: "A", minDaysSinceLastActivity: 90, maxDaysSinceLastActivity: 180, minLifetimeValue: null, maxLifetimeValue: null },
+    { bucket: "B", minDaysSinceLastActivity: 180, maxDaysSinceLastActivity: 365, minLifetimeValue: null, maxLifetimeValue: null },
+    { bucket: "C", minDaysSinceLastActivity: 365, maxDaysSinceLastActivity: 730, minLifetimeValue: null, maxLifetimeValue: null },
+    { bucket: "D", minDaysSinceLastActivity: 730, maxDaysSinceLastActivity: null, minLifetimeValue: null, maxLifetimeValue: null },
+  ],
+  maxTouchesPerContactPerWindow: 2,
+  createdAt: agoMinutes(60 * 24 * 30),
+  updatedAt: agoMinutes(60 * 2),
+};
+
+// A second, paused campaign — exercises the picker + the 4302 (inactive) path.
+const FD_NURTURE_CAMPAIGN_2_ID = "fd000000-0000-0000-0000-0000000000f2";
+const SEED_FD_NURTURE_CAMPAIGN_2: FdNurtureCampaign = {
+  id: FD_NURTURE_CAMPAIGN_2_ID,
+  tenantId: FD_TENANT_ID,
+  name: "Annual wellness reminders (paused)",
+  description: "Re-engage patients overdue for their annual wellness visit.",
+  active: false,
+  segments: [
+    { bucket: "A", minDaysSinceLastActivity: 365, maxDaysSinceLastActivity: 540, minLifetimeValue: null, maxLifetimeValue: null },
+  ],
+  maxTouchesPerContactPerWindow: 2,
+  createdAt: agoMinutes(60 * 24 * 10),
+  updatedAt: agoMinutes(60 * 24 * 5),
+};
+
+type FdSegCounts = FdNurtureCampaignAnalytics["perBucket"]["A"];
+
+function emptyFdSeg(): NonNullable<FdSegCounts> {
+  return {
+    total: 0,
+    enrolled: 0,
+    active: 0,
+    replied: 0,
+    booked: 0,
+    optedOut: 0,
+    completed: 0,
+    exited: 0,
+  };
+}
+
+// The mutable funnel for the primary campaign — seeded with a realistic mid-run
+// state (some sent, a few replies, one booked) so the dashboard reads as a live
+// campaign before the user even triggers a run.
+const fdNurtureBuckets: Record<"A" | "B" | "C" | "D", NonNullable<FdSegCounts>> = {
+  A: { total: 38, enrolled: 5, active: 25, replied: 5, booked: 2, optedOut: 1, completed: 0, exited: 0 },
+  B: { total: 27, enrolled: 3, active: 18, replied: 4, booked: 1, optedOut: 1, completed: 0, exited: 0 },
+  C: { total: 15, enrolled: 2, active: 11, replied: 1, booked: 0, optedOut: 1, completed: 0, exited: 0 },
+  D: { total: 8, enrolled: 1, active: 6, replied: 0, booked: 0, optedOut: 1, completed: 0, exited: 0 },
+};
+let fdNurtureSent = 172;
+
+function fdNurtureAnalytics(): FdNurtureCampaignAnalytics {
+  const sum = (k: keyof NonNullable<FdSegCounts>) =>
+    fdNurtureBuckets.A[k] +
+    fdNurtureBuckets.B[k] +
+    fdNurtureBuckets.C[k] +
+    fdNurtureBuckets.D[k];
+  return {
+    campaignId: FD_NURTURE_CAMPAIGN_ID,
+    name: SEED_FD_NURTURE_CAMPAIGN.name,
+    total: sum("total"),
+    enrolled: sum("enrolled"),
+    active: sum("active"),
+    replied: sum("replied"),
+    booked: sum("booked"),
+    optedOut: sum("optedOut"),
+    completed: sum("completed"),
+    exited: sum("exited"),
+    sent: fdNurtureSent,
+    perBucket: {
+      A: { ...fdNurtureBuckets.A },
+      B: { ...fdNurtureBuckets.B },
+      C: { ...fdNurtureBuckets.C },
+      D: { ...fdNurtureBuckets.D },
+    },
+  };
+}
+
+export const frontDeskNurtureStore = {
+  /** The tenant's nurture campaigns (active first). */
+  listCampaigns(): FdNurtureCampaign[] {
+    return [SEED_FD_NURTURE_CAMPAIGN, SEED_FD_NURTURE_CAMPAIGN_2];
+  },
+
+  /** Per-segment funnel for a campaign. 4301 if unknown. */
+  getAnalytics(
+    campaignId: string,
+  ): FdNurtureCampaignAnalytics | { code: number; message: string } {
+    if (campaignId === FD_NURTURE_CAMPAIGN_ID) return fdNurtureAnalytics();
+    if (campaignId === FD_NURTURE_CAMPAIGN_2_ID) {
+      // The paused campaign has nobody enrolled yet — an all-zero funnel.
+      return {
+        campaignId,
+        name: SEED_FD_NURTURE_CAMPAIGN_2.name,
+        total: 0,
+        enrolled: 0,
+        active: 0,
+        replied: 0,
+        booked: 0,
+        optedOut: 0,
+        completed: 0,
+        exited: 0,
+        sent: 0,
+        perBucket: { A: emptyFdSeg() },
+      };
+    }
+    return { code: 4301, message: "Nurture campaign not found" };
+  },
+
+  /**
+   * Simulate segment-and-enroll. 4302 if paused, 4301 if unknown. On the active
+   * campaign: enroll a fresh batch (lands in `enrolled`/`active`) and advance a
+   * couple toward replied/booked so the funnel visibly moves — the demo beat.
+   */
+  segmentAndEnroll(
+    campaignId: string,
+  ): FdSegmentationResult | { code: number; message: string } {
+    if (campaignId === FD_NURTURE_CAMPAIGN_2_ID) {
+      return {
+        code: 4302,
+        message: "Nurture campaign is inactive — cannot segment/enroll",
+      };
+    }
+    if (campaignId !== FD_NURTURE_CAMPAIGN_ID) {
+      return { code: 4301, message: "Nurture campaign not found" };
+    }
+
+    // A realistic run: 5 freshly-lapsed matches enrolled into bucket A,
+    // and 1 prior in-flight lead replies + books (the cadence paying off).
+    const newlyEnrolled = 5;
+    fdNurtureBuckets.A.total += newlyEnrolled;
+    fdNurtureBuckets.A.enrolled += newlyEnrolled;
+
+    // One active A patient replies; one prior reply converts to a booked appointment.
+    if (fdNurtureBuckets.A.active > 0) {
+      fdNurtureBuckets.A.active -= 1;
+      fdNurtureBuckets.A.replied += 1;
+    }
+    if (fdNurtureBuckets.A.replied > 0) {
+      fdNurtureBuckets.A.replied -= 1;
+      fdNurtureBuckets.A.booked += 1;
+    }
+    fdNurtureSent += newlyEnrolled; // step-0 touch fires for each fresh enroll
+
+    return {
+      campaignId,
+      evaluated: 198,
+      matched: newlyEnrolled + 3, // 3 matched but were already enrolled
+      enrolled: newlyEnrolled,
+      skippedOptedOut: 2,
+      alreadyEnrolled: 3,
+    };
+  },
+
+  /** The seeded active campaign id, for the smoke test to reference. */
+  seedCampaignId: FD_NURTURE_CAMPAIGN_ID,
+  seedPausedCampaignId: FD_NURTURE_CAMPAIGN_2_ID,
 };
 
 // ---------------------------------------------------------------------------
