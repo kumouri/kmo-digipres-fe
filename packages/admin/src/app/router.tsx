@@ -171,6 +171,11 @@ const NurtureDashboard = lazy(() =>
     default: m.NurtureDashboard,
   })),
 );
+const RevenueReviveDashboard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.RevenueReviveDashboard,
+  })),
+);
 const RiskDayView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.RiskDayView })),
 );
@@ -353,6 +358,12 @@ export const router = createBrowserRouter([
                   { path: "recall", element: <RecallBoard /> },
                   { path: "callbacks", element: <CallbackInbox /> },
                   { path: "review-inbox", element: <FrontDeskReviewInbox /> },
+                  // Health "RevenueRevive" (T2) — dormant-patient reactivation
+                  // funnel dashboard. The BE frontdesk-nurture routes are ADMIN
+                  // + frontdesk-AND-nurture-module-gated; gated behind
+                  // RequireNotContractor grouped with the other FrontDesk IQ
+                  // surfaces (the T1 RE Database Goldmine precedent). PHI-free.
+                  { path: "revenue-revive", element: <RevenueReviveDashboard /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },

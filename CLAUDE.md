@@ -53,6 +53,22 @@ Admin UI for the backend's **Google Business Profile review-reply automation** (
 - **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
 - **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
 
+## Health "RevenueRevive" — dormant-patient reactivation funnel (T2, SHIPPED)
+
+Admin UI for the backend FD-nurture **funnel ROI dashboard** (`FrontDeskNurtureController`, a thin frontdesk-namespaced facade over the shared E1 nurture engine — the health twin of T1). Pick a reactivation campaign, **segment-and-enroll** lapsed patients, then watch the per-segment funnel fill as cadences fire and replies turn into booked appointments. Branch `health-revenuerevive-fe`; smoke 205→212.
+
+| Area | Route | API surface |
+|---|---|---|
+| Revenue revive (`<RequireNotContractor>`) | `/revenue-revive` | GET /frontdesk/nurture/campaigns (FD-namespaced campaign list — returns only health campaigns in mock); GET /frontdesk/nurture/campaigns/:id/analytics (per-segment funnel ROI); POST /frontdesk/nurture/campaigns/:id/segment-and-enroll (`@IdempotentRoute` → `Idempotency-Key` minted per call → `FdSegmentationResult` counts) |
+
+- **Hand-written client** `api/frontdesk-nurture.ts` + hook `useFrontDeskNurtureApi` — the FD-nurture routes are `@ConditionalOnProperty(frontdesk)`-gated AND nurture-gated, so both are **absent from `openapi.json`** (the T1 precedent). DTOs mirror the BE shared engine records: `FdNurtureCampaignAnalytics` (campaign-wide totals + `perBucket: Partial<Record<FdDormancyBucket,FdNurtureSegmentCounts>>`), `FdSegmentationResult`, `FdNurtureCampaign`. `gen:api:check` stays green (hand-written, no regen). Campaign list uses `/frontdesk/nurture/campaigns` (not the shared `/nurture/campaigns`) so the mock returns only health campaigns.
+- **Component** `admin/frontdesk/RevenueReviveDashboard.tsx` — mirrors `NurtureDashboard.tsx` with health-specific copy (appointments not showings, patients not leads) and `HeartPulse` icon. Per-dormancy-tier rows reuse `DORMANCY_BUCKET_LABELS` (same A–D tiers). Grouped with the FrontDesk IQ surfaces in the nav.
+- **Route guard:** behind `RequireNotContractor` (grouped with the other FrontDesk IQ surfaces — the T1 / AR-FE precedent). The BE endpoints are ADMIN-guarded (`RoleGuard.requireRole("ADMIN")`, 1800).
+- **PHI-free by design:** no patient names, diagnoses, procedures, or clinical data on any DTO — only logistics signals (days since last visit, contact frequency).
+- **MSW**: `frontDeskNurtureStore` (store.ts) seeds an active "Lapsed-patient reactivation" campaign (A–D segments) mid-run (88 enrolled, 10 replied, 3 booked, 172 sent) + a paused "Annual wellness reminders" campaign. `segmentAndEnroll` enrolls 5 fresh patients AND advances one reply→booking; the paused campaign returns **4302** (inactive → 409). Spec: `tests/frontdesk-nurture.spec.ts` (7).
+- **Labels** in `admin/labels.ts`: `FD_NURTURE_ENROLLMENT_STATUS_LABELS` (BOOKED→"Appointment booked"). Reuses existing `DORMANCY_BUCKET_LABELS` (A–D) unchanged.
+- **Out of scope:** campaign authoring stays on the shared nurture CRUD surface.
+
 ## Real Estate "Database Goldmine" — dormant-lead nurture dashboard (T1, SHIPPED)
 
 Admin UI for the backend RE-nurture **funnel ROI dashboard** (BE PR #112 — `RealEstateNurtureController`, a thin RE-namespaced facade over the shared E1 nurture engine). Pick a reactivation campaign, **segment-and-enroll** the dormant contacts, then watch the per-segment funnel fill as cadences fire and replies turn into booked showings. Branch `re-database-goldmine-fe`; smoke 198→205.

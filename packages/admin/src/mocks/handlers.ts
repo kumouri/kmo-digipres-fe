@@ -84,6 +84,7 @@ import {
   quoteStore,
   realEstateStore,
   realEstateNurtureStore,
+  frontDeskNurtureStore,
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
@@ -2039,10 +2040,17 @@ export const handlers = [
   // segments). NOTE: the analytics + segment-and-enroll routes are registered
   // before nothing parametric collides here (distinct prefixes).
 
-  // Campaign list (the shared E1 CRUD controller).
+  // Campaign list (the shared E1 CRUD controller) — used by both the RE T1 and
+  // health T2 dashboards. Returns the union of all vertical stores; per-vertical
+  // campaign filtering is deferred to GATE 2 (NurtureCampaign has no vertical
+  // tag yet). In production, one tenant's /nurture/campaigns returns all that
+  // tenant's nurture campaigns regardless of the vertical that created them.
   http.get(`${API_BASE}/nurture/campaigns`, ({ request }) => {
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
-    return HttpResponse.json(realEstateNurtureStore.listCampaigns());
+    return HttpResponse.json([
+      ...realEstateNurtureStore.listCampaigns(),
+      ...frontDeskNurtureStore.listCampaigns(),
+    ]);
   }),
 
   // Per-segment funnel ROI. 4301 → not found (404).
@@ -2067,6 +2075,45 @@ export const handlers = [
     ({ request, params }) => {
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       const result = realEstateNurtureStore.segmentAndEnroll(String(params.id));
+      if ("code" in result) {
+        const status = result.code === 4302 ? 409 : 404;
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status },
+        );
+      }
+      return HttpResponse.json(result, { status: 200 });
+    },
+  ),
+
+  // --- Health "RevenueRevive" — dormant-patient reactivation funnel (T2) -----
+  // The campaign list is served by the shared /nurture/campaigns handler above
+  // (union of RE + FD stores). The FD-specific routes below are the analytics +
+  // segment-and-enroll endpoints only. Both are ADMIN + frontdesk-AND-nurture-
+  // module-gated on the BE. PHI-free by construction.
+
+  // Per-segment funnel ROI. 4301 → not found (404).
+  http.get(
+    `${API_BASE}/frontdesk/nurture/campaigns/:id/analytics`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = frontDeskNurtureStore.getAnalytics(String(params.id));
+      if ("code" in result) {
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // Trigger segment-and-enroll. 4302 → inactive (409), 4301 → not found (404).
+  http.post(
+    `${API_BASE}/frontdesk/nurture/campaigns/:id/segment-and-enroll`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const result = frontDeskNurtureStore.segmentAndEnroll(String(params.id));
       if ("code" in result) {
         const status = result.code === 4302 ? 409 : 404;
         return HttpResponse.json(
