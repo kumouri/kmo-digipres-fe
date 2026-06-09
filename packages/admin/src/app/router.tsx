@@ -166,6 +166,11 @@ const MarketingReviewQueue = lazy(() =>
     default: m.MarketingReviewQueue,
   })),
 );
+const NurtureDashboard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.NurtureDashboard,
+  })),
+);
 const RiskDayView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.RiskDayView })),
 );
@@ -325,6 +330,12 @@ export const router = createBrowserRouter([
                   { path: "concierge", element: <ConciergeInbox /> },
                   { path: "concierge/:id", element: <ConciergeTranscript /> },
                   { path: "marketing-review", element: <MarketingReviewQueue /> },
+                  // RE Database Goldmine (T1) — dormant-lead nurture funnel
+                  // dashboard. The BE RE-nurture routes are ADMIN + realestate-
+                  // AND-nurture-module-gated; gated behind RequireNotContractor
+                  // alongside the other RE surfaces (the AR-FE precedent). A
+                  // contractor deep-linking is bounced.
+                  { path: "database-goldmine", element: <NurtureDashboard /> },
                   // AR — Accounts Receivable / Collections module — staff-visible, like
                   // the flagship surfaces (the BE /ar/* routes are STAFF + ar-module-
                   // gated). A contractor deep-linking is bounced.

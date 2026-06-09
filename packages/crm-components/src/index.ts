@@ -177,6 +177,23 @@ export {
   MarketingReviewQueue,
 } from "./admin/realestate";
 export { useRealEstateApi } from "./hooks/useRealEstateApi";
+// Real Estate "Database Goldmine" (T1) — the dormant-lead nurture funnel
+// dashboard: pick a reactivation campaign, segment-and-enroll dormant leads,
+// watch the per-segment funnel fill (enrolled → nudged → replied → booked).
+// Hand-written client (the BE RE-nurture + shared nurture routes are
+// @ConditionalOnProperty-gated, so they are absent from the generated openapi
+// types — the Real Estate RE-5b / AR / proposals precedent).
+export { NurtureDashboard } from "./admin/realestate";
+export { useRealEstateNurtureApi } from "./hooks/useRealEstateNurtureApi";
+export type {
+  DormancyBucket,
+  NurtureEnrollmentStatus,
+  NurtureSegmentCounts,
+  NurtureCampaignAnalytics,
+  SegmentationResult,
+  NurtureCampaign,
+  NurtureSegmentDefinition,
+} from "./api/realestate-nurture";
 // FrontDesk IQ — Health Practices flagship (FD-5b) — five staff surfaces: the
 // risk-sorted day view, the recall board, the callback inbox (logistics only,
 // never a transcript — fence F2), the HIPAA-safe review inbox (the signature

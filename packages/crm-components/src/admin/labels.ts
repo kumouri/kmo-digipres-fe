@@ -358,6 +358,30 @@ export const BUYER_INTENT_LABELS: Record<string, string> = {
   SELL: "Selling",
 };
 
+// --- Real Estate "Database Goldmine" — dormant-lead nurture (T1) -------------
+// Dormancy tiers (DormancyBucket A..D) are internal codes; the agent reads them
+// as warmth bands — A is the freshest dormant cohort, D the coldest. The exact
+// day-windows live on the campaign, so the label stays a plain band name.
+export const DORMANCY_BUCKET_LABELS: Record<string, string> = {
+  A: "Recently dormant",
+  B: "Cooling off",
+  C: "Long dormant",
+  D: "Coldest leads",
+};
+
+// One enrolled contact's place in the funnel (NurtureEnrollmentStatus). Plain
+// words an agent scans: ENROLLED/ACTIVE are still being nudged; REPLIED → BOOKED
+// is the win; the rest closed out.
+export const NURTURE_ENROLLMENT_STATUS_LABELS: Record<string, string> = {
+  ENROLLED: "Just enrolled",
+  ACTIVE: "Being nudged",
+  REPLIED: "Replied",
+  BOOKED: "Showing booked",
+  EXITED: "Exited",
+  OPTED_OUT: "Opted out",
+  COMPLETED: "Ran its course",
+};
+
 // --- AR — Accounts Receivable / Collections module --------------------------
 // Aging bucket labels. The raw bucket names are internal codes; a plain-English
 // range ("8–14 days past due") reads at a glance for an office manager or owner.

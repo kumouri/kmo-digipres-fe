@@ -53,6 +53,21 @@ Admin UI for the backend's **Google Business Profile review-reply automation** (
 - **MSW**: `gbpReviewReplyStore` (store.ts) seeds two DRAFTED replies (a 5★ + a needs-care 2★); `post`/`skip` enforce the BE's 4032 (not found) / 4033 (not DRAFTED) status semantics. The list returns DRAFTED only, so a posted/skipped card leaves the queue. Spec: `tests/review-replies.spec.ts` (6).
 - **Deferred (separate, Google-approval-gated human step):** the live Google OAuth connect flow that activates the poller for a tenant — out of scope here, as in the BE.
 
+## Real Estate "Database Goldmine" — dormant-lead nurture dashboard (T1, SHIPPED)
+
+Admin UI for the backend RE-nurture **funnel ROI dashboard** (BE PR #112 — `RealEstateNurtureController`, a thin RE-namespaced facade over the shared E1 nurture engine). Pick a reactivation campaign, **segment-and-enroll** the dormant contacts, then watch the per-segment funnel fill as cadences fire and replies turn into booked showings. Branch `re-database-goldmine-fe`; smoke 198→205.
+
+| Area | Route | API surface |
+|---|---|---|
+| Database goldmine (`<RequireNotContractor>`) | `/database-goldmine` | GET /nurture/campaigns (shared E1 CRUD — campaign picker); GET /realestate/nurture/campaigns/:id/analytics (per-segment funnel ROI); POST /realestate/nurture/campaigns/:id/segment-and-enroll (`@IdempotentRoute` → `Idempotency-Key` minted per call → `SegmentationResult` counts) |
+
+- **Hand-written client** `api/realestate-nurture.ts` + hook `useRealEstateNurtureApi` — the RE-nurture routes are `@ConditionalOnProperty(realestate)`-gated AND the shared nurture CRUD is nurture-gated, so both are **absent from `openapi.json`** (the RE-5b / AR / proposals precedent). DTOs mirror the BE records exactly: `NurtureCampaignAnalytics` (campaign-wide totals + `perBucket: Partial<Record<DormancyBucket,NurtureSegmentCounts>>`), `SegmentationResult`, `NurtureCampaign`. `DormancyBucket` = `"A".."D"`; `NurtureEnrollmentStatus` = ENROLLED/ACTIVE/REPLIED/BOOKED/EXITED/OPTED_OUT/COMPLETED. `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/realestate/NurtureDashboard.tsx` — headline funnel cards (Enrolled / Touches sent / Replied / Showings booked / Re-engaged), a **reply→booking** outcome view, and a per-dormancy-tier row (A–D) each with an enrolled → being-nudged → replied → booked mini-funnel + the seeded day-window. Sits next to the RE-5b concierge surfaces (Listings/Concierge/Marketing review) in the nav (`Database` icon).
+- **Route guard:** behind `RequireNotContractor` (the AR-FE precedent — grouped with the other RE surfaces). NB the **BE endpoints are ADMIN-guarded** (`RoleGuard.requireRole("ADMIN")`, 1800), so a non-admin staffer reaches the page but the calls 1800; acceptable per the directive (matches the precedent placement). Tighten to `<RequireAdmin>` if owner-only is wanted.
+- **MSW**: `realEstateNurtureStore` (store.ts) seeds an active "Past-buyer reactivation" campaign (A–D segments) mid-run (100 enrolled, 8 replied, 3 booked, 188 sent) + a paused "Open-house no-shows" campaign. `segmentAndEnroll` enrolls 5 fresh leads AND advances one reply→booking so the funnel **visibly moves** on the trigger (the 60-second demo beat); the paused campaign returns BE **4302** (inactive → 409) and analytics on an unknown campaign returns **4301** (404). Spec: `tests/re-nurture.spec.ts` (7).
+- **Labels** in `admin/labels.ts`: `DORMANCY_BUCKET_LABELS` (A→"Recently dormant" … D→"Coldest leads"), `NURTURE_ENROLLMENT_STATUS_LABELS` (BOOKED→"Showing booked"). Index exports `NurtureDashboard`, `useRealEstateNurtureApi`, and the DTO types.
+- **Out of scope:** campaign **authoring** (the day-windows + cadence steps) stays on the shared nurture CRUD surface — this dashboard is read + the one segment-and-enroll trigger.
+
 ## Contractor & time management — admin UI (SHIPPED 2026-06-03)
 
 Admin UI for the backend **contractor / time-management vertical (BE Phase J1–J4)** — onboarding a 1099 teammate end to end: a staff/contractor directory, project assignment with bill/cost rates, a **scoped Contractor experience**, submit→approve timesheets, and a payout/margin (1099) report. Four FE PRs off four BE PRs: **#43** (J1) · **#44** (J2) · **#45** (J3) · **#47** (J4); branches `contractor-time-mgmt-phase-{1,2,3,4}-fe`; smoke +15 across the four phases.
