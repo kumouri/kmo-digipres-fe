@@ -8,6 +8,9 @@ import type {
   MidnightResponderLatencyStats,
   SwitchboardConfig,
   SwitchboardDeflectionStats,
+  CallbackCardDTO,
+  CallbackRecoveryStats,
+  CallbackConfig,
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
@@ -5068,6 +5071,207 @@ export const switchboardStore = {
       version: 0,
       createdAt: agoMinutes(60 * 24 * 14),
       updatedAt: agoMinutes(60 * 3),
+    };
+  },
+};
+
+// =============================================================================
+// Home Services T5 "Instant Callback" — ranked queue + recovery stats + config
+// =============================================================================
+//
+// Seeded with 3 callback cards in descending revenueScore order so the ordering
+// is immediately visible in smoke. Card A (LARGE/EMERGENCY, score 95) is first,
+// B (MEDIUM/URGENT, score 62) is second, C (SMALL/ROUTINE, score 28) is third.
+// Recovery stats show realistic demo numbers (150 offered / 105 accepted / 82
+// dispatched). Config is pre-seeded with custom copy so the form shows values.
+
+const CALLBACK_CONFIG_ID = "bb000001-0000-0000-0000-000000000001";
+const CALLBACK_TENANT_ID = SMOKE_USER.tenantId;
+
+const SEED_CALLBACK_CARDS: CallbackCardDTO[] = [
+  {
+    id: "cb000001-0000-0000-0000-000000000001",
+    contactId: null,
+    fromPhone: "+1 555 0191",
+    mode: "IMMEDIATE",
+    requestedWindowText: null,
+    requestedAt: null,
+    status: "REQUESTED",
+    summaryLine: "Burst pipe in the basement — water actively leaking.",
+    urgency: "EMERGENCY",
+    jobValueBand: "LARGE",
+    revenueScore: 95,
+    workOrderId: "wo-000001-0000-0000-0000-000000000001",
+    callSid: "CA0001",
+    createdAt: agoMinutes(15),
+  },
+  {
+    id: "cb000002-0000-0000-0000-000000000002",
+    contactId: null,
+    fromPhone: "+1 555 0142",
+    mode: "SCHEDULED",
+    requestedWindowText: "after 2pm tomorrow",
+    requestedAt: null,
+    status: "REQUESTED",
+    summaryLine: "HVAC not blowing cold air — whole house warm, replacement may be needed.",
+    urgency: "URGENT",
+    jobValueBand: "MEDIUM",
+    revenueScore: 62,
+    workOrderId: "wo-000002-0000-0000-0000-000000000002",
+    callSid: "CA0002",
+    createdAt: agoMinutes(45),
+  },
+  {
+    id: "cb000003-0000-0000-0000-000000000003",
+    contactId: null,
+    fromPhone: "+1 555 0177",
+    mode: "IMMEDIATE",
+    requestedWindowText: null,
+    requestedAt: null,
+    status: "REQUESTED",
+    summaryLine: "Kitchen faucet dripping — minor but persistent leak.",
+    urgency: "ROUTINE",
+    jobValueBand: "SMALL",
+    revenueScore: 28,
+    workOrderId: null,
+    callSid: "CA0003",
+    createdAt: agoMinutes(90),
+  },
+];
+
+/** Mutable cards map — dispatch mutates status in place. */
+const callbackCards = new Map<string, CallbackCardDTO>(
+  SEED_CALLBACK_CARDS.map((c) => [c.id, { ...c }]),
+);
+
+/** Mutable recovery stats — dispatch increments dispatched. */
+let callbackRecoveryStats: CallbackRecoveryStats = {
+  offered: 150,
+  accepted: 105,
+  dispatched: 82,
+  acceptanceRate: 105 / 150,
+  dispatchRate: 82 / 105,
+};
+
+/** Config row — null = not yet configured (4401). */
+let callbackConfigRow: CallbackConfig | null = {
+  id: CALLBACK_CONFIG_ID,
+  tenantId: CALLBACK_TENANT_ID,
+  offerMessage:
+    "We saw you called — would you like us to call you back? Reply YES for now or tell us a time that works.",
+  immediateConfirmMessage: "Got it — someone will call you back shortly.",
+  scheduledConfirmMessage: "Noted — we'll call you back during that window.",
+  version: 0,
+  createdAt: agoMinutes(60 * 24 * 7),
+  updatedAt: agoMinutes(60 * 2),
+};
+
+export const callbackStore = {
+  /**
+   * GET /home-services/callbacks — ranked queue (REQUESTED only, desc revenueScore).
+   * The BE sorts by revenueScore descending; the seed cards are already in order.
+   */
+  listQueue(): CallbackCardDTO[] {
+    return Array.from(callbackCards.values())
+      .filter((c) => c.status === "REQUESTED")
+      .sort((a, b) => b.revenueScore - a.revenueScore);
+  },
+
+  /**
+   * POST /home-services/callbacks/{id}/dispatch — transition to DISPATCHED.
+   * Returns { code: 4400 } if not found, { code: 4402 } if not REQUESTED.
+   */
+  dispatch(id: string):
+    | CallbackCardDTO
+    | { code: number; message: string } {
+    const card = callbackCards.get(id);
+    if (!card) {
+      return { code: 4400, message: "Callback request not found" };
+    }
+    if (card.status !== "REQUESTED") {
+      return {
+        code: 4402,
+        message: "Callback is not in REQUESTED state — cannot dispatch",
+      };
+    }
+    const updated: CallbackCardDTO = { ...card, status: "DISPATCHED" };
+    callbackCards.set(id, updated);
+    // Increment the dispatched count + recalculate rates.
+    const dispatched = callbackRecoveryStats.dispatched + 1;
+    const accepted = callbackRecoveryStats.accepted;
+    const offered = callbackRecoveryStats.offered;
+    callbackRecoveryStats = {
+      offered,
+      accepted,
+      dispatched,
+      acceptanceRate: offered > 0 ? accepted / offered : 0,
+      dispatchRate: accepted > 0 ? dispatched / accepted : 0,
+    };
+    return { ...updated };
+  },
+
+  /** GET /home-services/callbacks/recovery-stats. */
+  getRecoveryStats(): CallbackRecoveryStats {
+    return { ...callbackRecoveryStats };
+  },
+
+  /**
+   * GET /home-services/callbacks/config — returns the config or signals 4401.
+   */
+  getConfig(): CallbackConfig | { code: number; message: string } {
+    if (!callbackConfigRow) {
+      return {
+        code: 4401,
+        message: "Callback config not found for this tenant",
+      };
+    }
+    return { ...callbackConfigRow };
+  },
+
+  /**
+   * PUT /home-services/callbacks/config — upsert.
+   * Mirrors CallbackController.ConfigRequest.applyTo / toNewEntity logic.
+   */
+  saveConfig(body: Omit<CallbackConfig, "id" | "tenantId" | "version" | "createdAt" | "updatedAt">): CallbackConfig {
+    const existing = callbackConfigRow;
+    const now = new Date().toISOString();
+    if (existing) {
+      callbackConfigRow = {
+        ...existing,
+        ...body,
+        version: existing.version + 1,
+        updatedAt: now,
+      };
+    } else {
+      callbackConfigRow = {
+        id: CALLBACK_CONFIG_ID,
+        tenantId: CALLBACK_TENANT_ID,
+        ...body,
+        version: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+    return { ...callbackConfigRow };
+  },
+
+  /** Clear the config row — exercises the 4401 empty-state path. */
+  clearConfig() {
+    callbackConfigRow = null;
+  },
+
+  /** Restore seeded cards (resets dispatch mutations for test isolation). */
+  resetCards() {
+    callbackCards.clear();
+    for (const c of SEED_CALLBACK_CARDS) {
+      callbackCards.set(c.id, { ...c });
+    }
+    callbackRecoveryStats = {
+      offered: 150,
+      accepted: 105,
+      dispatched: 82,
+      acceptanceRate: 105 / 150,
+      dispatchRate: 82 / 105,
     };
   },
 };

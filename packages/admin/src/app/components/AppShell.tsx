@@ -42,6 +42,7 @@ import {
   TicketIcon,
   TrendingDown,
   Users,
+  Zap,
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
@@ -83,6 +84,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/knowledge-base", label: "Knowledge Base", icon: BookOpen, hideForContractor: true },
   { to: "/inbox", label: "Inbox", icon: Inbox, hideForContractor: true },
   { to: "/missed-calls", label: "Missed Calls", icon: PhoneMissed, hideForContractor: true },
+  { to: "/callback-queue", label: "Callback queue", icon: Zap, hideForContractor: true },
   { to: "/no-show-risk", label: "No-show risk", icon: ShieldAlert, hideForContractor: true },
   { to: "/waitlist", label: "Waitlist", icon: ListChecks, hideForContractor: true },
   { to: "/salon-reviews", label: "Salon reviews", icon: MessagesSquare, hideForContractor: true },

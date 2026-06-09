@@ -138,6 +138,9 @@ const ReviewRepliesList = lazy(() =>
 const MissedCallInbox = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.MissedCallInbox })),
 );
+const CallbackQueue = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.CallbackQueue })),
+);
 const NoShowRiskView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.NoShowRiskView })),
 );
@@ -331,6 +334,14 @@ export const router = createBrowserRouter([
                   { path: "inbox", element: <InboxList /> },
                   { path: "inbox/:id", element: <InboxDetail /> },
                   { path: "missed-calls", element: <MissedCallInbox /> },
+                  // Home Services T5 "Instant Callback" — revenue-ranked
+                  // callback dispatcher queue + recovery stats + config. The
+                  // BE CallbackController is home-services AND responder
+                  // module-gated; gated behind RequireNotContractor grouped
+                  // with the other Home Services surfaces (the T4
+                  // SwitchboardPanel precedent). A contractor deep-linking is
+                  // bounced.
+                  { path: "callback-queue", element: <CallbackQueue /> },
                   // ChairFill salon flagship (CF-5) — staff-visible, like
                   // missed-calls (the BE board/review-draft routes are
                   // STAFF-gated). A contractor deep-linking is bounced.
