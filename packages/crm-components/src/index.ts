@@ -403,3 +403,21 @@ export type {
   StylerMatchAnalytics,
   StylerMatchRequestBody,
 } from "./api/stylermatch";
+// Home Services T13 "Tech Copilot" — field-tech grounded Q&A surface + manual
+// corpus manager + query history with feedback. Hand-written client (both the
+// TechCopilotController and TechDocController are
+// @ConditionalOnProperty(kmosf.modules.techcopilot)-gated, so all routes are
+// absent from the generated openapi types — the T11 QuoteCloserSettings /
+// T8 PriceBookConfig / T5 CallbackController precedent). Gated behind
+// RequireNotContractor grouped with the other Home Services surfaces.
+export { TechCopilotPanel } from "./admin/home-services";
+export { useTechCopilotApi } from "./hooks/useTechCopilotApi";
+export type {
+  EquipmentType,
+  Citation,
+  AskResponse,
+  TechQuery,
+  TechQueryCitation,
+  TechDoc,
+  TechDocRequest,
+} from "./api/tech-copilot";

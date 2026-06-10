@@ -626,3 +626,23 @@ export const STYLER_MATCH_STATUS_LABELS: Record<string, string> = {
   NEW: "New",
   BOOKED: "Booked",
 };
+
+// --- Home Services T13 "Tech Copilot" — grounded Q&A + corpus manager -------
+// Labels for the tech-copilot office surfaces. A field tech or office staff
+// reads these at a glance in the ask panel and the doc corpus list.
+
+// The coarse equipment category a TechDoc documents. Plain names so a tech
+// reads the citation label at a glance ("from the Furnace manual …").
+// GENERAL is the catch-all — retrieval is never restricted to one category
+// (T13-D3); the label rides in the citation chip as a visual hint only.
+export const EQUIPMENT_TYPE_LABELS: Record<string, string> = {
+  FURNACE: "Furnace",
+  AC: "Air conditioner",
+  HEAT_PUMP: "Heat pump",
+  BOILER: "Boiler",
+  WATER_HEATER: "Water heater",
+  THERMOSTAT: "Thermostat",
+  DUCTLESS_MINI_SPLIT: "Ductless mini-split",
+  REFRIGERATION: "Refrigeration",
+  GENERAL: "General",
+};
