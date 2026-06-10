@@ -8,6 +8,7 @@ import {
   BookOpen,
   Building2,
   CalendarCheck,
+  CalendarDays,
   CalendarRange,
   ClipboardCheck,
   ClipboardList,
@@ -98,6 +99,10 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/listings", label: "Listings", icon: Home, hideForContractor: true },
   { to: "/concierge", label: "Concierge", icon: Sparkles, hideForContractor: true },
   { to: "/marketing-review", label: "Marketing review", icon: Megaphone, hideForContractor: true },
+  // T10 — Listing Prep Studio: "Listing prep" is distinct from all existing labels
+  // ("Listings" is /listings, "Marketing review" is /marketing-review); no
+  // substring collision risk with Playwright partial-match selectors.
+  { to: "/listing-prep-studio", label: "Listing prep", icon: CalendarDays, hideForContractor: true },
   { to: "/database-goldmine", label: "Database goldmine", icon: Database, hideForContractor: true },
   { to: "/midnight-responder", label: "Midnight Responder", icon: MoonStar, hideForContractor: true },
   { to: "/appointments", label: "Appointments", icon: CalendarRange, hideForContractor: true },

@@ -224,6 +224,23 @@ export {
   MarketingReviewQueue,
 } from "./admin/realestate";
 export { useRealEstateApi } from "./hooks/useRealEstateApi";
+// Real Estate Concierge (T10 — Listing Prep Studio): per-listing generate
+// (MLS description + 4-week dated social calendar + email campaign) → Fair-
+// Housing lint panel (flagged calendar posts are held + safe-substituted, never
+// emitted) → Approve / Skip queue. Hand-written client (the BE
+// ListingPrepController is @ConditionalOnProperty(kmosf.modules.realestate)
+// -gated, so all routes are absent from the generated openapi types — the RE-5b
+// / ChairFill / HS-4 precedent). No @IdempotentRoute on generate.
+export { ListingPrepStudio } from "./admin/realestate";
+export { useListingPrepApi } from "./hooks/useListingPrepApi";
+export type {
+  PrepPackStatus,
+  SocialPost,
+  PhotoNote,
+  PrepFairHousingFlag,
+  ListingPrepPack,
+  ListingPrepGenerateRequest,
+} from "./api/listing-prep";
 // Real Estate "Database Goldmine" (T1) — the dormant-lead nurture funnel
 // dashboard: pick a reactivation campaign, segment-and-enroll dormant leads,
 // watch the per-segment funnel fill (enrolled → nudged → replied → booked).

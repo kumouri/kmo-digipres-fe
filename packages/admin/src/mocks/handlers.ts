@@ -44,6 +44,7 @@ import type {
   WaitlistJoinRequest,
 } from "@kmosf/crm-components";
 import type { components } from "@kmosf/crm-components";
+import type { ListingPrepGenerateRequest } from "@kmosf/crm-components";
 import {
   SMOKE_CONTRACTOR_TOKEN,
   SMOKE_CONTRACTOR_USER,
@@ -100,6 +101,7 @@ import {
   timesheetStore,
   quotingStore,
   styleConsultStore,
+  listingPrepStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -2740,6 +2742,117 @@ export const handlers = [
     ({ request }) => {
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       styleConsultStore.resetConsults();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // ── Real Estate T10 — Listing Prep Studio ──────────────────────────────────
+  // All routes are STAFF + realestate-module-gated on the BE (the RE-5b posture).
+  // No @IdempotentRoute on generate — the controller does not send one.
+
+  // POST /realestate/listings/:listingId/prep/generate
+  // Must be registered BEFORE the parametric /realestate/listings/:id routes
+  // (the MSW router is first-match, not longest-match). The prep-specific
+  // /listings/:listingId/prep/packs GET is also before the generic :id GET.
+  http.post(
+    `${API_BASE}/realestate/listings/:listingId/prep/generate`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      await delay(80);
+      let body: ListingPrepGenerateRequest | null = null;
+      try {
+        const text = await request.text();
+        if (text) body = JSON.parse(text) as ListingPrepGenerateRequest;
+      } catch {
+        // body is optional
+      }
+      const pack = listingPrepStore.generate(
+        String(params.listingId),
+        body?.startDate ?? null,
+        body?.postsPerWeek ?? null,
+      );
+      return HttpResponse.json(pack);
+    },
+  ),
+
+  // GET /realestate/listings/:listingId/prep/packs — listing prep history
+  http.get(
+    `${API_BASE}/realestate/listings/:listingId/prep/packs`,
+    ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(
+        listingPrepStore.listForListing(String(params.listingId)),
+      );
+    },
+  ),
+
+  // GET /realestate/prep/packs — DRAFTED queue (registered before parametric
+  // /realestate/prep/packs/:id to avoid matching "packs" as an id).
+  http.get(`${API_BASE}/realestate/prep/packs`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(listingPrepStore.listDrafted());
+  }),
+
+  // POST /realestate/prep/packs/:id/approve
+  http.post(
+    `${API_BASE}/realestate/prep/packs/:id/approve`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      await delay(50);
+      const result = listingPrepStore.approve(String(params.id));
+      if (result === undefined)
+        return HttpResponse.json(
+          { message: "Prep pack not found", errorCode: 4460 },
+          { status: 404 },
+        );
+      if (result === null)
+        return HttpResponse.json(
+          { message: "Prep pack is not DRAFTED", errorCode: 4461 },
+          { status: 409 },
+        );
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // POST /realestate/prep/packs/:id/skip
+  http.post(
+    `${API_BASE}/realestate/prep/packs/:id/skip`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      await delay(50);
+      const result = listingPrepStore.skip(String(params.id));
+      if (result === undefined)
+        return HttpResponse.json(
+          { message: "Prep pack not found", errorCode: 4460 },
+          { status: 404 },
+        );
+      if (result === null)
+        return HttpResponse.json(
+          { message: "Prep pack is not DRAFTED", errorCode: 4461 },
+          { status: 409 },
+        );
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // GET /realestate/prep/packs/:id — single pack
+  http.get(`${API_BASE}/realestate/prep/packs/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const pack = listingPrepStore.get(String(params.id));
+    if (!pack)
+      return HttpResponse.json(
+        { message: "Prep pack not found", errorCode: 4460 },
+        { status: 404 },
+      );
+    return HttpResponse.json(pack);
+  }),
+
+  // TEST-ONLY: reset prep packs to seeds
+  http.post(
+    `${API_BASE}/realestate/prep/packs/test-reset`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      listingPrepStore.reset();
       return new HttpResponse(null, { status: 204 });
     },
   ),

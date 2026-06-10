@@ -181,6 +181,16 @@ const MarketingReviewQueue = lazy(() =>
     default: m.MarketingReviewQueue,
   })),
 );
+// Real Estate Concierge (T10 — Listing Prep Studio): per-listing generate
+// (MLS + 4-week social calendar + email) → Fair-Housing lint panel → Approve /
+// Skip queue. Hand-written client (the BE ListingPrepController is
+// @ConditionalOnProperty(kmosf.modules.realestate)-gated). Gated behind
+// RequireNotContractor, grouped with the other RE surfaces.
+const ListingPrepStudio = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.ListingPrepStudio,
+  })),
+);
 const NurtureDashboard = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({
     default: m.NurtureDashboard,
@@ -399,6 +409,15 @@ export const router = createBrowserRouter([
                   { path: "concierge", element: <ConciergeInbox /> },
                   { path: "concierge/:id", element: <ConciergeTranscript /> },
                   { path: "marketing-review", element: <MarketingReviewQueue /> },
+                  // Real Estate Concierge (T10 — Listing Prep Studio) — per-listing
+                  // one-click prep pack generation (MLS description + 4-week dated
+                  // social calendar + email campaign) + Fair-Housing lint review +
+                  // Approve / Skip queue. The BE ListingPrepController is
+                  // @ConditionalOnProperty(kmosf.modules.realestate)-gated; gated
+                  // behind RequireNotContractor grouped with the other RE surfaces
+                  // (the MarketingReviewQueue / MidnightResponderPanel precedent).
+                  // A contractor deep-linking is bounced.
+                  { path: "listing-prep-studio", element: <ListingPrepStudio /> },
                   // RE Database Goldmine (T1) — dormant-lead nurture funnel
                   // dashboard. The BE RE-nurture routes are ADMIN + realestate-
                   // AND-nurture-module-gated; gated behind RequireNotContractor
