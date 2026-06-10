@@ -6,6 +6,14 @@ import {
 
 export { ApiError };
 
+// Security FE-02 (DEFERRED / tracked follow-up): the admin JWT lives in
+// localStorage, which is XSS-exfiltratable. The hardened design is an
+// httpOnly + Secure + SameSite=Strict session cookie set by the backend, but
+// that is a coordinated BE+FE architectural change (CORS + CSRF handling), so
+// it is intentionally NOT done here. The immediate XSS sink that made this
+// exploitable (FE-01 `javascript:` href stored XSS) is fixed in this PR; keep
+// the token TTL short until the cookie migration lands. Do NOT change the
+// storage mechanism in this change. See security-remediation-plan-2026-06-09.md.
 export const TOKEN_STORAGE_KEY = "kmosf.jwt";
 export const UNAUTHORIZED_EVENT = "kmosf:unauthorized";
 

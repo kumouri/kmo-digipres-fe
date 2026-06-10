@@ -2,6 +2,35 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Security WEB-02 (admin portion): starter Content-Security-Policy.
+
+      This is an INTERIM, defense-in-depth baseline meta CSP. The AUTHORITATIVE
+      CSP must be served as a response header at Caddy/Cloudflare in front of the
+      admin app (tracked as the INFRA-04 ops follow-up) -- a response-header CSP
+      can carry frame-ancestors (which a meta CSP cannot enforce) and a
+      per-response nonce. Keep the two in sync.
+
+      script-src: the inline no-flash theme script further down is allow-listed
+      by its sha256 hash, because a meta CSP cannot use a nonce. Vite does NOT
+      transform that inline script, so the source hash and the built hash match.
+      IF YOU EDIT THAT SCRIPT (even whitespace), regenerate the hash or the
+      no-flash behavior breaks silently. Recompute by running, from this dir:
+        npm run csp:hash    (see package.json -> scripts.csp:hash)
+      The helper normalizes CRLF -> LF before hashing because the browser hashes
+      the parser's LF-normalized text; a raw-CRLF hash would NOT match.
+
+      connect-src: includes the local dev/mock API origins (localhost:8080 and
+      127.0.0.1:8080) so `npm run dev` and the MSW Playwright smoke (which fetch
+      the default http://localhost:8080/api/v1 base when VITE_API_BASE_URL is
+      unset) are not CSP-blocked. These loopback entries are harmless in a
+      deployed page; OMIT them from the authoritative Caddy/Cloudflare response
+      header, which should allow only the real API origin.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self' https://api.kmosolutionsfoundry.com http://localhost:8080 http://127.0.0.1:8080; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'sha256-tA1QunEjoFAloZOuou3I5iiqFmxDfMc7UAuWjXvnsj0='; object-src 'none'; base-uri 'self'"
+    />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%238e00ff'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-size='18' font-weight='600' fill='white'>K</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
