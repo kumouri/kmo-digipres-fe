@@ -28,7 +28,7 @@ export * from "./primitives/skeleton";
 export * from "./primitives/table";
 export * from "./primitives/tabs";
 export * from "./primitives/textarea";
-export { cn } from "./primitives/utils";
+export { cn, safeHref } from "./primitives/utils";
 
 // Generic components
 export { DataTable, type Column } from "./components/DataTable";

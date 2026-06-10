@@ -17,9 +17,30 @@ const addressSchema = z.object({
   label: z.string().default(""),
 });
 
+// Security FE-01: a company website is rendered into an `href`. Restrict it to
+// an http(s) URL (or empty) at the input boundary so a `javascript:`/`data:`
+// scheme can never be stored. The render side (CompaniesList) also guards via
+// safeHref — this is defense-in-depth plus a friendly inline validation error.
+const websiteSchema = z
+  .string()
+  .default("")
+  .refine(
+    (v) => {
+      const trimmed = v.trim();
+      if (trimmed === "") return true; // optional field
+      try {
+        const parsed = new URL(trimmed);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "Enter a valid http(s) URL (e.g. https://example.com)" },
+  );
+
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  website: z.string().default(""),
+  website: websiteSchema,
   industry: z.string().default(""),
   addresses: z.array(addressSchema),
   tags: z.string().default(""),
@@ -103,7 +124,15 @@ export function CompanyForm({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor="company-website">Website</Label>
-          <Input id="company-website" placeholder="https://" {...register("website")} />
+          <Input
+            id="company-website"
+            placeholder="https://"
+            aria-invalid={errors.website ? true : undefined}
+            {...register("website")}
+          />
+          {errors.website ? (
+            <p className="text-xs text-destructive">{errors.website.message}</p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="company-industry">Industry</Label>
