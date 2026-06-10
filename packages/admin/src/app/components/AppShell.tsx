@@ -47,6 +47,7 @@ import {
   TrendingDown,
   Users,
   Zap,
+  MailCheck,
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
@@ -91,6 +92,11 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/callback-queue", label: "Callback queue", icon: Zap, hideForContractor: true },
   { to: "/instant-quotes", label: "Job estimates", icon: ClipboardList, hideForContractor: true },
   { to: "/quote-settings", label: "Estimate settings", icon: Settings2, hideForContractor: true },
+  // T11 — Home QuoteCloser follow-up settings + recovery funnel.
+  // "Quote follow-up" is distinct from all existing nav labels:
+  //   "Job estimates" (/instant-quotes), "Estimate settings" (/quote-settings),
+  //   "Quotes" (/quotes) — no substring collision with Playwright partial-match.
+  { to: "/quote-follow-up", label: "Quote follow-up", icon: MailCheck, hideForContractor: true },
   { to: "/no-show-risk", label: "No-show risk", icon: ShieldAlert, hideForContractor: true },
   { to: "/waitlist", label: "Waitlist", icon: ListChecks, hideForContractor: true },
   { to: "/salon-reviews", label: "Salon reviews", icon: MessagesSquare, hideForContractor: true },

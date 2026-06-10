@@ -147,6 +147,18 @@ const QuoteInbox = lazy(() =>
 const PriceBookConfig = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.PriceBookConfig })),
 );
+// Home Services T11 "QuoteCloser" — follow-up config card (window / cadence
+// toggle / financing-nudge copy) + recovery-funnel analytics panel (quotes
+// sent → followed-up → recovered → review-requested + recovery rate). Hand-
+// written client (the BE QuoteCloserConfigController and QuoteCloserController
+// are @ConditionalOnProperty(kmosf.modules.quoting)-gated AND require the
+// nurture module, so all routes are absent from the generated openapi types —
+// the T8 PriceBookConfig / T5 CallbackController precedent).
+const QuoteCloserSettings = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.QuoteCloserSettings,
+  })),
+);
 const NoShowRiskView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.NoShowRiskView })),
 );
@@ -378,6 +390,17 @@ export const router = createBrowserRouter([
                   // precedent). A contractor deep-linking is bounced.
                   { path: "instant-quotes", element: <QuoteInbox /> },
                   { path: "quote-settings", element: <PriceBookConfig /> },
+                  // Home Services T11 "QuoteCloser" — follow-up config card
+                  // (window / cadence toggle / financing-nudge copy) + recovery-
+                  // funnel analytics panel (quotes sent → followed-up →
+                  // recovered → review-requested + recovery rate). The BE
+                  // QuoteCloserConfigController and QuoteCloserController are
+                  // @ConditionalOnProperty(kmosf.modules.quoting)-gated AND
+                  // require the nurture module; gated behind RequireNotContractor
+                  // grouped with the other Home Services surfaces (the T8
+                  // PriceBookConfig / T5 CallbackQueue precedent). A contractor
+                  // deep-linking is bounced.
+                  { path: "quote-follow-up", element: <QuoteCloserSettings /> },
                   // ChairFill salon flagship (CF-5) — staff-visible, like
                   // missed-calls (the BE board/review-draft routes are
                   // STAFF-gated). A contractor deep-linking is bounced.
