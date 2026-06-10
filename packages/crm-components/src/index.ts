@@ -194,6 +194,7 @@ export {
   WaitlistBoard,
   SalonReviewInbox,
   ReviewBoostBoard,
+  StyleConsultInbox,
 } from "./admin/chairfill";
 export { useChairFillApi } from "./hooks/useChairFillApi";
 // Salon "ReviewBoost" (T6) — per-stylist review-insights board + config status
@@ -337,3 +338,20 @@ export type {
   ProposalDraftRequest,
   SowDraft,
 } from "./api/proposals";
+// Salon T9 "StyleConsult AI" — staff consult inbox (assessment + service recs +
+// margin-ranked retail recs + "stylist will confirm" guardrail + booking status),
+// retail-attach analytics panel, and consult-widget token-issue. Hand-written
+// client (the BE StyleConsultController and StyleConsultTokenController are
+// @ConditionalOnProperty(kmosf.modules.chairfill)-gated, so all routes are
+// absent from the generated openapi types — the T8 QuoteNow / T6 ReviewBoost
+// precedent).
+export { useStyleConsultApi } from "./hooks/useStyleConsultApi";
+export type {
+  StyleConsultStatus,
+  StyleAttributeSource,
+  StyleConsultInboxCard,
+  ServiceRecommendation,
+  RetailRecommendation,
+  StyleConsultResponse,
+  StyleConsultAnalytics,
+} from "./api/styleconsult";

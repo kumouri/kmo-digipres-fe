@@ -102,6 +102,22 @@ Admin UI for the backend T7 **RescheduleFlow** — the staff console for the hea
 - **Nav item:** `CalendarCheck` icon, `hideForContractor: true`, inserted after "Switchboard AI" in `AppShell.tsx` NAV_ITEMS.
 - **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md).
 
+## Salon "StyleConsult AI" — consult inbox + analytics + token (T9, SHIPPED)
+
+Admin UI for the backend T9 **StyleConsult AI** — the staff consult-inbox surface on the salon (ChairFill) console: a **status-filtered consult inbox** (each consult shows the AI-read style category, service count, retail count, and booking status), a **detail view** (vision / manual style assessment, recommended services + the "stylist will confirm" guardrail, margin-ranked retail recommendations), a **retail-attach analytics card**, and a **"Generate consult link" token-issue panel**. Branch `salon-styleconsult-fe`; smoke +15 specs (285→300).
+
+| Area | Route | API surface |
+|---|---|---|
+| Style consults (`<RequireNotContractor>`) | `/style-consults` | GET /styleconsult/consults[?status=] → `StyleConsultInboxCard[]`; GET /styleconsult/consults/{id} → `StyleConsultResponse` (4455 if absent); GET /styleconsult/analytics → `StyleConsultAnalytics`; POST /styleconsult/tokens → `{token}` (201, 180-day TTL, ADMIN-gated) |
+
+- **Hand-written client** `api/styleconsult.ts` + hook `useStyleConsultApi` — the StyleConsultController and StyleConsultTokenController are `@ConditionalOnProperty(kmosf.modules.chairfill)`-gated, so all routes are **absent from `openapi.json`** (the T8 QuoteNow / T6 ReviewBoostController precedent). All types typed field-by-field from BE records. `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/chairfill/StyleConsultInbox.tsx` — three sections: (1) `StyleConsultAnalyticsCard` (TanStack Query → 6 stat cards: total / with-retail / booked / booked+retail / retail-attach rate / avg retail margin); (2) `StyleConsultTokenPanel` (POST /styleconsult/tokens + copy consult widget URL); (3) Status-filtered inbox list + `StyleConsultDetailView` (assessment card: category/length/texture/color/source/confidence; service recs list with the "stylist will confirm" guardrail banner; retail recs list ordered highest-margin-first, each carrying a margin badge). Route: `/style-consults`.
+- **Route guard:** behind `RequireNotContractor` grouped with the other ChairFill/salon surfaces (the T6 ReviewBoostBoard / T8 QuoteInbox precedent). The BE endpoints are staff-accessible (no extra RoleGuard on list/detail/analytics; ADMIN-gated on token-issue).
+- **New labels** in `admin/labels.ts`: `STYLE_CONSULT_STATUS_LABELS` (NEW→"New", BOOKED→"Booked"), `STYLE_ATTRIBUTE_SOURCE_LABELS` (VISION→"Inspiration photo (AI)", MANUAL→"Client-typed").
+- **Nav item:** `Scissors` icon "Style consults" (`/style-consults`), `hideForContractor: true`, inserted after "ReviewBoost" in `AppShell.tsx` NAV_ITEMS. Label chosen to avoid Playwright partial-match collision with any existing nav label.
+- **MSW**: `styleConsultStore` (store.ts) seeds 3 consults (Brianna NEW/VISION curly 2-service 3-retail; Chloe NEW/MANUAL straight 1-service 2-retail; Devon BOOKED wavy 1-service 1-retail) + retail ordered high→mid→low margin so ordering is visible in smoke + analytics (28 total / 21 with-retail / 12 booked / 10 booked+retail, ~83% attach rate) + token endpoint. Test-control `POST /styleconsult/consults/test-reset`. Spec: `tests/styleconsult.spec.ts` (15).
+- **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md), homeowner-facing intake widget UI (the token endpoint surfaces the link to share).
+
 ## Home Services "QuoteNow" — quote inbox + price-book config (T8, SHIPPED)
 
 Admin UI for the backend T8 **QuoteNow** — staff quote-inbox + admin price-book configuration surfaces for the home-services vertical. Branch `home-quotenow-fe`; smoke +19 specs (285 total).

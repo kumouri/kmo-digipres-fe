@@ -16,6 +16,11 @@ import type {
   QuoteInboxCard,
   QuoteResponse,
   PriceBook,
+  StyleConsultInboxCard,
+  StyleConsultResponse,
+  StyleConsultAnalytics,
+  ServiceRecommendation,
+  RetailRecommendation,
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
@@ -5754,5 +5759,262 @@ export const rescheduleStore = {
       filled: 32,
       fillRate: 32 / 48,
     };
+  },
+};
+
+// =============================================================================
+// Salon T9 "StyleConsult AI" — consult inbox + analytics + token-issue
+// =============================================================================
+//
+// Three seeded consults with diverse statuses and retail recs ranked by margin:
+//   1. Brianna — NEW, VISION-read (curly / mid-length / warm brunette), 2 services,
+//      3 retail products (high → mid → low margin visible ordering).
+//   2. Chloe — NEW, MANUAL-typed (straight / long / platinum), 1 service,
+//      2 retail products.
+//   3. Devon — BOOKED (wavy / short / auburn), 1 service, 1 retail product.
+//
+// Analytics seed: 28 total, 21 with retail recs, 12 booked, 10 booked+retail
+// → ~83% retail-attach rate, ~43% booking rate, $8.50 avg margin.
+
+// Stable UUIDs.
+const SC_CONSULT_BRIANNA = "sc000001-0000-0000-0000-000000000001";
+const SC_CONSULT_CHLOE = "sc000002-0000-0000-0000-000000000002";
+const SC_CONSULT_DEVON = "sc000003-0000-0000-0000-000000000003";
+
+const SEED_STYLE_CONSULTS: StyleConsultInboxCard[] = [
+  {
+    consultId: SC_CONSULT_BRIANNA,
+    contactId: "cc000001-0000-0000-0000-000000000001",
+    contactPhone: "+1 555 0401",
+    styleCategory: "Curly / wavy",
+    serviceCount: 2,
+    retailCount: 3,
+    status: "NEW",
+    createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 min ago
+  },
+  {
+    consultId: SC_CONSULT_CHLOE,
+    contactId: null,
+    contactPhone: "+1 555 0402",
+    styleCategory: "Straight / sleek",
+    serviceCount: 1,
+    retailCount: 2,
+    status: "NEW",
+    createdAt: new Date(Date.now() - 1000 * 60 * 75).toISOString(), // 75 min ago
+  },
+  {
+    consultId: SC_CONSULT_DEVON,
+    contactId: null,
+    contactPhone: "+1 555 0403",
+    styleCategory: "Wavy / beachy",
+    serviceCount: 1,
+    retailCount: 1,
+    status: "BOOKED",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(), // 4 hr ago
+  },
+];
+
+// Retail products — ordered highest→lowest margin within each consult.
+const BRIANNA_RETAIL: RetailRecommendation[] = [
+  {
+    productId: "prod-0001-0000-0000-0000-000000000001",
+    sku: "CR-SERUM-01",
+    name: "Curl Defining Serum",
+    price: 28.0,
+    cost: 10.50,
+    marginAmount: 17.50,
+    rationale:
+      "Highest margin on curly-hair products — and it's exactly what this texture needs. Your stylist will confirm the right amount at the appointment.",
+  },
+  {
+    productId: "prod-0002-0000-0000-0000-000000000002",
+    sku: "DFC-MASK-02",
+    name: "Deep Frizz-Control Mask",
+    price: 22.0,
+    cost: 11.0,
+    marginAmount: 11.0,
+    rationale:
+      "Great weekly treatment for curly and wavy types. Your stylist will confirm it's the right fit for your hair.",
+  },
+  {
+    productId: "prod-0003-0000-0000-0000-000000000003",
+    sku: "HLD-MIST-03",
+    name: "Humidity-Blocking Hold Mist",
+    price: 18.0,
+    cost: 10.0,
+    marginAmount: 8.0,
+    rationale:
+      "Locks the style in humid conditions — keeps curls defined through the day. Your stylist will confirm this works with your routine.",
+  },
+];
+
+const CHLOE_RETAIL: RetailRecommendation[] = [
+  {
+    productId: "prod-0004-0000-0000-0000-000000000004",
+    sku: "PLA-SHINE-04",
+    name: "Platinum Shine Toner",
+    price: 32.0,
+    cost: 14.0,
+    marginAmount: 18.0,
+    rationale:
+      "Essential between toning appointments to keep platinum bright. Your stylist will confirm the application frequency at the appointment.",
+  },
+  {
+    productId: "prod-0005-0000-0000-0000-000000000005",
+    sku: "SFT-BALM-05",
+    name: "Smoothing Bond Balm",
+    price: 19.0,
+    cost: 11.5,
+    marginAmount: 7.5,
+    rationale:
+      "Protects hair bonds during thermal styling — ideal for long, straight styles. Your stylist will confirm at the appointment.",
+  },
+];
+
+const DEVON_RETAIL: RetailRecommendation[] = [
+  {
+    productId: "prod-0006-0000-0000-0000-000000000006",
+    sku: "WAV-CREAM-06",
+    name: "Wave Texture Cream",
+    price: 24.0,
+    cost: 12.5,
+    marginAmount: 11.5,
+    rationale:
+      "Enhances natural wave without weighing it down — great for short beachy styles. Your stylist confirmed this at booking.",
+  },
+];
+
+const BRIANNA_SERVICES: ServiceRecommendation[] = [
+  {
+    serviceMenuItemId: "svc-001",
+    name: "Curl Cut & Shape",
+    price: 75.0,
+    rationale:
+      "Cutting curly hair dry and by curl pattern gives the best shape for this style. Your stylist will confirm the cut angle at the appointment.",
+  },
+  {
+    serviceMenuItemId: "svc-002",
+    name: "Gloss Treatment",
+    price: 45.0,
+    rationale:
+      "Enhances shine and tones the warm brunette notes in this color profile. Your stylist will confirm the shade at the appointment.",
+  },
+];
+
+const CHLOE_SERVICES: ServiceRecommendation[] = [
+  {
+    serviceMenuItemId: "svc-003",
+    name: "Platinum Toning Service",
+    price: 90.0,
+    rationale:
+      "Maintains the platinum tone and corrects brassiness — essential for long, straight color. Your stylist will confirm the lift level at the appointment.",
+  },
+];
+
+const DEVON_SERVICES: ServiceRecommendation[] = [
+  {
+    serviceMenuItemId: "svc-004",
+    name: "Texture Cut (Short)",
+    price: 65.0,
+    rationale:
+      "Short wavy cuts need point-cutting to preserve texture and remove bulk. Your stylist confirmed this at booking.",
+  },
+];
+
+const SEED_STYLE_CONSULT_RESPONSES: Record<string, StyleConsultResponse> = {
+  [SC_CONSULT_BRIANNA]: {
+    consultId: SC_CONSULT_BRIANNA,
+    styleCategory: "Curly / wavy",
+    length: "Mid-length (shoulder)",
+    texture: "Curly / 3A coils",
+    color: "Warm brunette",
+    attributeSource: "VISION",
+    confidence: 0.89,
+    serviceRecommendations: BRIANNA_SERVICES,
+    retailRecommendations: BRIANNA_RETAIL,
+    status: "NEW",
+    bookingId: null,
+  },
+  [SC_CONSULT_CHLOE]: {
+    consultId: SC_CONSULT_CHLOE,
+    styleCategory: "Straight / sleek",
+    length: "Long (collarbone+)",
+    texture: "Fine / straight",
+    color: "Platinum blonde",
+    attributeSource: "MANUAL",
+    confidence: 1.0,
+    serviceRecommendations: CHLOE_SERVICES,
+    retailRecommendations: CHLOE_RETAIL,
+    status: "NEW",
+    bookingId: null,
+  },
+  [SC_CONSULT_DEVON]: {
+    consultId: SC_CONSULT_DEVON,
+    styleCategory: "Wavy / beachy",
+    length: "Short (chin)",
+    texture: "Wavy / 2B",
+    color: "Auburn",
+    attributeSource: "VISION",
+    confidence: 0.82,
+    serviceRecommendations: DEVON_SERVICES,
+    retailRecommendations: DEVON_RETAIL,
+    status: "BOOKED",
+    bookingId: "bk000001-0000-0000-0000-000000000001",
+  },
+};
+
+const SEED_STYLE_CONSULT_ANALYTICS: StyleConsultAnalytics = {
+  totalConsults: 28,
+  consultsWithRetail: 21,
+  consultsBooked: 12,
+  bookedWithRetail: 10,
+  retailAttachRate: 10 / 12, // ~0.833
+  bookingRate: 12 / 28, // ~0.429
+  avgRecommendedRetailMargin: 8.5,
+};
+
+let styleConsultRows: StyleConsultInboxCard[] = SEED_STYLE_CONSULTS.map(
+  (c) => ({ ...c }),
+);
+
+export const styleConsultStore = {
+  /**
+   * GET /styleconsult/consults[?status=<StyleConsultStatus>] — inbox list newest-first.
+   * Optional status filter.
+   */
+  list(status?: string): StyleConsultInboxCard[] {
+    const rows = status
+      ? styleConsultRows.filter((c) => c.status === status)
+      : styleConsultRows;
+    return rows
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((c) => ({ ...c }));
+  },
+
+  /**
+   * GET /styleconsult/consults/{id} — full detail (4455 if absent).
+   */
+  get(id: string): StyleConsultResponse | null {
+    return SEED_STYLE_CONSULT_RESPONSES[id] ?? null;
+  },
+
+  /**
+   * GET /styleconsult/analytics — retail-attach funnel.
+   */
+  getAnalytics(): StyleConsultAnalytics {
+    return { ...SEED_STYLE_CONSULT_ANALYTICS };
+  },
+
+  /**
+   * POST /styleconsult/tokens — issue a stable fake widget token.
+   */
+  issueToken(): { token: string } {
+    return { token: "msw-style-consult-token-xyz789" };
+  },
+
+  /** TEST-ONLY: reset consult rows to seeds. */
+  resetConsults() {
+    styleConsultRows = SEED_STYLE_CONSULTS.map((c) => ({ ...c }));
   },
 };
