@@ -421,3 +421,23 @@ export type {
   TechDoc,
   TechDocRequest,
 } from "./api/tech-copilot";
+// Home Services T14 "DispatchIQ" — the dispatcher optimize console: pick a
+// date → AI-proposed tech assignments (urgency / skill-matched badge / fit
+// score / rationale table) + unassigned section (with unassignedReason) →
+// Apply plan (POST /dispatch/apply with Idempotency-Key, @IdempotentRoute) →
+// applied/skipped result banner + dispatch analytics card. Hand-written client
+// (the DispatchController is @ConditionalOnProperty(kmosf.modules.dispatch)
+// -gated, so all routes are absent from the generated openapi types — the T13
+// TechCopilotPanel / T11 QuoteCloserSettings / T8 PriceBookConfig precedent).
+// Gated behind RequireNotContractor grouped with the other Home Services
+// surfaces. Final flagship tool (T14) — completes the 4-vertical AI demo set.
+export { DispatchConsole } from "./admin/home-services";
+export { useDispatchApi } from "./hooks/useDispatchApi";
+export type {
+  ProposedAssignment,
+  DispatchPlan,
+  ApplyDecision,
+  ApplyRequest,
+  ApplyResponse,
+  DispatchAnalytics,
+} from "./api/dispatch";

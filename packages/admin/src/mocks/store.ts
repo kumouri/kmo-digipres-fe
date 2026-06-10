@@ -10,6 +10,11 @@ import type {
   TechQuery,
   TechQueryCitation,
   AskResponse,
+  ProposedAssignment,
+  DispatchPlan,
+  ApplyRequest,
+  ApplyResponse,
+  DispatchAnalytics,
 } from "@kmosf/crm-components";
 import type {
   ArAgingReport,
@@ -7039,5 +7044,199 @@ export const techCopilotStore = {
       ...q,
       citations: [...q.citations],
     }));
+  },
+};
+
+// =============================================================================
+// Home Services T14 "DispatchIQ" — optimizer + apply + analytics mock store
+// =============================================================================
+//
+// Seeded assignments (4 total):
+//   1. EMERGENCY HVAC repair — Rivera Tech, score 0.91, skillMatched, LARGE value
+//   2. AC maintenance — Jordan Kim, score 0.74, skillMatched, MEDIUM value
+//   3. Plumbing leak repair — Alex Chen, score 0.68, NOT skillMatched (nearest
+//      available, no plumbing cert), MEDIUM value
+//   4. Unassigned: boiler inspection — no available tech with BOILER skill
+//
+// The plan has 4 open WOs, 3 assigned, 1 unassigned.
+// apply() transitions all three to "committed", returns applied=3 skipped=0.
+// Re-apply returns applied=0 skipped=3 (idempotent feel).
+// analytics() returns the aggregate stats consistent with the plan.
+
+const DISPATCH_WO_1 = "d14-wo-001-hvac-emergency";
+const DISPATCH_WO_2 = "d14-wo-002-ac-maint";
+const DISPATCH_WO_3 = "d14-wo-003-plumbing-leak";
+const DISPATCH_WO_4 = "d14-wo-004-boiler-insp";
+
+const DISPATCH_TECH_RIVERA = "d14-tech-001-rivera";
+const DISPATCH_TECH_JORDAN = "d14-tech-002-jordan";
+const DISPATCH_TECH_ALEX = "d14-tech-003-alex";
+
+const SEED_DISPATCH_ASSIGNMENTS: ProposedAssignment[] = [
+  {
+    workOrderId: DISPATCH_WO_1,
+    workOrderNumber: "WO-1041",
+    title: "HVAC system not responding — no heat",
+    serviceType: "HVAC",
+    urgency: "EMERGENCY",
+    jobValueBand: "LARGE",
+    scheduledStart: new Date().toISOString(),
+    jobSiteId: null,
+    assignedTechUserId: DISPATCH_TECH_RIVERA,
+    assignedTechName: "Marcus Rivera",
+    score: 0.91,
+    confidence: 0.95,
+    skillFit: 0.98,
+    availability: 0.85,
+    proximity: 0.90,
+    priority: 1.0,
+    skillMatched: true,
+    rationale:
+      "Marcus Rivera is HVAC-certified, available first thing, and is closest to the site. Emergency priority pushed this job to the top of the stack.",
+    unassignedReason: null,
+  },
+  {
+    workOrderId: DISPATCH_WO_2,
+    workOrderNumber: "WO-1042",
+    title: "Annual AC maintenance — unit 4B",
+    serviceType: "AC",
+    urgency: "ROUTINE",
+    jobValueBand: "MEDIUM",
+    scheduledStart: new Date().toISOString(),
+    jobSiteId: null,
+    assignedTechUserId: DISPATCH_TECH_JORDAN,
+    assignedTechName: "Jordan Kim",
+    score: 0.74,
+    confidence: 0.88,
+    skillFit: 0.90,
+    availability: 0.70,
+    proximity: 0.62,
+    priority: 0.40,
+    skillMatched: true,
+    rationale:
+      "Jordan Kim is AC-certified and has a lighter load today. The site is a reasonable drive; no higher-urgency work competes for their slot.",
+    unassignedReason: null,
+  },
+  {
+    workOrderId: DISPATCH_WO_3,
+    workOrderNumber: "WO-1043",
+    title: "Visible pipe leak — kitchen ceiling",
+    serviceType: "Plumbing",
+    urgency: "URGENT",
+    jobValueBand: "MEDIUM",
+    scheduledStart: new Date().toISOString(),
+    jobSiteId: null,
+    assignedTechUserId: DISPATCH_TECH_ALEX,
+    assignedTechName: "Alex Chen",
+    score: 0.68,
+    confidence: 0.72,
+    skillFit: 0.55,
+    availability: 0.80,
+    proximity: 0.75,
+    priority: 0.70,
+    skillMatched: false,
+    rationale:
+      "No plumbing-certified tech is available today. Alex Chen is the nearest general-trades technician with capacity — a temporary assignment until a certified plumber opens up.",
+    unassignedReason: null,
+  },
+];
+
+const SEED_DISPATCH_UNASSIGNED: ProposedAssignment[] = [
+  {
+    workOrderId: DISPATCH_WO_4,
+    workOrderNumber: "WO-1044",
+    title: "Boiler inspection — annual service",
+    serviceType: "Boiler",
+    urgency: "ROUTINE",
+    jobValueBand: "SMALL",
+    scheduledStart: new Date(Date.now() + 86400000).toISOString(),
+    jobSiteId: null,
+    assignedTechUserId: null,
+    assignedTechName: null,
+    score: 0,
+    confidence: 0,
+    skillFit: 0,
+    availability: 0,
+    proximity: 0,
+    priority: 0.2,
+    skillMatched: false,
+    rationale: "No eligible technician available for this work order.",
+    unassignedReason:
+      "No available technician has the Boiler service skill. Schedule for a day when a certified boiler tech is on the roster.",
+  },
+];
+
+const SEED_DISPATCH_PLAN = (date: string): DispatchPlan => ({
+  date,
+  assignments: SEED_DISPATCH_ASSIGNMENTS.map((a) => ({ ...a })),
+  unassigned: SEED_DISPATCH_UNASSIGNED.map((a) => ({ ...a })),
+  openCount: 4,
+  assignedCount: 3,
+  unassignedCount: 1,
+  skillMatchRate: 0.667,
+  avgFitScore: 0.777,
+});
+
+const SEED_DISPATCH_ANALYTICS = (date: string): DispatchAnalytics => ({
+  date,
+  totalOpen: 4,
+  assigned: 3,
+  unassigned: 1,
+  skillMatched: 2,
+  skillMatchRate: 0.667,
+  avgFitScore: 0.777,
+});
+
+/** Track which (date → workOrderId set) have been applied. */
+type AppliedState = Map<string, Set<string>>;
+let appliedState: AppliedState = new Map();
+
+export const dispatchStore = {
+  /**
+   * GET /dispatch/optimize?date=<ISO date>
+   * Returns the seeded DispatchPlan. The same plan is returned regardless of
+   * the date — in tests we just verify shape + field values.
+   */
+  optimize(date: string): DispatchPlan {
+    return SEED_DISPATCH_PLAN(date);
+  },
+
+  /**
+   * POST /dispatch/apply — idempotent apply.
+   *
+   * First call: all decisions are "new" → applied = decisions.length, skipped = 0.
+   * Re-apply of the same decisions (same date + same WO ids): applied = 0,
+   * skipped = decisions.length (the idempotent proof, mirroring ApplyResponse
+   * semantics from the BE Javadoc).
+   */
+  apply(body: ApplyRequest): ApplyResponse {
+    const dateKey = body.date ?? "unknown";
+    const existing = appliedState.get(dateKey) ?? new Set<string>();
+    let applied = 0;
+    let skipped = 0;
+    for (const d of body.assignments ?? []) {
+      if (!d?.workOrderId) continue;
+      if (existing.has(d.workOrderId)) {
+        skipped++;
+      } else {
+        existing.add(d.workOrderId);
+        applied++;
+      }
+    }
+    appliedState.set(dateKey, existing);
+    return { applied, skipped };
+  },
+
+  /**
+   * GET /dispatch/analytics?date=<ISO date>
+   * Returns seeded analytics consistent with the plan.
+   */
+  analytics(date: string): DispatchAnalytics {
+    return SEED_DISPATCH_ANALYTICS(date);
+  },
+
+  /** TEST-ONLY: reset applied state to seeds. */
+  reset() {
+    appliedState = new Map();
   },
 };

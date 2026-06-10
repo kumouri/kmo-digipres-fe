@@ -627,6 +627,28 @@ export const STYLER_MATCH_STATUS_LABELS: Record<string, string> = {
   BOOKED: "Booked",
 };
 
+// --- Home Services T14 "DispatchIQ" — dispatcher optimize console -----------
+// Labels for the dispatch office surfaces. A dispatcher reads these at a glance
+// when reviewing the AI-proposed tech assignments and unassigned jobs.
+
+// The urgency signal on a work order (from customFields.urgency). Plain words
+// so the dispatcher reads priority at a glance in the assignment table.
+// Mirrors the URGENCY_LABELS already used by the Missed-Call Inbox but scoped
+// to dispatch so the two surfaces can evolve independently.
+export const DISPATCH_URGENCY_LABELS: Record<string, string> = {
+  EMERGENCY: "Emergency",
+  URGENT: "Urgent",
+  ROUTINE: "Routine",
+};
+
+// The coarse job-value band on a work order (from customFields.jobValueBand).
+// Plain words so the dispatcher reads revenue potential at a glance.
+export const DISPATCH_JOB_VALUE_LABELS: Record<string, string> = {
+  LARGE: "High value",
+  MEDIUM: "Mid value",
+  SMALL: "Low value",
+};
+
 // --- Home Services T13 "Tech Copilot" — grounded Q&A + corpus manager -------
 // Labels for the tech-copilot office surfaces. A field tech or office staff
 // reads these at a glance in the ask panel and the doc corpus list.

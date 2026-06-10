@@ -35,6 +35,7 @@ import {
   Receipt,
   ReceiptText,
   RefreshCw,
+  Route,
   Scissors,
   ScrollText,
   Settings2,
@@ -103,6 +104,12 @@ const NAV_ITEMS: NavItem[] = [
   // no substring collision with "Job estimates", "Estimate settings",
   // "Quote follow-up", "Callback queue", or any other Home Services label.
   { to: "/tech-copilot", label: "Tech copilot", icon: BotMessageSquare, hideForContractor: true },
+  // T14 — Home "DispatchIQ" — dispatcher optimize console (AI-proposed tech
+  // assignments + apply plan + analytics). "Dispatch" is distinct from all
+  // existing nav labels — no substring collision with "Callback queue",
+  // "Tech copilot", "Job estimates", "Estimate settings", "Quote follow-up",
+  // "Missed Calls", or any other nav label.
+  { to: "/dispatch", label: "Dispatch", icon: Route, hideForContractor: true },
   { to: "/no-show-risk", label: "No-show risk", icon: ShieldAlert, hideForContractor: true },
   { to: "/waitlist", label: "Waitlist", icon: ListChecks, hideForContractor: true },
   { to: "/salon-reviews", label: "Salon reviews", icon: MessagesSquare, hideForContractor: true },
