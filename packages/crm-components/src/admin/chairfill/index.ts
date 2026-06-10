@@ -3,3 +3,4 @@ export { WaitlistBoard } from "./WaitlistBoard";
 export { SalonReviewInbox } from "./SalonReviewInbox";
 export { ReviewBoostBoard } from "./ReviewBoostBoard";
 export { StyleConsultInbox } from "./StyleConsultInbox";
+export { StylerMatchConsole } from "./StylerMatchConsole";

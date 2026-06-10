@@ -615,3 +615,14 @@ export const QUOTE_CLOSER_FUNNEL_LABELS: Record<string, string> = {
   recovered: "Recovered",
   reviewRequested: "Review requested",
 };
+
+// --- Salon T12 "StylerMatch" — stylist-match console labels ------------------
+// Labels for the styler-match office surfaces. A salon coordinator reads these
+// at a glance to triage the match queue and interpret ranked results.
+
+// The lifecycle of a submitted stylist match. NEW = ranked board ready;
+// BOOKED = a ranked stylist was accepted and a real Booking was created.
+export const STYLER_MATCH_STATUS_LABELS: Record<string, string> = {
+  NEW: "New",
+  BOOKED: "Booked",
+};
