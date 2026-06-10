@@ -11,6 +11,8 @@ import type {
   CallbackCardDTO,
   CallbackRecoveryStats,
   CallbackConfig,
+  SalonReviewBoard,
+  ReviewBoostConfig,
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
@@ -5273,5 +5275,70 @@ export const callbackStore = {
       acceptanceRate: 105 / 150,
       dispatchRate: 82 / 105,
     };
+  },
+};
+
+// =============================================================================
+// Salon "ReviewBoost" (T6) — per-stylist review insights + config status
+// =============================================================================
+//
+// Three stylists with uneven request counts so the per-stylist rows are visibly
+// different. Mia (28 requests) leads, Jordan (14) is mid-pack, Alex (3) is new.
+// The tenant-level review block has 18 reviews — positives dominant, one negative
+// so the board isn't all-green. Config has the review link set but the three
+// feature flags off (the default-OFF baseline).
+
+const SEED_SALON_BOARD: SalonReviewBoard = {
+  reviewCount: 18,
+  averageRating: 4.6,
+  positiveCount: 14,
+  neutralCount: 3,
+  negativeCount: 1,
+  unclassifiedCount: 0,
+  totalRequestsSent: 45,
+  totalRequestsResponded: 18,
+  overallResponseRate: 18 / 45,
+  stylists: [
+    {
+      staffMemberId: "aa000001-0000-0000-0000-000000000001",
+      displayName: "Mia Torres",
+      requestsSent: 28,
+      requestsResponded: 12,
+      responseRate: 12 / 28,
+    },
+    {
+      staffMemberId: "aa000002-0000-0000-0000-000000000002",
+      displayName: "Jordan Kim",
+      requestsSent: 14,
+      requestsResponded: 5,
+      responseRate: 5 / 14,
+    },
+    {
+      staffMemberId: "aa000003-0000-0000-0000-000000000003",
+      displayName: "Alex Rivera",
+      requestsSent: 3,
+      requestsResponded: 1,
+      responseRate: 1 / 3,
+    },
+  ],
+};
+
+const SEED_REVIEW_BOOST_CONFIG: ReviewBoostConfig = {
+  reviewLinkConfigured: true,
+  reviewLink: "https://g.page/bella-vita-salon/review",
+  senderEnabled: false,
+  sentimentRefineEnabled: false,
+  negativeAlertEnabled: false,
+};
+
+export const reviewBoostStore = {
+  /** GET /chairfill/reviewboost/insights — returns the seeded board. */
+  getInsights(): SalonReviewBoard {
+    return { ...SEED_SALON_BOARD, stylists: SEED_SALON_BOARD.stylists.map((s) => ({ ...s })) };
+  },
+
+  /** GET /chairfill/reviewboost/config — returns the seeded config. */
+  getConfig(): ReviewBoostConfig {
+    return { ...SEED_REVIEW_BOOST_CONFIG };
   },
 };

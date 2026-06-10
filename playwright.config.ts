@@ -8,7 +8,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // CI workers: the smoke suite grew with each shipped module; serial (1 worker)
+  // crossed the CI job's wall-clock cap. 2 workers (ubuntu-latest has >=2 vCPUs)
+  // roughly halves it; tests are MSW-isolated + clearCookies-per-test so they
+  // parallelize safely, and retries:2 still covers any transient contention.
+  workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: `http://localhost:${PORT}`,

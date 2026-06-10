@@ -508,3 +508,21 @@ export const RESPONDER_LEAD_TIER_LABELS: Record<string, string> = {
   WARM: "Warm leads",
   COLD: "Long-dormant leads",
 };
+
+// --- Salon "ReviewBoost" (T6) — per-stylist review insights board ------------
+// Copy for the ReviewBoost board: config flag status display so the salon
+// manager knows at a glance whether the feature is actually wired up.
+// Plain, non-technical labels — a front-desk manager, not an engineer, reads these.
+
+/** Short label for a boolean ReviewBoost flag when it is ON. */
+export const REVIEW_BOOST_FLAG_ON = "On";
+
+/** Short label for a boolean ReviewBoost flag when it is OFF (default). */
+export const REVIEW_BOOST_FLAG_OFF = "Off (default)";
+
+/** Human-readable names for each ReviewBoostConfig flag. */
+export const REVIEW_BOOST_FLAG_LABELS: Record<string, string> = {
+  senderEnabled: "Auto-send review requests",
+  sentimentRefineEnabled: "AI sentiment refinement",
+  negativeAlertEnabled: "Negative review alerts",
+};
