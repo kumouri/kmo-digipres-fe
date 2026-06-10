@@ -103,6 +103,7 @@ import {
   styleConsultStore,
   listingPrepStore,
   quoteCloserStore,
+  stylerMatchStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -2743,6 +2744,100 @@ export const handlers = [
     ({ request }) => {
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       styleConsultStore.resetConsults();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // ── Salon T12 "StylerMatch" ────────────────────────────────────────────────
+  // POST /stylermatch/matches   — create a match (staff desk)
+  // GET  /stylermatch/matches   — inbox list
+  // GET  /stylermatch/matches/:id — detail (4485 if absent)
+  // GET  /stylermatch/analytics — accept-rate funnel
+  // POST /stylermatch/tokens    — issue widget token (ADMIN)
+  // POST /public/integrations/stylermatch/:token/matches/:matchId/accept — book
+  // POST /stylermatch/matches/test-reset — TEST-ONLY
+
+  // POST /stylermatch/matches (create)
+  http.post(`${API_BASE}/stylermatch/matches`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    let body: Record<string, unknown> = {};
+    try {
+      const text = await request.text();
+      if (text) body = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      // body is optional
+    }
+    const result = stylerMatchStore.create({
+      styleCategory: body.styleCategory as string | null,
+      serviceMenuItemId: body.serviceMenuItemId as string | null,
+      length: body.length as string | null,
+      texture: body.texture as string | null,
+      color: body.color as string | null,
+      name: body.name as string | null,
+      phone: body.phone as string | null,
+      notes: body.notes as string | null,
+    });
+    return HttpResponse.json(result, { status: 201 });
+  }),
+
+  // GET /stylermatch/matches[?status=]
+  http.get(`${API_BASE}/stylermatch/matches`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status") ?? undefined;
+    return HttpResponse.json(stylerMatchStore.list(status));
+  }),
+
+  // GET /stylermatch/matches/:id
+  http.get(`${API_BASE}/stylermatch/matches/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const id = String(params.id);
+    const match = stylerMatchStore.get(id);
+    if (!match) {
+      return HttpResponse.json(
+        { code: 4485, message: "Styler match not found" },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(match);
+  }),
+
+  // GET /stylermatch/analytics
+  http.get(`${API_BASE}/stylermatch/analytics`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(stylerMatchStore.getAnalytics());
+  }),
+
+  // POST /stylermatch/tokens (ADMIN-gated)
+  http.post(`${API_BASE}/stylermatch/tokens`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(stylerMatchStore.issueToken(), { status: 201 });
+  }),
+
+  // POST /public/integrations/stylermatch/:token/matches/:matchId/accept
+  // The public accept endpoint — resolves tenant from token; books top stylist.
+  // MSW: token is ignored (no JWT verify in mock); matchId drives the state machine.
+  http.post(
+    `/public/integrations/stylermatch/:token/matches/:matchId/accept`,
+    ({ params }) => {
+      const matchId = String(params.matchId);
+      const result = stylerMatchStore.bookTopMatch(matchId);
+      if (!result) {
+        return HttpResponse.json(
+          { code: 4485, message: "Styler match not found" },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // TEST-ONLY: reset match rows to seeds
+  http.post(
+    `${API_BASE}/stylermatch/matches/test-reset`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      stylerMatchStore.resetMatches();
       return new HttpResponse(null, { status: 204 });
     },
   ),

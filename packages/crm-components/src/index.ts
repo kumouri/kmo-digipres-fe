@@ -195,6 +195,7 @@ export {
   SalonReviewInbox,
   ReviewBoostBoard,
   StyleConsultInbox,
+  StylerMatchConsole,
 } from "./admin/chairfill";
 export { useChairFillApi } from "./hooks/useChairFillApi";
 // Salon "ReviewBoost" (T6) — per-stylist review-insights board + config status
@@ -386,3 +387,19 @@ export type {
   QuoteCloserConfigDTO,
   QuoteCloserAnalytics,
 } from "./api/quote-closer";
+// Salon T12 "StylerMatch" — staff stylist-match console: create-match form
+// (service + style attributes) → ranked best-fit stylists (rationale + score
+// + "not certified" badge) + Book-top-match action + match inbox + accept-rate
+// analytics panel + "Copy match widget link" token-issue. Hand-written client
+// (the BE StylerMatchController and StylerMatchTokenController are
+// @ConditionalOnProperty(kmosf.modules.chairfill)-gated, so all routes are
+// absent from the generated openapi types — the T9 StyleConsultInbox /
+// T6 ReviewBoostBoard precedent).
+export { useStylerMatchApi } from "./hooks/useStylerMatchApi";
+export type {
+  StylerMatchStatus,
+  RankedMatch,
+  StylerMatchResponse,
+  StylerMatchAnalytics,
+  StylerMatchRequestBody,
+} from "./api/stylermatch";

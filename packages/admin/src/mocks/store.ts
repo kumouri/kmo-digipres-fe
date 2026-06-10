@@ -3,6 +3,11 @@
 // online. Not exported to the prod bundle.
 
 import type {
+  StylerMatchResponse,
+  StylerMatchAnalytics,
+  RankedMatch,
+} from "@kmosf/crm-components";
+import type {
   ArAgingReport,
   MidnightResponderConfig,
   MidnightResponderLatencyStats,
@@ -6423,5 +6428,259 @@ export const quoteCloserStore = {
   /** TEST-ONLY: reset config to seed. */
   resetConfig() {
     qcConfigRow = { ...SEED_QC_CONFIG };
+  },
+};
+
+// =============================================================================
+// Salon T12 "StylerMatch" — match inbox + analytics + token-issue + book
+// =============================================================================
+//
+// Three seeded matches with diverse statuses:
+//   1. Jordan — NEW, curly/mid — top match: Mia Torres (certified, 0.92);
+//      second: Alex Rivera (NOT certified, penalized, 0.53). Both have
+//      rationale + score breakdown visible.
+//   2. Casey — NEW, straight/long/platinum — top match: Jordan Kim (0.87);
+//      single-stylist result (no eligible-service penalty).
+//   3. Riley — BOOKED, wavy/short — already accepted rank-1 (Mia Torres),
+//      bookingId present, selectedRank = 1.
+//
+// Analytics seed: 42 total, 31 booked, 28 by rank-1, 2 by rank-2, 1 by rank-3+
+// → ~74% booking rate, ~90% rank-1 accept rate, avg top score 0.88.
+
+// Stable UUIDs.
+const SM_MATCH_JORDAN = "sm000001-0000-0000-0000-000000000001";
+const SM_MATCH_CASEY = "sm000002-0000-0000-0000-000000000002";
+const SM_MATCH_RILEY = "sm000003-0000-0000-0000-000000000003";
+
+const SM_STAFF_MIA = "sm-staff-00-0000-0000-0000-000000000001";
+const SM_STAFF_ALEX = "sm-staff-00-0000-0000-0000-000000000002";
+const SM_STAFF_JORDAN_KIM = "sm-staff-00-0000-0000-0000-000000000003";
+
+const SM_BOOKING_RILEY = "sm-bk0001-0000-0000-0000-000000000001";
+
+/** Rank-1 certified stylist — high specialty fit */
+const MIA_RANKED_CERTIFIED: RankedMatch = {
+  staffMemberId: SM_STAFF_MIA,
+  displayName: "Mia Torres",
+  score: 0.92,
+  confidence: 0.91,
+  rationale:
+    "Mia's specialty is curly and textured hair — she's your highest-fit stylist for this look. Your salon will confirm the booking.",
+  specialtyFit: 0.95,
+  availability: 0.88,
+  preference: 0.0,
+  eligibleForRequestedService: true,
+};
+
+/** Rank-2 NOT certified stylist — penalized */
+const ALEX_RANKED_NOT_CERTIFIED: RankedMatch = {
+  staffMemberId: SM_STAFF_ALEX,
+  displayName: "Alex Rivera",
+  score: 0.53,
+  confidence: 0.72,
+  rationale:
+    "Alex has strong availability and good color experience, but is not certified for the requested cut service — shown here for reference only. Your salon must confirm eligibility before booking.",
+  specialtyFit: 0.61,
+  availability: 0.82,
+  preference: 0.0,
+  eligibleForRequestedService: false,
+};
+
+/** Jordan Kim ranked match — single certified stylist for the straight match */
+const JORDAN_KIM_RANKED: RankedMatch = {
+  staffMemberId: SM_STAFF_JORDAN_KIM,
+  displayName: "Jordan Kim",
+  score: 0.87,
+  confidence: 0.89,
+  rationale:
+    "Jordan specialises in fine, straight styles and platinum toning — excellent fit for this request. Your salon will confirm the booking.",
+  specialtyFit: 0.91,
+  availability: 0.83,
+  preference: 0.0,
+  eligibleForRequestedService: true,
+};
+
+/** Mia Torres for the already-booked Riley match */
+const MIA_BOOKED_FOR_RILEY: RankedMatch = {
+  staffMemberId: SM_STAFF_MIA,
+  displayName: "Mia Torres",
+  score: 0.9,
+  confidence: 0.88,
+  rationale:
+    "Mia was the top-ranked match for this wavy short style — already booked. Your salon confirmed the appointment.",
+  specialtyFit: 0.92,
+  availability: 0.88,
+  preference: 0.0,
+  eligibleForRequestedService: true,
+};
+
+const SEED_STYLER_MATCHES: StylerMatchResponse[] = [
+  {
+    matchId: SM_MATCH_JORDAN,
+    serviceMenuItemId: "svc-001",
+    serviceMenuItemName: "Curl Cut & Shape",
+    styleCategory: "Curly / wavy",
+    slotStart: null,
+    slotEnd: null,
+    confidence: 0.88,
+    rankedMatches: [MIA_RANKED_CERTIFIED, ALEX_RANKED_NOT_CERTIFIED],
+    status: "NEW",
+    selectedStaffMemberId: null,
+    selectedRank: null,
+    bookingId: null,
+  },
+  {
+    matchId: SM_MATCH_CASEY,
+    serviceMenuItemId: "svc-003",
+    serviceMenuItemName: "Platinum Toning Service",
+    styleCategory: "Straight / sleek",
+    slotStart: null,
+    slotEnd: null,
+    confidence: 0.85,
+    rankedMatches: [JORDAN_KIM_RANKED],
+    status: "NEW",
+    selectedStaffMemberId: null,
+    selectedRank: null,
+    bookingId: null,
+  },
+  {
+    matchId: SM_MATCH_RILEY,
+    serviceMenuItemId: "svc-004",
+    serviceMenuItemName: "Texture Cut (Short)",
+    styleCategory: "Wavy / beachy",
+    slotStart: null,
+    slotEnd: null,
+    confidence: 0.86,
+    rankedMatches: [MIA_BOOKED_FOR_RILEY],
+    status: "BOOKED",
+    selectedStaffMemberId: SM_STAFF_MIA,
+    selectedRank: 1,
+    bookingId: SM_BOOKING_RILEY,
+  },
+];
+
+const SEED_STYLER_MATCH_ANALYTICS: StylerMatchAnalytics = {
+  totalMatches: 42,
+  matchesBooked: 31,
+  bookingRate: 31 / 42, // ~0.738
+  top1BookedCount: 28,
+  top2BookedCount: 2,
+  top3PlusBookedCount: 1,
+  top1AcceptRate: 28 / 31, // ~0.903
+  avgTopScore: 0.88,
+};
+
+let stylerMatchRows: StylerMatchResponse[] = SEED_STYLER_MATCHES.map(
+  (m) => ({ ...m, rankedMatches: [...m.rankedMatches] }),
+);
+
+export const stylerMatchStore = {
+  /**
+   * GET /stylermatch/matches[?status=<StylerMatchStatus>] — inbox list newest-first.
+   */
+  list(status?: string): StylerMatchResponse[] {
+    const rows = status
+      ? stylerMatchRows.filter((m) => m.status === status)
+      : stylerMatchRows;
+    return rows
+      .slice()
+      .sort((a, b) => (b.matchId > a.matchId ? 1 : -1))
+      .map((m) => ({ ...m, rankedMatches: [...m.rankedMatches] }));
+  },
+
+  /**
+   * POST /stylermatch/matches — create a new match (returns seeded result).
+   * In the mock, always returns the Jordan-style result as a newly created match.
+   */
+  create(body: {
+    styleCategory?: string | null;
+    serviceMenuItemId?: string | null;
+    length?: string | null;
+    texture?: string | null;
+    color?: string | null;
+    name?: string | null;
+    phone?: string | null;
+    notes?: string | null;
+  }): StylerMatchResponse {
+    const newId = `sm-new-${Date.now()}-0000-0000-0000-000000000001`;
+    const created: StylerMatchResponse = {
+      matchId: newId,
+      serviceMenuItemId: body.serviceMenuItemId ?? null,
+      serviceMenuItemName: null,
+      styleCategory: body.styleCategory ?? null,
+      slotStart: null,
+      slotEnd: null,
+      confidence: 0.88,
+      rankedMatches: [
+        { ...MIA_RANKED_CERTIFIED },
+        { ...ALEX_RANKED_NOT_CERTIFIED },
+      ],
+      status: "NEW",
+      selectedStaffMemberId: null,
+      selectedRank: null,
+      bookingId: null,
+    };
+    stylerMatchRows = [created, ...stylerMatchRows];
+    return { ...created, rankedMatches: [...created.rankedMatches] };
+  },
+
+  /**
+   * GET /stylermatch/matches/{id} — full detail (4485 if absent).
+   */
+  get(id: string): StylerMatchResponse | null {
+    return stylerMatchRows.find((m) => m.matchId === id) ?? null;
+  },
+
+  /**
+   * GET /stylermatch/analytics — accept-rate funnel.
+   */
+  getAnalytics(): StylerMatchAnalytics {
+    return { ...SEED_STYLER_MATCH_ANALYTICS };
+  },
+
+  /**
+   * POST /stylermatch/tokens — issue a stable fake widget token.
+   */
+  issueToken(): { token: string } {
+    return { token: "msw-styler-match-token-abc123" };
+  },
+
+  /**
+   * POST /public/integrations/stylermatch/{token}/matches/{matchId}/accept
+   * Books the top-ranked stylist on the match.
+   * Returns 4485/404 if not found.
+   */
+  bookTopMatch(
+    matchId: string,
+  ): StylerMatchResponse | null {
+    const idx = stylerMatchRows.findIndex((m) => m.matchId === matchId);
+    if (idx === -1) return null;
+    const match = stylerMatchRows[idx];
+    if (match.status === "BOOKED") {
+      // Already booked — re-confirm idempotently.
+      return { ...match, rankedMatches: [...match.rankedMatches] };
+    }
+    const topRanked = match.rankedMatches[0];
+    const booked: StylerMatchResponse = {
+      ...match,
+      status: "BOOKED",
+      selectedStaffMemberId: topRanked?.staffMemberId ?? null,
+      selectedRank: 1,
+      bookingId: `sm-bk-new-${Date.now().toString(36)}-0000`,
+      rankedMatches: [...match.rankedMatches],
+    };
+    stylerMatchRows = [
+      ...stylerMatchRows.slice(0, idx),
+      booked,
+      ...stylerMatchRows.slice(idx + 1),
+    ];
+    return { ...booked, rankedMatches: [...booked.rankedMatches] };
+  },
+
+  /** TEST-ONLY: reset match rows to seeds. */
+  resetMatches() {
+    stylerMatchRows = SEED_STYLER_MATCHES.map(
+      (m) => ({ ...m, rankedMatches: [...m.rankedMatches] }),
+    );
   },
 };

@@ -102,6 +102,10 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/salon-reviews", label: "Salon reviews", icon: MessagesSquare, hideForContractor: true },
   { to: "/review-boost", label: "ReviewBoost", icon: Star, hideForContractor: true },
   { to: "/style-consults", label: "Style consults", icon: Scissors, hideForContractor: true },
+  // Salon T12 "StylerMatch" — staff stylist-match console. "Stylist match" is
+  // distinct from all existing nav labels — no substring collision with
+  // "Style consults" (/style-consults) or any other label.
+  { to: "/styler-match", label: "Stylist match", icon: Users, hideForContractor: true },
   { to: "/listings", label: "Listings", icon: Home, hideForContractor: true },
   { to: "/concierge", label: "Concierge", icon: Sparkles, hideForContractor: true },
   { to: "/marketing-review", label: "Marketing review", icon: Megaphone, hideForContractor: true },

@@ -174,6 +174,15 @@ const ReviewBoostBoard = lazy(() =>
 const StyleConsultInbox = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.StyleConsultInbox })),
 );
+// Salon T12 "StylerMatch" — staff stylist-match console: create-match form →
+// ranked best-fit stylists (rationale + score + not-certified badge) +
+// Book-top-match + match inbox + accept-rate analytics + token-issue.
+// Hand-written client (@ConditionalOnProperty(kmosf.modules.chairfill)-gated;
+// absent from openapi.json — the T9 StyleConsultInbox precedent). Gated behind
+// RequireNotContractor grouped with the other ChairFill surfaces.
+const StylerMatchConsole = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.StylerMatchConsole })),
+);
 const ListingConsole = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ListingConsole })),
 );
@@ -424,6 +433,16 @@ export const router = createBrowserRouter([
                   // surfaces (the T6 ReviewBoostBoard / T8 QuoteInbox precedent).
                   // A contractor deep-linking is bounced.
                   { path: "style-consults", element: <StyleConsultInbox /> },
+                  // Salon T12 "StylerMatch" — staff stylist-match console:
+                  // create-match form → ranked best-fit stylists (rationale +
+                  // score + not-certified badge) + Book-top-match + match inbox
+                  // + accept-rate analytics + "Copy match widget link". The BE
+                  // StylerMatchController and StylerMatchTokenController are
+                  // @ConditionalOnProperty(kmosf.modules.chairfill)-gated; gated
+                  // behind RequireNotContractor grouped with the other ChairFill
+                  // surfaces (the T9 StyleConsultInbox precedent). A contractor
+                  // deep-linking is bounced.
+                  { path: "styler-match", element: <StylerMatchConsole /> },
                   // Real Estate Concierge flagship (RE-5b) — staff-visible, like
                   // the ChairFill surfaces (the BE listing/concierge/marketing
                   // routes are STAFF-gated). A contractor deep-linking is bounced.
