@@ -134,6 +134,22 @@ Admin UI for the backend T9 **StyleConsult AI** — the staff consult-inbox surf
 - **MSW**: `styleConsultStore` (store.ts) seeds 3 consults (Brianna NEW/VISION curly 2-service 3-retail; Chloe NEW/MANUAL straight 1-service 2-retail; Devon BOOKED wavy 1-service 1-retail) + retail ordered high→mid→low margin so ordering is visible in smoke + analytics (28 total / 21 with-retail / 12 booked / 10 booked+retail, ~83% attach rate) + token endpoint. Test-control `POST /styleconsult/consults/test-reset`. Spec: `tests/styleconsult.spec.ts` (15).
 - **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md), homeowner-facing intake widget UI (the token endpoint surfaces the link to share).
 
+## Home Services "QuoteCloser" — follow-up config + recovery funnel (T11, SHIPPED)
+
+Admin UI for the backend T11 **QuoteCloser** — per-tenant follow-up configuration + the quote abandonment + recovery funnel analytics. Branch `home-quotecloser-fe`; smoke +15 specs (313→328).
+
+| Area | Route | API surface |
+|---|---|---|
+| Quote follow-up (`<RequireNotContractor>`) | `/quote-follow-up` | GET /quoting/quote-closer/config → `QuoteCloserConfigDTO` (4470/404 if none); PUT /quoting/quote-closer/config body `QuoteCloserConfigDTO` → `QuoteCloserConfigDTO` (ADMIN); GET /quoting/quote-closer/analytics → `QuoteCloserAnalytics` (staff-accessible) |
+
+- **Hand-written client** `api/quote-closer.ts` + hook `useQuoteCloserApi` — both the `QuoteCloserConfigController` and `QuoteCloserController` are `@ConditionalOnProperty(kmosf.modules.quoting.enabled)`-gated AND require the nurture module, so all routes are **absent from `openapi.json`** (the T8 PriceBookController / T5 CallbackController precedent). DTOs typed field-by-field from the BE records: `QuoteCloserConfigDTO` (campaignId, unacceptedWindowHours — both nullable for partial upsert), `QuoteCloserAnalytics` (quotesSent, followedUp, recovered, reviewRequested, recoveryRate). `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/home-services/QuoteCloserSettings.tsx` — two sections: (1) `QuoteCloserConfigCard` (react-hook-form + zod; cadence enable toggle; follow-up window input in hours — disabled when cadence is off; financing-nudge copy textarea; PUT on save; 4470/404 → friendly empty-state banner + blank form for initial setup); (2) `RecoveryFunnelPanel` (TanStack Query → 5 stat cards: quotes sent / followed up / recovered / review requested / recovery rate; no-data empty state). Route: `/quote-follow-up`.
+- **Route guard:** behind `RequireNotContractor` grouped with the other Home Services surfaces (the T8 PriceBookConfig / T5 CallbackQueue precedent). Config endpoints are ADMIN-gated; analytics is staff-accessible.
+- **New labels** in `admin/labels.ts`: `QUOTE_CLOSER_FUNNEL_LABELS` (human names for the five funnel steps).
+- **Nav item:** `MailCheck` icon "Quote follow-up" (`/quote-follow-up`), `hideForContractor: true`, inserted after "Estimate settings" in `AppShell.tsx` NAV_ITEMS. Label chosen to avoid Playwright partial-match collision with existing "Quotes" (/quotes), "Job estimates" (/instant-quotes), and "Estimate settings" (/quote-settings).
+- **MSW**: `quoteCloserStore` (store.ts) seeds a config row (48-hour window, campaign linked, cadence on) + realistic analytics (120 sent / 84 followed-up / 31 recovered / 27 review-requested / ~36.9% recovery rate). `saveConfig` mirrors BE partial-upsert logic (null fields preserve prior values). `clearConfig()` exercises the 4470 empty-state path. `resetConfig()` restores seed state. Test-control `POST /quoting/quote-closer/test-clear-config` + `POST /quoting/quote-closer/test-reset-config`. Spec: `tests/quote-closer.spec.ts` (15).
+- **Out of scope:** per-tenant module enablement, campaign-picker UI for `campaignId` (the nurture campaign list is not surfaced here — campaignId is preserved by the BE partial-upsert; wiring a campaign-picker dropdown deferred to a future pass once a shared campaign-list component is available), Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md).
+
 ## Home Services "QuoteNow" — quote inbox + price-book config (T8, SHIPPED)
 
 Admin UI for the backend T8 **QuoteNow** — staff quote-inbox + admin price-book configuration surfaces for the home-services vertical. Branch `home-quotenow-fe`; smoke +19 specs (285 total).
