@@ -166,6 +166,24 @@ export type {
   CallbackConfig,
   CallbackConfigRequest,
 } from "./api/home-callback";
+// Home Services T8 "QuoteNow" — office quote-inbox (list + detail: attributes,
+// price range, repair-vs-replace, status) + price-book config card + homeowner
+// widget token-issue. Hand-written client (the BE QuoteInboxController,
+// PriceBookController, and QuoteIntakeTokenController are
+// @ConditionalOnProperty(kmosf.modules.quoting)-gated, so all routes are absent
+// from the generated openapi types — the T5 CallbackController precedent).
+export { QuoteInbox, PriceBookConfig } from "./admin/home-services";
+export { useQuotingApi } from "./hooks/useQuotingApi";
+export type {
+  QuoteStatus,
+  Recommendation,
+  AttributeSource,
+  JobKind,
+  QuoteInboxCard,
+  QuoteResponse,
+  PriceBookLineItem,
+  PriceBook,
+} from "./api/quoting";
 // ChairFill — salon flagship (CF-5) — three staff surfaces: the no-show risk
 // view, the gap-fill waitlist board, and the salon review inbox (reuses the
 // shared review-replies queue + adds a paste-in). Hand-written client (the BE

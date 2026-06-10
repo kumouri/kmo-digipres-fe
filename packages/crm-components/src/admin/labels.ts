@@ -477,6 +477,29 @@ export const HIPAA_FLAG_CATEGORY_LABELS: Record<string, string> = {
   CLINICAL: "Names care",
 };
 
+// --- Home Services "QuoteNow" (T8) — office quote-inbox + price book --------
+// Plain labels for the instant-quote office surfaces. The homeowner sees the
+// same estimates directly in the intake widget; these labels are the
+// dispatcher's read surface so they scan quickly without decoding acronyms.
+
+// The lifecycle of a submitted homeowner quote request.
+// NEW = just arrived; ACCEPTED = homeowner accepted the estimate;
+// BOOKED = visit confirmed on calendar; DECLINED = homeowner declined.
+export const QUOTE_NOW_STATUS_LABELS: Record<string, string> = {
+  NEW: "New",
+  ACCEPTED: "Accepted",
+  BOOKED: "Booked",
+  DECLINED: "Declined",
+};
+
+// The AI's repair-vs-replace verdict. Plain action words — a dispatcher reads
+// these at a glance and knows what to lead with on the follow-up call.
+export const QUOTE_NOW_RECOMMENDATION_LABELS: Record<string, string> = {
+  REPAIR: "Repair recommended",
+  REPLACE: "Replace recommended",
+  DIAGNOSTIC_VISIT: "Diagnostic visit needed",
+};
+
 // --- Health "RevenueRevive" — dormant-patient reactivation funnel (T2) ------
 // PHI-free by design: these labels are logistics-only — no clinical status,
 // diagnosis, or procedure names. The enrolled patient's place in the funnel

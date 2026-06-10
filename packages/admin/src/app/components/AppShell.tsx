@@ -87,6 +87,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/inbox", label: "Inbox", icon: Inbox, hideForContractor: true },
   { to: "/missed-calls", label: "Missed Calls", icon: PhoneMissed, hideForContractor: true },
   { to: "/callback-queue", label: "Callback queue", icon: Zap, hideForContractor: true },
+  { to: "/instant-quotes", label: "Job estimates", icon: ClipboardList, hideForContractor: true },
+  { to: "/quote-settings", label: "Estimate settings", icon: Settings2, hideForContractor: true },
   { to: "/no-show-risk", label: "No-show risk", icon: ShieldAlert, hideForContractor: true },
   { to: "/waitlist", label: "Waitlist", icon: ListChecks, hideForContractor: true },
   { to: "/salon-reviews", label: "Salon reviews", icon: MessagesSquare, hideForContractor: true },
