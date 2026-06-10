@@ -94,6 +94,11 @@ import type {
   WaitlistOffer,
 } from "@kmosf/crm-components";
 import type { components } from "@kmosf/crm-components";
+import type {
+  ListingPrepPack,
+  SocialPost,
+  PrepFairHousingFlag,
+} from "@kmosf/crm-components";
 
 type Attachment = components["schemas"]["Attachment"];
 
@@ -3786,6 +3791,291 @@ export const realEstateStore = {
   },
   getConversation(id: string): ConciergeConversationDetailDTO | undefined {
     return reConversations.get(id);
+  },
+};
+
+// --- Real Estate T10 — Listing Prep Studio -----------------------------------
+// Seeded with one DRAFTED prep pack for the first seeded listing (RE_LISTING_ID)
+// with a 4-week calendar, one held/safe-substituted post (week 3), two
+// Fair-Housing flags (on description + email surfaces), and a realistic MLS
+// description + email campaign. The second pack is APPROVED (history row).
+// A test-reset handler restores the seed state.
+
+const PREP_PACK_1_ID = "pp000000-0000-0000-0000-000000000001";
+const PREP_PACK_2_ID = "pp000000-0000-0000-0000-000000000002";
+
+const seedSocialCalendar: SocialPost[] = [
+  // Week 1
+  {
+    postDate: "2026-06-16",
+    weekIndex: 1,
+    dayOffset: 0,
+    channel: "INSTAGRAM",
+    copy: "Just listed at 1442 Lindenwood Ave — 3 bed, 2 bath, soaring ceilings and a chef's kitchen. Schedule your showing today! 🏡 #justlisted #stlouishomes",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  {
+    postDate: "2026-06-18",
+    weekIndex: 1,
+    dayOffset: 2,
+    channel: "FACEBOOK",
+    copy: "Open house this Saturday 11am–2pm at 1442 Lindenwood Ave. Come see the renovated master bath and the oversized backyard — bring your coffee, take a tour. Reply for details.",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  {
+    postDate: "2026-06-20",
+    weekIndex: 1,
+    dayOffset: 4,
+    channel: "X",
+    copy: "New listing alert: 1442 Lindenwood Ave, 3bd/2ba. Roof 2021, HVAC 2022. DM for a private tour. #realestate #ofallon",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  // Week 2
+  {
+    postDate: "2026-06-23",
+    weekIndex: 2,
+    dayOffset: 7,
+    channel: "INSTAGRAM",
+    copy: "Still on the market — and worth a second look. The sunlit breakfast nook and freshly finished hardwoods at 1442 Lindenwood Ave are calling your name. 📸 Link in bio for the full gallery. #stlrealestate",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  {
+    postDate: "2026-06-25",
+    weekIndex: 2,
+    dayOffset: 9,
+    channel: "FACEBOOK",
+    copy: "Did you know? The seller replaced every window at 1442 Lindenwood in 2023 — double-pane, argon-filled, transferable warranty. Energy savings and peace of mind included. Schedule a showing today.",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  // Week 3 — one held post (safe-substituted)
+  {
+    postDate: "2026-06-30",
+    weekIndex: 3,
+    dayOffset: 14,
+    channel: "INSTAGRAM",
+    // Safe substitute (original held for Fair-Housing lint match)
+    copy: "Looking for a home in a welcoming community? 1442 Lindenwood Ave is a beautiful 3 bd/2 ba that checks all the boxes. Contact us to schedule your private tour.",
+    fairHousingSafe: false,
+    heldReason: "perfect for families",
+  },
+  {
+    postDate: "2026-07-02",
+    weekIndex: 3,
+    dayOffset: 16,
+    channel: "FACEBOOK",
+    copy: "Price reflects the value — 1442 Lindenwood Ave is priced to move at $430,000. Comparable sales in the area support it. Come see it before it's gone.",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  // Week 4
+  {
+    postDate: "2026-07-07",
+    weekIndex: 4,
+    dayOffset: 21,
+    channel: "INSTAGRAM",
+    copy: "Last call — 1442 Lindenwood Ave is still available! The seller is motivated. Contact us today for a showing before this one is off the market. 🏡 #motivated #stlouishomes",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+  {
+    postDate: "2026-07-09",
+    weekIndex: 4,
+    dayOffset: 23,
+    channel: "X",
+    copy: "Week 4 and still available: 1442 Lindenwood Ave, 3bd/2ba $430K. Roof/HVAC/windows all updated. Serious buyers — DM us. #realestate",
+    fairHousingSafe: true,
+    heldReason: null,
+  },
+];
+
+const seedFairHousingFlags: PrepFairHousingFlag[] = [
+  {
+    term: "perfect for families",
+    surface: "CALENDAR week 3",
+    snippet: "looking for a home perfect for families with children",
+  },
+  {
+    term: "walking distance to churches",
+    surface: "DESCRIPTION",
+    snippet: "conveniently walking distance to churches and schools",
+  },
+];
+
+const SEED_PREP_PACK_1: ListingPrepPack = {
+  id: PREP_PACK_1_ID,
+  tenantId: SMOKE_USER.tenantId!,
+  listingId: RE_LISTING_ID,
+  mlsDescription:
+    "Beautifully maintained 3-bedroom, 2-bath home at 1442 Lindenwood Ave. Soaring ceilings and hardwood floors flow through an open-plan living and dining area. The chef's kitchen features granite counters, stainless appliances, and a gas range. The primary suite has a renovated en-suite bath with heated floors. Roof replaced 2021 (architectural shingles, transferable warranty), HVAC 2022, all windows 2023 (double-pane argon, transferable warranty). Oversized backyard with a patio — great for entertaining. Attached 2-car garage. Convenient access to I-64 and Metro East amenities. List price $430,000 — priced in line with recent comps.",
+  emailCampaign:
+    "Subject: Just Listed — 1442 Lindenwood Ave | 3 BD / 2 BA | $430,000\n\nHi [First Name],\n\nA beautifully maintained home just hit the market in O'Fallon and I wanted you to be among the first to know.\n\n1442 Lindenwood Ave — 3 BD / 2 BA — $430,000\n\nHighlights:\n• Roof replaced 2021 (transferable warranty)\n• HVAC replaced 2022\n• All windows replaced 2023 (double-pane, transferable warranty)\n• Renovated primary bath with heated floors\n• Open-plan kitchen with granite counters + gas range\n• Oversized backyard with patio\n\nThis one is priced right and priced to move. Reply to this email or call me directly to schedule a private showing this week.\n\nBest,\n[Agent Name]",
+  socialCalendar: seedSocialCalendar,
+  photoCaptions: [
+    {
+      photoId: "re-photo-1",
+      caption: "Bright open-plan living room with hardwood floors and vaulted ceilings",
+      features: ["hardwood floors", "vaulted ceilings", "natural light"],
+    },
+    {
+      photoId: "re-photo-2",
+      caption: "Chef's kitchen with granite counters and stainless appliances",
+      features: ["granite counters", "stainless appliances", "gas range"],
+    },
+  ],
+  fairHousingFlags: seedFairHousingFlags,
+  fairHousingFlagged: true,
+  calendarHeldCount: 1,
+  generationDegraded: false,
+  status: "DRAFTED",
+  approvedAt: null,
+  approvedByUserId: null,
+  version: 0,
+  createdAt: "2026-06-10T09:00:00Z",
+  updatedAt: "2026-06-10T09:00:00Z",
+};
+
+const SEED_PREP_PACK_2: ListingPrepPack = {
+  id: PREP_PACK_2_ID,
+  tenantId: SMOKE_USER.tenantId!,
+  listingId: RE_LISTING_ID,
+  mlsDescription: "Earlier MLS draft — approved and filed.",
+  emailCampaign: "Earlier email draft — approved and filed.",
+  socialCalendar: [],
+  photoCaptions: [],
+  fairHousingFlags: [],
+  fairHousingFlagged: false,
+  calendarHeldCount: 0,
+  generationDegraded: false,
+  status: "APPROVED",
+  approvedAt: "2026-06-09T14:00:00Z",
+  approvedByUserId: SMOKE_USER.id,
+  version: 1,
+  createdAt: "2026-06-09T08:00:00Z",
+  updatedAt: "2026-06-09T14:00:00Z",
+};
+
+let listingPrepPacks = new Map<string, ListingPrepPack>([
+  [PREP_PACK_1_ID, { ...SEED_PREP_PACK_1 }],
+  [PREP_PACK_2_ID, { ...SEED_PREP_PACK_2 }],
+]);
+let prepPackSeq = 10;
+
+export const listingPrepStore = {
+  /**
+   * POST /realestate/listings/{listingId}/prep/generate
+   * Generates a fresh DRAFTED pack (no @IdempotentRoute on the BE controller).
+   */
+  generate(
+    listingId: string,
+    _startDate?: string | null,
+    _postsPerWeek?: number | null,
+  ): ListingPrepPack {
+    const now = new Date().toISOString();
+    // Generate a new pack with a 4-week calendar seeded from the first listing
+    const newCalendar: SocialPost[] = seedSocialCalendar.map((p) => ({ ...p }));
+    const pack: ListingPrepPack = {
+      id: `pp-gen-${prepPackSeq++}`,
+      tenantId: SMOKE_USER.tenantId!,
+      listingId,
+      mlsDescription:
+        "Freshly generated MLS description — review the Fair-Housing flags and refine before publishing.",
+      emailCampaign:
+        "Subject: Just Listed — [address]\n\nHi [First Name],\n\nA new listing you may love just hit the market. Contact us to schedule a showing.\n\nBest,\n[Agent Name]",
+      socialCalendar: newCalendar,
+      photoCaptions: [],
+      fairHousingFlags: seedFairHousingFlags.map((f) => ({ ...f })),
+      fairHousingFlagged: true,
+      calendarHeldCount: 1,
+      generationDegraded: false,
+      status: "DRAFTED",
+      approvedAt: null,
+      approvedByUserId: null,
+      version: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    listingPrepPacks.set(pack.id, pack);
+    return pack;
+  },
+
+  /**
+   * GET /realestate/listings/{listingId}/prep/packs
+   * Lists a listing's packs, most-recent first.
+   */
+  listForListing(listingId: string): ListingPrepPack[] {
+    return Array.from(listingPrepPacks.values())
+      .filter((p) => p.listingId === listingId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  /**
+   * GET /realestate/prep/packs
+   * All DRAFTED packs for the tenant (the review queue), most-recent first.
+   */
+  listDrafted(): ListingPrepPack[] {
+    return Array.from(listingPrepPacks.values())
+      .filter((p) => p.status === "DRAFTED")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  /**
+   * GET /realestate/prep/packs/{id}
+   * A single pack. Returns undefined (→ 4460) if not found.
+   */
+  get(id: string): ListingPrepPack | undefined {
+    return listingPrepPacks.get(id);
+  },
+
+  /**
+   * POST /realestate/prep/packs/{id}/approve
+   * Approve a DRAFTED pack → APPROVED. Returns undefined (→ 4460) if not found;
+   * null (→ 4461/409) if not DRAFTED.
+   */
+  approve(id: string): ListingPrepPack | undefined | null {
+    const existing = listingPrepPacks.get(id);
+    if (!existing) return undefined;
+    if (existing.status !== "DRAFTED") return null;
+    const updated: ListingPrepPack = {
+      ...existing,
+      status: "APPROVED",
+      approvedAt: new Date().toISOString(),
+      approvedByUserId: SMOKE_USER.id,
+      updatedAt: new Date().toISOString(),
+    };
+    listingPrepPacks.set(id, updated);
+    return updated;
+  },
+
+  /**
+   * POST /realestate/prep/packs/{id}/skip
+   * Skip a DRAFTED pack → SKIPPED. Returns undefined (→ 4460) if not found;
+   * null (→ 4461/409) if not DRAFTED.
+   */
+  skip(id: string): ListingPrepPack | undefined | null {
+    const existing = listingPrepPacks.get(id);
+    if (!existing) return undefined;
+    if (existing.status !== "DRAFTED") return null;
+    const updated: ListingPrepPack = {
+      ...existing,
+      status: "SKIPPED",
+      updatedAt: new Date().toISOString(),
+    };
+    listingPrepPacks.set(id, updated);
+    return updated;
+  },
+
+  /** TEST-ONLY: restore seed state. */
+  reset() {
+    listingPrepPacks = new Map([
+      [PREP_PACK_1_ID, { ...SEED_PREP_PACK_1 }],
+      [PREP_PACK_2_ID, { ...SEED_PREP_PACK_2 }],
+    ]);
+    prepPackSeq = 10;
   },
 };
 

@@ -570,6 +570,29 @@ export const STYLE_ATTRIBUTE_SOURCE_LABELS: Record<string, string> = {
   MANUAL: "Client-typed",
 };
 
+// --- Real Estate "Listing Prep Studio" (T10) ---------------------------------
+// Labels for the prep-pack lifecycle and the social calendar. An agent reads
+// these at a glance in the Listing Prep queue — "Needs review" reads clearer
+// than the raw "DRAFTED" (the review-replies / marketing-draft posture).
+
+// The prep pack's review lifecycle. A DRAFTED pack is waiting on the agent;
+// APPROVED means copy-ready (paste-out — no auto-posting); SKIPPED is terminal.
+export const PREP_PACK_STATUS_LABELS: Record<string, string> = {
+  DRAFTED: "Needs review",
+  APPROVED: "Approved",
+  SKIPPED: "Skipped",
+};
+
+// Social channel labels for calendar posts. The same values as RE-4
+// MARKETING_CHANNEL_LABELS but scoped to the channels the social calendar uses
+// (INSTAGRAM / FACEBOOK / X — not MLS_REMARKS or EMAIL_BLAST which are
+// separate fields on the pack).
+export const PREP_SOCIAL_CHANNEL_LABELS: Record<string, string> = {
+  INSTAGRAM: "Instagram",
+  FACEBOOK: "Facebook",
+  X: "X",
+};
+
 /** Short label for a boolean ReviewBoost flag when it is ON. */
 export const REVIEW_BOOST_FLAG_ON = "On";
 
