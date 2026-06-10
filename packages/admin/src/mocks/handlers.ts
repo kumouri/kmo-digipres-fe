@@ -41,6 +41,7 @@ import type {
   TimesheetStatus,
   TimesheetView,
   Ticket,
+  WaitlistJoinRequest,
 } from "@kmosf/crm-components";
 import type { components } from "@kmosf/crm-components";
 import {
@@ -2574,7 +2575,7 @@ export const handlers = [
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       const idempotencyKey =
         request.headers.get("Idempotency-Key") ?? crypto.randomUUID();
-      const body = (await request.json()) as Partial<{ contactId: string; providerId: string | null; earliestStart: string | null; latestStart: string | null; smsOptIn: boolean | null; notes: string | null; priorNoShowCount: number | null; priorVisitCount: number | null; lastVisitAt: string | null }>;
+      const body = (await request.json()) as Partial<WaitlistJoinRequest>;
       const result = rescheduleStore.joinWaitlist(body, idempotencyKey);
       if ("code" in result) {
         return HttpResponse.json(

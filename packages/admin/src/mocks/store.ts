@@ -23,6 +23,7 @@ import type {
   SowDraft,
   PromiseToPay,
   WaitlistEntry,
+  WaitlistJoinRequest,
   RescheduleFillStats,
   ActivityDTO,
   Appointment,
@@ -5457,7 +5458,7 @@ export const rescheduleStore = {
    * Returns { code: 4421 } when contactId is missing.
    */
   joinWaitlist(
-    body: Partial<WaitlistEntry>,
+    body: Partial<WaitlistJoinRequest>,
     idempotencyKey: string,
   ): WaitlistEntry | { code: number; message: string } {
     if (!body.contactId) {
