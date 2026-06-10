@@ -552,6 +552,24 @@ export const WAITLIST_ENTRY_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Removed",
 };
 
+// --- Salon "StyleConsult AI" (T9) — style-consult inbox labels ---------------
+// Plain labels for the style-consult office surfaces. A salon coordinator reads
+// these at a glance to triage the prospect queue.
+
+// The lifecycle of a submitted prospect style consult. NEW = just arrived with
+// AI recommendations; BOOKED = prospect accepted and a booking was created.
+export const STYLE_CONSULT_STATUS_LABELS: Record<string, string> = {
+  NEW: "New",
+  BOOKED: "Booked",
+};
+
+// Where the style attributes came from. "Inspiration photo" reads warmer than
+// the raw "VISION" enum for a non-technical salon coordinator.
+export const STYLE_ATTRIBUTE_SOURCE_LABELS: Record<string, string> = {
+  VISION: "Inspiration photo (AI)",
+  MANUAL: "Client-typed",
+};
+
 /** Short label for a boolean ReviewBoost flag when it is ON. */
 export const REVIEW_BOOST_FLAG_ON = "On";
 

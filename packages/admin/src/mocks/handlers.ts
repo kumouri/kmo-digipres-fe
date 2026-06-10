@@ -99,6 +99,7 @@ import {
   timeEntryStore,
   timesheetStore,
   quotingStore,
+  styleConsultStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -2685,6 +2686,60 @@ export const handlers = [
     ({ request }) => {
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       quotingStore.resetQuotes();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // ==========================================================================
+  // Salon T9 "StyleConsult AI"
+  // GET  /styleconsult/consults[?status=] — consult inbox list (staff-accessible)
+  // GET  /styleconsult/consults/{id}      — consult detail (4455 if absent)
+  // GET  /styleconsult/analytics          — retail-attach funnel analytics
+  // POST /styleconsult/tokens             — issue widget token (ADMIN)
+  //
+  // POST /styleconsult/consults/test-reset — resets consult rows to seeds
+  // ==========================================================================
+
+  // GET /styleconsult/consults[?status=]
+  http.get(`${API_BASE}/styleconsult/consults`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status") ?? undefined;
+    return HttpResponse.json(styleConsultStore.list(status));
+  }),
+
+  // GET /styleconsult/consults/{id}
+  http.get(`${API_BASE}/styleconsult/consults/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const { id } = params as { id: string };
+    const detail = styleConsultStore.get(id);
+    if (!detail) {
+      return HttpResponse.json(
+        { message: "Style consult not found", errorCode: 4455 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(detail);
+  }),
+
+  // GET /styleconsult/analytics
+  http.get(`${API_BASE}/styleconsult/analytics`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(styleConsultStore.getAnalytics());
+  }),
+
+  // POST /styleconsult/tokens (ADMIN-gated)
+  http.post(`${API_BASE}/styleconsult/tokens`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(styleConsultStore.issueToken(), { status: 201 });
+  }),
+
+  // TEST-ONLY: reset consult rows to seeds
+  http.post(
+    `${API_BASE}/styleconsult/consults/test-reset`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      styleConsultStore.resetConsults();
       return new HttpResponse(null, { status: 204 });
     },
   ),

@@ -159,6 +159,9 @@ const SalonReviewInbox = lazy(() =>
 const ReviewBoostBoard = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ReviewBoostBoard })),
 );
+const StyleConsultInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.StyleConsultInbox })),
+);
 const ListingConsole = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.ListingConsole })),
 );
@@ -378,6 +381,16 @@ export const router = createBrowserRouter([
                   // (the T4 SwitchboardPanel precedent). Read-only surface: no
                   // write endpoint exists.
                   { path: "review-boost", element: <ReviewBoostBoard /> },
+                  // Salon T9 "StyleConsult AI" — staff consult inbox (assessment +
+                  // service recs + margin-ranked retail recs + "stylist will
+                  // confirm" guardrail + booking status), retail-attach analytics
+                  // panel, and consult-widget token-issue. The BE
+                  // StyleConsultController and StyleConsultTokenController are
+                  // @ConditionalOnProperty(kmosf.modules.chairfill)-gated; gated
+                  // behind RequireNotContractor grouped with the other ChairFill
+                  // surfaces (the T6 ReviewBoostBoard / T8 QuoteInbox precedent).
+                  // A contractor deep-linking is bounced.
+                  { path: "style-consults", element: <StyleConsultInbox /> },
                   // Real Estate Concierge flagship (RE-5b) — staff-visible, like
                   // the ChairFill surfaces (the BE listing/concierge/marketing
                   // routes are STAFF-gated). A contractor deep-linking is bounced.
