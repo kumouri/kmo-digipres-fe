@@ -372,3 +372,17 @@ export type {
   StyleConsultResponse,
   StyleConsultAnalytics,
 } from "./api/styleconsult";
+// Home Services T11 "QuoteCloser" — follow-up config card (window / cadence
+// toggle / financing-nudge copy) + recovery-funnel analytics panel (quotes
+// sent → followed-up → recovered → review-requested + recovery rate). Hand-
+// written client (both the QuoteCloserConfigController and
+// QuoteCloserController are @ConditionalOnProperty(kmosf.modules.quoting)
+// -gated AND require the nurture module, so all routes are absent from the
+// generated openapi types — the T8 PriceBookConfig / T5 CallbackController
+// precedent).
+export { QuoteCloserSettings } from "./admin/home-services";
+export { useQuoteCloserApi } from "./hooks/useQuoteCloserApi";
+export type {
+  QuoteCloserConfigDTO,
+  QuoteCloserAnalytics,
+} from "./api/quote-closer";

@@ -102,6 +102,7 @@ import {
   quotingStore,
   styleConsultStore,
   listingPrepStore,
+  quoteCloserStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -2854,6 +2855,69 @@ export const handlers = [
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       listingPrepStore.reset();
       return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // ── Home Services T11 — QuoteCloser ────────────────────────────────────────
+  // GET  /quoting/quote-closer/config  — ADMIN; 4470/404 if not yet configured
+  // PUT  /quoting/quote-closer/config  — ADMIN; body QuoteCloserConfigDTO
+  // GET  /quoting/quote-closer/analytics — staff-accessible
+  //
+  // TEST-ONLY:
+  //   POST /quoting/quote-closer/test-clear-config  — clears config (4470 path)
+  //   POST /quoting/quote-closer/test-reset-config  — restores config to seed
+
+  // TEST-ONLY: clear config (exercises the 4470 empty-state path). Must be
+  // registered before the parametric GET /quoting/quote-closer/config.
+  http.post(
+    `${API_BASE}/quoting/quote-closer/test-clear-config`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      quoteCloserStore.clearConfig();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // TEST-ONLY: reset config to seed.
+  http.post(
+    `${API_BASE}/quoting/quote-closer/test-reset-config`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      quoteCloserStore.resetConfig();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // GET /quoting/quote-closer/analytics
+  // Must be registered before the parametric /quoting/quote-closer/config so
+  // MSW's first-match router doesn't misroute it (path is longer, but safer to
+  // be explicit).
+  http.get(`${API_BASE}/quoting/quote-closer/analytics`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(quoteCloserStore.getAnalytics());
+  }),
+
+  // GET /quoting/quote-closer/config — 4470/404 if none
+  http.get(`${API_BASE}/quoting/quote-closer/config`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const cfg = quoteCloserStore.getConfig();
+    if (!cfg)
+      return HttpResponse.json(
+        { message: "QuoteCloser config not found", errorCode: 4470 },
+        { status: 404 },
+      );
+    return HttpResponse.json(cfg);
+  }),
+
+  // PUT /quoting/quote-closer/config
+  http.put(
+    `${API_BASE}/quoting/quote-closer/config`,
+    async ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      await delay(60);
+      const body = await request.json() as { campaignId: string | null; unacceptedWindowHours: number | null };
+      const saved = quoteCloserStore.saveConfig(body);
+      return HttpResponse.json(saved);
     },
   ),
 ];

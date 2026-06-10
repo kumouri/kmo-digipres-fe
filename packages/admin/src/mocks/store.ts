@@ -6308,3 +6308,120 @@ export const styleConsultStore = {
     styleConsultRows = SEED_STYLE_CONSULTS.map((c) => ({ ...c }));
   },
 };
+
+// =============================================================================
+// Home Services T11 "QuoteCloser" — follow-up config + recovery funnel
+// =============================================================================
+//
+// Seeded config: cadence on, 48-hour window.
+// Seeded analytics: a realistic mid-run recovery funnel — 120 quotes sent →
+// 84 followed up → 31 recovered → 27 review-requested → 36.9% recovery rate.
+// The clearConfig() method exercises the 4470 empty-state path.
+
+const QC_TENANT_ID = SMOKE_USER.tenantId;
+
+type QuoteCloserConfigRow = {
+  id: string;
+  tenantId: string;
+  campaignId: string | null;
+  unacceptedWindowHours: number | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type QuoteCloserConfigDTO = {
+  campaignId: string | null;
+  unacceptedWindowHours: number | null;
+};
+
+type QuoteCloserAnalytics = {
+  quotesSent: number;
+  followedUp: number;
+  recovered: number;
+  reviewRequested: number;
+  recoveryRate: number;
+};
+
+const SEED_QC_CONFIG: QuoteCloserConfigRow = {
+  id: "qc000001-0000-0000-0000-000000000001",
+  tenantId: QC_TENANT_ID,
+  campaignId: "nc000001-0000-0000-0000-000000000001",
+  unacceptedWindowHours: 48,
+  version: 0,
+  createdAt: "2026-06-09T10:00:00Z",
+  updatedAt: "2026-06-09T10:00:00Z",
+};
+
+const SEED_QC_ANALYTICS: QuoteCloserAnalytics = {
+  quotesSent: 120,
+  followedUp: 84,
+  recovered: 31,
+  reviewRequested: 27,
+  recoveryRate: 31 / 84, // ~0.369
+};
+
+let qcConfigRow: QuoteCloserConfigRow | null = { ...SEED_QC_CONFIG };
+
+export const quoteCloserStore = {
+  /**
+   * GET /quoting/quote-closer/config — the tenant's config (null → 4470/404).
+   */
+  getConfig(): QuoteCloserConfigDTO | null {
+    if (!qcConfigRow) return null;
+    return {
+      campaignId: qcConfigRow.campaignId,
+      unacceptedWindowHours: qcConfigRow.unacceptedWindowHours,
+    };
+  },
+
+  /**
+   * PUT /quoting/quote-closer/config — upsert (all fields nullable; preserves
+   * prior values for null fields — the BE partial-upsert posture).
+   */
+  saveConfig(body: QuoteCloserConfigDTO): QuoteCloserConfigDTO {
+    if (qcConfigRow) {
+      qcConfigRow = {
+        ...qcConfigRow,
+        campaignId: body.campaignId !== null ? body.campaignId : qcConfigRow.campaignId,
+        unacceptedWindowHours:
+          body.unacceptedWindowHours !== null
+            ? body.unacceptedWindowHours
+            : qcConfigRow.unacceptedWindowHours,
+        version: qcConfigRow.version + 1,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      qcConfigRow = {
+        id: "qc000001-0000-0000-0000-000000000001",
+        tenantId: QC_TENANT_ID,
+        campaignId: body.campaignId,
+        unacceptedWindowHours: body.unacceptedWindowHours ?? 48,
+        version: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return {
+      campaignId: qcConfigRow.campaignId,
+      unacceptedWindowHours: qcConfigRow.unacceptedWindowHours,
+    };
+  },
+
+  /**
+   * GET /quoting/quote-closer/analytics — the recovery funnel counters.
+   */
+  getAnalytics(): QuoteCloserAnalytics {
+    return { ...SEED_QC_ANALYTICS };
+  },
+
+  /** TEST-ONLY: clear config (exercises the 4470 empty-state path). */
+  clearConfig() {
+    qcConfigRow = null;
+  },
+
+  /** TEST-ONLY: reset config to seed. */
+  resetConfig() {
+    qcConfigRow = { ...SEED_QC_CONFIG };
+  },
+};

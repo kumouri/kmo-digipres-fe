@@ -605,3 +605,13 @@ export const REVIEW_BOOST_FLAG_LABELS: Record<string, string> = {
   sentimentRefineEnabled: "AI sentiment refinement",
   negativeAlertEnabled: "Negative review alerts",
 };
+
+// --- Home Services T11 "QuoteCloser" — follow-up settings + recovery funnel -
+// Analytics funnel step labels. Plain present-tense words a staff member reads
+// at a glance on the recovery funnel panel.
+export const QUOTE_CLOSER_FUNNEL_LABELS: Record<string, string> = {
+  quotesSent: "Quotes sent",
+  followedUp: "Followed up",
+  recovered: "Recovered",
+  reviewRequested: "Review requested",
+};
