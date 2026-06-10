@@ -3,6 +3,11 @@ name: ci
 on:
   push:
     branches: [main]
+    # CI-04: doc-only merges skip CI; mirrors the pull_request filter below.
+    paths-ignore:
+      - '**/*.md'
+      - '.claude/**'
+      - 'LICENSE'
   pull_request:
     paths-ignore:
       - '**/*.md'
@@ -33,7 +38,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # CI-04: the Playwright smoke suite runs on PRs only — the merge commit was already
+      # smoke-tested by the PR before it landed (re-running on main push was pure
+      # duplication; kmosf-homepage already learned this). Push to main keeps the cheap
+      # typecheck + build canary below so a bad merge state still surfaces, but skips the
+      # ~83%-of-CI-time browser install + smoke run.
       - name: Cache Playwright browsers
+        if: github.event_name == 'pull_request'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -42,11 +53,11 @@ jobs:
 
       # Cache hit: only the (uncacheable) apt OS-deps. Miss: full browser + deps install.
       - name: Install Playwright (chromium + deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: github.event_name == 'pull_request' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Install Playwright system deps (cache hit)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: github.event_name == 'pull_request' && steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
       - name: Codegen drift check
@@ -59,10 +70,11 @@ jobs:
         run: npm run build
 
       - name: Smoke tests
+        if: github.event_name == 'pull_request'
         run: npm run test:smoke
 
       - name: Upload Playwright report on failure
-        if: failure()
+        if: failure() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
