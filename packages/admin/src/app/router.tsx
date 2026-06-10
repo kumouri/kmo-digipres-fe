@@ -159,6 +159,21 @@ const QuoteCloserSettings = lazy(() =>
     default: m.QuoteCloserSettings,
   })),
 );
+// Home Services T13 "Tech Copilot" — field-tech grounded Q&A surface (ask →
+// cited answer with doc-title/equipment-type/preview citation chips, or an
+// honest "not documented" handoff) + manual corpus manager (list/add/edit
+// TechDocs: title, equipment type, source, full text) + query history with
+// thumbs-up/down feedback. Hand-written client (both the TechCopilotController
+// and TechDocController are @ConditionalOnProperty(kmosf.modules.techcopilot)
+// -gated, so all routes are absent from the generated openapi types — the T11
+// QuoteCloserSettings / T8 PriceBookConfig / T5 CallbackController precedent).
+// Gated behind RequireNotContractor grouped with the other Home Services
+// surfaces. A contractor deep-linking is bounced.
+const TechCopilotPanel = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.TechCopilotPanel,
+  })),
+);
 const NoShowRiskView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.NoShowRiskView })),
 );
@@ -410,6 +425,17 @@ export const router = createBrowserRouter([
                   // PriceBookConfig / T5 CallbackQueue precedent). A contractor
                   // deep-linking is bounced.
                   { path: "quote-follow-up", element: <QuoteCloserSettings /> },
+                  // Home Services T13 "Tech Copilot" — field-tech grounded Q&A
+                  // surface (ask → cited answer + citation chips, or an honest
+                  // "not documented" handoff) + manual corpus manager
+                  // (list/add/edit TechDocs) + query history with feedback. The
+                  // BE TechCopilotController and TechDocController are
+                  // @ConditionalOnProperty(kmosf.modules.techcopilot)-gated;
+                  // gated behind RequireNotContractor grouped with the other
+                  // Home Services surfaces (the T11 QuoteCloserSettings / T8
+                  // PriceBookConfig precedent). A contractor deep-linking is
+                  // bounced.
+                  { path: "tech-copilot", element: <TechCopilotPanel /> },
                   // ChairFill salon flagship (CF-5) — staff-visible, like
                   // missed-calls (the BE board/review-draft routes are
                   // STAFF-gated). A contractor deep-linking is bounced.

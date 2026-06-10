@@ -48,6 +48,7 @@ import {
   Users,
   Zap,
   MailCheck,
+  BotMessageSquare,
 } from "lucide-react";
 
 import { UserMenu } from "./UserMenu";
@@ -97,6 +98,11 @@ const NAV_ITEMS: NavItem[] = [
   //   "Job estimates" (/instant-quotes), "Estimate settings" (/quote-settings),
   //   "Quotes" (/quotes) — no substring collision with Playwright partial-match.
   { to: "/quote-follow-up", label: "Quote follow-up", icon: MailCheck, hideForContractor: true },
+  // T13 — Home "Tech Copilot" — field-tech grounded Q&A + manual library +
+  // query history. "Tech copilot" is distinct from all existing nav labels —
+  // no substring collision with "Job estimates", "Estimate settings",
+  // "Quote follow-up", "Callback queue", or any other Home Services label.
+  { to: "/tech-copilot", label: "Tech copilot", icon: BotMessageSquare, hideForContractor: true },
   { to: "/no-show-risk", label: "No-show risk", icon: ShieldAlert, hideForContractor: true },
   { to: "/waitlist", label: "Waitlist", icon: ListChecks, hideForContractor: true },
   { to: "/salon-reviews", label: "Salon reviews", icon: MessagesSquare, hideForContractor: true },

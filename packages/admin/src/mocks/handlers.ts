@@ -104,6 +104,7 @@ import {
   listingPrepStore,
   quoteCloserStore,
   stylerMatchStore,
+  techCopilotStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -3015,4 +3016,133 @@ export const handlers = [
       return HttpResponse.json(saved);
     },
   ),
+
+  // ── Home Services T13 "Tech Copilot" ───────────────────────────────────────
+  // POST /techcopilot/ask              — grounded Q&A (staff-gated; 4494 if blank)
+  // GET  /techcopilot/queries          — recent Q&A history (staff-gated)
+  // POST /techcopilot/queries/{id}/feedback — feedback (staff-gated; 4495 if null)
+  // POST /techcopilot/docs             — create doc (staff-gated; 4491 if blank)
+  // GET  /techcopilot/docs             — list docs (staff-gated)
+  // GET  /techcopilot/docs/{id}        — get doc (staff-gated; 4490 if absent)
+  // PUT  /techcopilot/docs/{id}        — update doc (staff-gated; 4490/4491)
+  //
+  // TEST-ONLY:
+  //   POST /techcopilot/test-reset     — reset docs + queries to seeds
+
+  // TEST-ONLY: reset docs and queries to seeds (register before parametrics)
+  http.post(`${API_BASE}/techcopilot/test-reset`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    techCopilotStore.reset();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // POST /techcopilot/ask
+  http.post(`${API_BASE}/techcopilot/ask`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    await delay(80); // simulate RAG latency
+    const body = await request.json() as { question?: string; equipmentType?: string | null };
+    if (!body?.question?.trim()) {
+      return HttpResponse.json(
+        { message: "Question is required", errorCode: 4494 },
+        { status: 400 },
+      );
+    }
+    const result = techCopilotStore.ask(body.question, body.equipmentType);
+    return HttpResponse.json(result);
+  }),
+
+  // GET /techcopilot/queries — recent Q&A history
+  http.get(`${API_BASE}/techcopilot/queries`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(techCopilotStore.listQueries());
+  }),
+
+  // POST /techcopilot/queries/{id}/feedback
+  http.post(
+    `${API_BASE}/techcopilot/queries/:id/feedback`,
+    async ({ request, params }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const body = await request.json() as { helpful?: boolean | null };
+      const result = techCopilotStore.recordFeedback(
+        String(params.id),
+        body?.helpful ?? null,
+      );
+      if (result === "not_found") {
+        return HttpResponse.json(
+          { message: "Query not found", errorCode: 4490 },
+          { status: 404 },
+        );
+      }
+      if (result === "invalid") {
+        return HttpResponse.json(
+          { message: "feedback 'helpful' (true/false) is required", errorCode: 4495 },
+          { status: 400 },
+        );
+      }
+      return HttpResponse.json(result);
+    },
+  ),
+
+  // POST /techcopilot/docs — create a new doc
+  http.post(`${API_BASE}/techcopilot/docs`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = await request.json() as {
+      title?: string | null;
+      equipmentType?: string | null;
+      source?: string | null;
+      text?: string | null;
+    };
+    const result = techCopilotStore.createDoc(body ?? {});
+    if (!result) {
+      return HttpResponse.json(
+        { message: "Title and text are required", errorCode: 4491 },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json(result, { status: 201 });
+  }),
+
+  // GET /techcopilot/docs — list all docs (register before /:id)
+  http.get(`${API_BASE}/techcopilot/docs`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(techCopilotStore.listDocs());
+  }),
+
+  // GET /techcopilot/docs/{id} — get one doc
+  http.get(`${API_BASE}/techcopilot/docs/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const doc = techCopilotStore.getDoc(String(params.id));
+    if (!doc) {
+      return HttpResponse.json(
+        { message: "TechDoc not found", errorCode: 4490 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(doc);
+  }),
+
+  // PUT /techcopilot/docs/{id} — update a doc
+  http.put(`${API_BASE}/techcopilot/docs/:id`, async ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = await request.json() as {
+      title?: string | null;
+      equipmentType?: string | null;
+      source?: string | null;
+      text?: string | null;
+    };
+    const result = techCopilotStore.updateDoc(String(params.id), body ?? {});
+    if (result === "not_found") {
+      return HttpResponse.json(
+        { message: "TechDoc not found", errorCode: 4490 },
+        { status: 404 },
+      );
+    }
+    if (result === "invalid") {
+      return HttpResponse.json(
+        { message: "Title and text are required", errorCode: 4491 },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json(result);
+  }),
 ];

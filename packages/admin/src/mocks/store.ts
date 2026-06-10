@@ -6,6 +6,10 @@ import type {
   StylerMatchResponse,
   StylerMatchAnalytics,
   RankedMatch,
+  TechDoc,
+  TechQuery,
+  TechQueryCitation,
+  AskResponse,
 } from "@kmosf/crm-components";
 import type {
   ArAgingReport,
@@ -6682,5 +6686,358 @@ export const stylerMatchStore = {
     stylerMatchRows = SEED_STYLER_MATCHES.map(
       (m) => ({ ...m, rankedMatches: [...m.rankedMatches] }),
     );
+  },
+};
+
+// =============================================================================
+// Home Services T13 "Tech Copilot" — corpus docs + Q&A history + feedback
+// =============================================================================
+//
+// Two seeded TechDocs (furnace manual + water-heater spec) — different equipment
+// types so equipment-type badges are visible in the doc list and citation chips.
+//
+// Two seeded TechQuerys:
+//   1. A grounded ask (handoff=false): "What is the igniter resistance range?"
+//      with 1 citation pointing at the furnace doc. helpful=null (not yet rated).
+//   2. A no-context ask (handoff=true): "What refrigerant does the ice machine use?"
+//      with empty citations. helpful=null.
+//
+// The ask() mock applies simple keyword-matching so the smoke can exercise both
+// grounded and handoff paths. The test-reset endpoint restores seeds.
+
+const TC_TENANT_ID = SMOKE_USER.tenantId;
+
+// Stable doc IDs.
+const TC_DOC_FURNACE = "tc-doc-01-0000-0000-0000-000000000001";
+const TC_DOC_WATER_HEATER = "tc-doc-02-0000-0000-0000-000000000002";
+
+// Stable query IDs.
+const TC_QUERY_GROUNDED = "tc-qry-01-0000-0000-0000-000000000001";
+const TC_QUERY_HANDOFF = "tc-qry-02-0000-0000-0000-000000000002";
+
+const SEED_TC_DOCS: TechDoc[] = [
+  {
+    id: TC_DOC_FURNACE,
+    tenantId: TC_TENANT_ID,
+    title: "Carrier 58STA Furnace — Installation & Service Manual",
+    equipmentType: "FURNACE",
+    source: "Carrier Corp — Rev-G, 2024",
+    text:
+      "SECTION 3 — IGNITION SYSTEM\n" +
+      "The electronic igniter must read between 40 and 90 ohms at room temperature " +
+      "(70°F). A reading below 40 ohms indicates a short; above 90 ohms indicates a " +
+      "broken element. Replace if outside this range.\n\n" +
+      "SECTION 4 — BLOWER\n" +
+      "Blower wheel should be cleaned annually. Verify the draft inducer turns freely " +
+      "before startup. Check pressure-switch hoses for blockage.",
+    chunkCount: 4,
+    indexedAt: "2026-06-09T08:00:00Z",
+    version: 0,
+    createdAt: "2026-06-09T08:00:00Z",
+    updatedAt: "2026-06-09T08:00:00Z",
+  },
+  {
+    id: TC_DOC_WATER_HEATER,
+    tenantId: TC_TENANT_ID,
+    title: "Bradford White RE2H50S10 — Water Heater Spec Sheet",
+    equipmentType: "WATER_HEATER",
+    source: "Bradford White — Product Spec 2025",
+    text:
+      "MODEL: RE2H50S10 — 50-gallon electric water heater, 4500W dual elements.\n" +
+      "ELEMENT RESISTANCE: Upper and lower elements should each measure 12–13 ohms. " +
+      "Replace any element outside this range.\n" +
+      "THERMOSTAT SETTING: Factory default 120°F. Max 140°F.\n" +
+      "ANODE ROD: Inspect every 3 years; replace when less than 6 inches of core rod " +
+      "is visible.",
+    chunkCount: 3,
+    indexedAt: "2026-06-09T09:00:00Z",
+    version: 0,
+    createdAt: "2026-06-09T09:00:00Z",
+    updatedAt: "2026-06-09T09:00:00Z",
+  },
+];
+
+const SEED_FURNACE_CITATION: TechQueryCitation = {
+  techDocId: TC_DOC_FURNACE,
+  techDocTitle: "Carrier 58STA Furnace — Installation & Service Manual",
+  equipmentType: "FURNACE",
+  contentPreview:
+    "The electronic igniter must read between 40 and 90 ohms at room temperature (70°F).",
+  score: 0.91,
+};
+
+const SEED_TC_QUERIES: TechQuery[] = [
+  {
+    id: TC_QUERY_GROUNDED,
+    tenantId: TC_TENANT_ID,
+    question: "What is the igniter resistance range for the Carrier 58STA furnace?",
+    equipmentTypeHint: "FURNACE",
+    answer:
+      "According to the Carrier 58STA service manual, the electronic igniter must " +
+      "read between 40 and 90 ohms at room temperature (70°F). Below 40 ohms " +
+      "indicates a short; above 90 ohms indicates a broken element — replace if " +
+      "outside this range.",
+    handoff: false,
+    citations: [{ ...SEED_FURNACE_CITATION }],
+    helpful: null,
+    version: 0,
+    createdAt: "2026-06-10T07:30:00Z",
+    updatedAt: "2026-06-10T07:30:00Z",
+  },
+  {
+    id: TC_QUERY_HANDOFF,
+    tenantId: TC_TENANT_ID,
+    question: "What refrigerant does the commercial ice machine use?",
+    equipmentTypeHint: null,
+    answer:
+      "This isn’t covered in your current manual library. Add the ice-machine " +
+      "service manual to get a grounded answer.",
+    handoff: true,
+    citations: [],
+    helpful: null,
+    version: 0,
+    createdAt: "2026-06-10T07:00:00Z",
+    updatedAt: "2026-06-10T07:00:00Z",
+  },
+];
+
+let tcDocs: TechDoc[] = SEED_TC_DOCS.map((d) => ({ ...d }));
+let tcQueries: TechQuery[] = SEED_TC_QUERIES.map((q) => ({
+  ...q,
+  citations: [...q.citations],
+}));
+
+export const techCopilotStore = {
+  // ---------------------------------------------------------------------------
+  // TechDoc CRUD
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GET /techcopilot/docs — list all docs (newest-first by createdAt).
+   */
+  listDocs(): TechDoc[] {
+    return tcDocs
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((d) => ({ ...d }));
+  },
+
+  /**
+   * GET /techcopilot/docs/{id} — get one doc (null → 4490/404).
+   */
+  getDoc(id: string): TechDoc | null {
+    return tcDocs.find((d) => d.id === id) ?? null;
+  },
+
+  /**
+   * POST /techcopilot/docs — create a new doc (4491 if title or text blank).
+   */
+  createDoc(body: {
+    title?: string | null;
+    equipmentType?: string | null;
+    source?: string | null;
+    text?: string | null;
+  }): TechDoc | null {
+    if (!body.title?.trim() || !body.text?.trim()) return null; // 4491
+    const now = new Date().toISOString();
+    const doc: TechDoc = {
+      id: `tc-doc-${Date.now().toString(36)}-new`,
+      tenantId: TC_TENANT_ID,
+      title: body.title.trim(),
+      equipmentType: (body.equipmentType as TechDoc["equipmentType"]) ?? "GENERAL",
+      source: body.source?.trim() || null,
+      text: body.text.trim(),
+      chunkCount: Math.ceil(body.text.trim().length / 500), // rough mock
+      indexedAt: now,
+      version: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    tcDocs = [doc, ...tcDocs];
+    return { ...doc };
+  },
+
+  /**
+   * PUT /techcopilot/docs/{id} — update a doc (null → 4490/404 if absent;
+   * null if title or text blank → 4491).
+   */
+  updateDoc(
+    id: string,
+    body: {
+      title?: string | null;
+      equipmentType?: string | null;
+      source?: string | null;
+      text?: string | null;
+    },
+  ): TechDoc | "not_found" | "invalid" {
+    const idx = tcDocs.findIndex((d) => d.id === id);
+    if (idx === -1) return "not_found";
+    if (!body.title?.trim() || !body.text?.trim()) return "invalid";
+    const now = new Date().toISOString();
+    const updated: TechDoc = {
+      ...tcDocs[idx],
+      title: body.title.trim(),
+      equipmentType:
+        (body.equipmentType as TechDoc["equipmentType"]) ?? tcDocs[idx].equipmentType,
+      source: body.source?.trim() || null,
+      text: body.text.trim(),
+      chunkCount: Math.ceil(body.text.trim().length / 500),
+      indexedAt: now,
+      version: (tcDocs[idx].version ?? 0) + 1,
+      updatedAt: now,
+    };
+    tcDocs = [
+      ...tcDocs.slice(0, idx),
+      updated,
+      ...tcDocs.slice(idx + 1),
+    ];
+    return { ...updated };
+  },
+
+  // ---------------------------------------------------------------------------
+  // Q&A
+  // ---------------------------------------------------------------------------
+
+  /**
+   * POST /techcopilot/ask — grounded Q&A mock.
+   *
+   * If the question contains "igniter" or "furnace" or "resistance", returns a
+   * grounded answer citing the furnace doc.
+   * If the question contains "water heater" or "element" or "anode", returns a
+   * grounded answer citing the water-heater doc.
+   * Otherwise returns handoff=true with an honest "not documented" message.
+   *
+   * Always persists a new TechQuery and prepends it to the query log.
+   */
+  ask(
+    question: string,
+    equipmentTypeHint?: string | null,
+  ): AskResponse {
+    const q = question.toLowerCase();
+    const furnaceMatch =
+      q.includes("igniter") ||
+      q.includes("furnace") ||
+      q.includes("resistance") ||
+      q.includes("58sta");
+    const waterHeaterMatch =
+      q.includes("water heater") ||
+      q.includes("element") ||
+      q.includes("anode") ||
+      q.includes("bradford");
+
+    let answer: string;
+    let handoff: boolean;
+    let citations: TechQueryCitation[];
+
+    if (furnaceMatch) {
+      handoff = false;
+      answer =
+        "According to the Carrier 58STA service manual, the electronic igniter must " +
+        "read between 40 and 90 ohms at room temperature (70°F). Below 40 ohms " +
+        "indicates a short; above 90 ohms indicates a broken element — replace if " +
+        "outside this range.";
+      citations = [{ ...SEED_FURNACE_CITATION }];
+    } else if (waterHeaterMatch) {
+      handoff = false;
+      answer =
+        "According to the Bradford White RE2H50S10 spec sheet, upper and lower " +
+        "elements should each measure 12–13 ohms. Replace any element outside this " +
+        "range. The factory thermostat default is 120°F (max 140°F). Inspect the " +
+        "anode rod every 3 years.";
+      citations = [
+        {
+          techDocId: TC_DOC_WATER_HEATER,
+          techDocTitle: "Bradford White RE2H50S10 — Water Heater Spec Sheet",
+          equipmentType: "WATER_HEATER",
+          contentPreview:
+            "Upper and lower elements should each measure 12–13 ohms. Replace any element outside this range.",
+          score: 0.88,
+        },
+      ];
+    } else {
+      handoff = true;
+      answer =
+        "This isn’t covered in your current manual library. Add the relevant " +
+        "manual to get a grounded answer.";
+      citations = [];
+    }
+
+    const now = new Date().toISOString();
+    const queryId = `tc-qry-${Date.now().toString(36)}-new`;
+    const newQuery: TechQuery = {
+      id: queryId,
+      tenantId: TC_TENANT_ID,
+      question,
+      equipmentTypeHint: (equipmentTypeHint as TechQuery["equipmentTypeHint"]) ?? null,
+      answer: handoff ? answer : answer,
+      handoff,
+      citations: citations.map((c) => ({ ...c })),
+      helpful: null,
+      version: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    tcQueries = [newQuery, ...tcQueries];
+
+    return {
+      answer,
+      handoff,
+      citations: citations.map((c) => ({
+        techDocId: c.techDocId,
+        techDocTitle: c.techDocTitle,
+        equipmentType: c.equipmentType,
+        contentPreview: c.contentPreview,
+        score: c.score,
+      })),
+      queryId,
+    };
+  },
+
+  // ---------------------------------------------------------------------------
+  // Query history + feedback
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GET /techcopilot/queries — recent Q&A log (newest first).
+   */
+  listQueries(): TechQuery[] {
+    return tcQueries
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((q) => ({ ...q, citations: [...q.citations] }));
+  },
+
+  /**
+   * POST /techcopilot/queries/{id}/feedback — record usefulness rating.
+   * Returns null → 4495 if helpful is null; "not_found" → 4490 if absent.
+   */
+  recordFeedback(
+    id: string,
+    helpful: boolean | null,
+  ): TechQuery | "not_found" | "invalid" {
+    if (helpful === null) return "invalid"; // 4495
+    const idx = tcQueries.findIndex((q) => q.id === id);
+    if (idx === -1) return "not_found";
+    const updated: TechQuery = {
+      ...tcQueries[idx],
+      helpful,
+      version: (tcQueries[idx].version ?? 0) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    tcQueries = [
+      ...tcQueries.slice(0, idx),
+      updated,
+      ...tcQueries.slice(idx + 1),
+    ];
+    return { ...updated, citations: [...updated.citations] };
+  },
+
+  /** TEST-ONLY: reset docs + queries to seeds. */
+  reset() {
+    tcDocs = SEED_TC_DOCS.map((d) => ({ ...d }));
+    tcQueries = SEED_TC_QUERIES.map((q) => ({
+      ...q,
+      citations: [...q.citations],
+    }));
   },
 };
