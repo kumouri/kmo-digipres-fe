@@ -174,6 +174,19 @@ const TechCopilotPanel = lazy(() =>
     default: m.TechCopilotPanel,
   })),
 );
+// Home Services T14 "DispatchIQ" — dispatcher optimize console: pick a date
+// → AI-proposed tech assignments (urgency / skill-matched badge / fit score /
+// rationale) + unassigned section (with unassignedReason) → Apply plan (POST
+// /dispatch/apply with Idempotency-Key, @IdempotentRoute → applied/skipped
+// result) + dispatch analytics card. The BE DispatchController is
+// @ConditionalOnProperty(kmosf.modules.dispatch)-gated; gated behind
+// RequireNotContractor grouped with the other Home Services surfaces (the T13
+// TechCopilotPanel / T11 QuoteCloserSettings precedent). Final flagship T14.
+const DispatchConsole = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.DispatchConsole,
+  })),
+);
 const NoShowRiskView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.NoShowRiskView })),
 );
@@ -436,6 +449,14 @@ export const router = createBrowserRouter([
                   // PriceBookConfig precedent). A contractor deep-linking is
                   // bounced.
                   { path: "tech-copilot", element: <TechCopilotPanel /> },
+                  // Home Services T14 "DispatchIQ" — dispatcher optimize
+                  // console (AI-proposed assignments + apply plan + analytics).
+                  // The BE DispatchController is @ConditionalOnProperty
+                  // (kmosf.modules.dispatch)-gated; gated behind
+                  // RequireNotContractor grouped with the other Home Services
+                  // surfaces (the T13 TechCopilotPanel precedent). Final
+                  // flagship tool. A contractor deep-linking is bounced.
+                  { path: "dispatch", element: <DispatchConsole /> },
                   // ChairFill salon flagship (CF-5) — staff-visible, like
                   // missed-calls (the BE board/review-draft routes are
                   // STAFF-gated). A contractor deep-linking is bounced.

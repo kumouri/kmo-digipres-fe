@@ -4,3 +4,4 @@ export { QuoteInbox } from "./QuoteInbox";
 export { PriceBookConfig } from "./PriceBookConfig";
 export { QuoteCloserSettings } from "./QuoteCloserSettings";
 export { TechCopilotPanel } from "./TechCopilotPanel";
+export { DispatchConsole } from "./DispatchConsole";

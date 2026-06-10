@@ -105,6 +105,7 @@ import {
   quoteCloserStore,
   stylerMatchStore,
   techCopilotStore,
+  dispatchStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -3144,5 +3145,68 @@ export const handlers = [
       );
     }
     return HttpResponse.json(result);
+  }),
+
+  // ── Home Services T14 "DispatchIQ" ─────────────────────────────────────────
+  // GET  /dispatch/optimize?date=<ISO>  — propose schedule (staff-gated; 4521 if no date)
+  // POST /dispatch/apply               — commit decisions (@IdempotentRoute, Idempotency-Key)
+  // GET  /dispatch/analytics?date=<ISO>— aggregate stats (staff-gated; 4521 if no date)
+  //
+  // TEST-ONLY:
+  //   POST /dispatch/test-reset        — reset applied state to seeds
+
+  // TEST-ONLY: reset applied state (register before parametrics)
+  http.post(`${API_BASE}/dispatch/test-reset`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    dispatchStore.reset();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // GET /dispatch/optimize?date=<ISO date>
+  http.get(`${API_BASE}/dispatch/optimize`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const date = url.searchParams.get("date");
+    if (!date) {
+      return HttpResponse.json(
+        { message: "date (ISO yyyy-MM-dd) is required", errorCode: 4521 },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json(dispatchStore.optimize(date));
+  }),
+
+  // POST /dispatch/apply (@IdempotentRoute — Idempotency-Key required)
+  http.post(`${API_BASE}/dispatch/apply`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = await request.json() as { date?: string; assignments?: { workOrderId?: string; techUserId?: string | null }[] } | null;
+    if (!body?.assignments || body.assignments.length === 0) {
+      return HttpResponse.json(
+        { message: "At least one assignment decision is required", errorCode: 4522 },
+        { status: 400 },
+      );
+    }
+    const result = dispatchStore.apply({
+      date: body.date ?? new Date().toISOString().slice(0, 10),
+      assignments: body.assignments.map((d) => ({
+        workOrderId: d?.workOrderId ?? "",
+        techUserId: d?.techUserId ?? null,
+      })),
+    });
+    return HttpResponse.json(result);
+  }),
+
+  // GET /dispatch/analytics?date=<ISO date>
+  http.get(`${API_BASE}/dispatch/analytics`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const date = url.searchParams.get("date");
+    if (!date) {
+      return HttpResponse.json(
+        { message: "date (ISO yyyy-MM-dd) is required", errorCode: 4521 },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json(dispatchStore.analytics(date));
   }),
 ];

@@ -18,6 +18,22 @@ When writing API calls or understanding FE–BE contracts, read `.claude/backend
 When writing components, queries, forms, or handling errors, read `.claude/conventions.md`.
 For what is explicitly out of scope for the current init plan, read `.claude/scope-boundaries.md`.
 
+## Home Services "DispatchIQ" — dispatcher optimize console (T14, SHIPPED)
+
+Admin UI for the backend T14 **DispatchIQ** — the final flagship tool (completes the 4-vertical AI demo set): a **date picker** → AI-proposed tech assignments (urgency badge / skill-matched badge / fit score / rationale table) + a separate **Unassigned** section (each with its `unassignedReason`) → **Apply plan** button (commits decisions + `Idempotency-Key` per `@IdempotentRoute`) → applied/skipped result banner + a **dispatch analytics** card (total open / assigned / unassigned / skill-matched / skill-match rate / avg fit). Branch `home-dispatchiq-fe`; smoke +16 specs (362→378).
+
+| Area | Route | API surface |
+|---|---|---|
+| Dispatch console (`<RequireNotContractor>`) | `/dispatch` | GET /dispatch/optimize?date=<ISO> → `DispatchPlan{date, assignments[], unassigned[], openCount, assignedCount, unassignedCount, skillMatchRate, avgFitScore}`; POST /dispatch/apply (`@IdempotentRoute` → `Idempotency-Key` REQUIRED) body `ApplyRequest{date, assignments[{workOrderId,techUserId}]}` → `ApplyResponse{applied, skipped}`; GET /dispatch/analytics?date=<ISO> → `DispatchAnalytics{date, totalOpen, assigned, unassigned, skillMatched, skillMatchRate, avgFitScore}` |
+
+- **Hand-written client** `api/dispatch.ts` + hook `useDispatchApi` — the `DispatchController` is `@ConditionalOnProperty(kmosf.modules.dispatch)`-gated, so all routes are **absent from `openapi.json`** (the T13 TechCopilotController precedent). All 19 fields of `ProposedAssignment` typed field-by-field from `module/dispatch/model/ProposedAssignment.java`; all 8 fields of `DispatchPlan`; all 2 fields of each DTO. `gen:api:check` stays green (hand-written, no regen). `applyDispatch()` sends `Idempotency-Key: crypto.randomUUID()` per call (the T7 RescheduleBoard / T5 CallbackController precedent).
+- **Component** `admin/home-services/DispatchConsole.tsx` — three sections: (1) date picker (`<input type="date">`) + optimize query → summary bar (open/assigned/unassigned/skill-match-rate/avg-fit) + `AssignmentsTable` (urgency badge + job-value badge + tech name + skill-matched/skill-gap badge + fit score % + rationale) + `UnassignedSection` (each item: title + urgency + unassignedReason); (2) "Apply plan" button (mutation → `@IdempotentRoute` POST with `Idempotency-Key`; result banner applied/skipped; re-apply shows "already applied"); (3) `AnalyticsCard` (TanStack Query → 6 stat tiles: total open / assigned / unassigned / skill-matched / skill-match rate / avg fit score). Route: `/dispatch`.
+- **Route guard:** behind `RequireNotContractor` grouped with the other Home Services surfaces (the T13 TechCopilotPanel precedent). The BE endpoints are STAFF-gated (`RoleGuard.requireRole("STAFF")`).
+- **New labels** in `admin/labels.ts`: `DISPATCH_URGENCY_LABELS` (EMERGENCY/URGENT/ROUTINE), `DISPATCH_JOB_VALUE_LABELS` (LARGE→"High value", MEDIUM→"Mid value", SMALL→"Low value").
+- **MSW**: `dispatchStore` (store.ts) seeds 3 assigned WOs (HVAC EMERGENCY score 0.91 skillMatched=true + AC ROUTINE score 0.74 skillMatched=true + Plumbing URGENT score 0.68 skillMatched=false nearest-general-tech) + 1 unassigned (Boiler inspection — "no available tech has the Boiler skill"). `apply()` is idempotent (first call: applied=3 skipped=0; re-apply: applied=0 skipped=3). `analytics()` returns consistent stats (4 open / 3 assigned / 1 unassigned / 2 skill-matched / 66.7% / 0.777 avg). Test-control `POST /dispatch/test-reset`. Spec: `tests/dispatch.spec.ts` (16).
+- **Nav item:** `Route` icon "Dispatch" (`/dispatch`), `hideForContractor: true`, inserted after "Tech copilot" in `AppShell.tsx` NAV_ITEMS. Label "Dispatch" has no substring collision with any existing nav label ("Callback queue", "Job estimates", "Estimate settings", "Quote follow-up", "Tech copilot", "Missed Calls", etc.).
+- **Out of scope:** per-tenant module enablement, go-live config (tracked in go-live-requirements.md). T14 is the final flagship tool — the 4-vertical AI demo set (Home Services, ChairFill, Real Estate, FrontDesk IQ) is complete.
+
 ## Tenant-admin polish (SHIPPED 2026-05-17)
 
 Six-PR program (#23–#27, #29) making the UI tenant-admin-ready. Plan: `~/.claude/plans/now-that-the-kmo-digipres-fe-functional-turtle.md`.
