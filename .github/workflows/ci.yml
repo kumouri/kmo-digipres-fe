@@ -17,7 +17,10 @@ jobs:
   verify:
     name: typecheck + build + smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Raised 15 -> 30: the Playwright smoke suite grows with each shipped module;
+    # combined with playwright.config CI workers 1 -> 2 (parallel) this gives ample
+    # headroom. If it approaches the cap again, shard the smoke across a matrix.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
