@@ -102,6 +102,23 @@ Admin UI for the backend T7 **RescheduleFlow** — the staff console for the hea
 - **Nav item:** `CalendarCheck` icon, `hideForContractor: true`, inserted after "Switchboard AI" in `AppShell.tsx` NAV_ITEMS.
 - **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md).
 
+## Home Services "QuoteNow" — quote inbox + price-book config (T8, SHIPPED)
+
+Admin UI for the backend T8 **QuoteNow** — staff quote-inbox + admin price-book configuration surfaces for the home-services vertical. Branch `home-quotenow-fe`; smoke +19 specs (285 total).
+
+| Area | Route | API surface |
+|---|---|---|
+| Quote inbox (`<RequireNotContractor>`) | `/instant-quotes` | GET /quoting/quotes[?status=] → `QuoteInboxCard[]`; GET /quoting/quotes/:id → `QuoteResponse` (4435 if absent) |
+| Price-book config (`<RequireNotContractor>`) | `/quote-settings` | GET /quoting/price-book → `PriceBook` (4431 if none); PUT /quoting/price-book → `PriceBook`; POST /quoting/tokens → `{token}` (201, 180-day TTL) — ADMIN-gated |
+
+- **Hand-written client** `api/quoting.ts` + hook `useQuotingApi` — all routes are `@ConditionalOnProperty(home-services)`-gated and **absent from `openapi.json`** (the T4/T5 precedent). Types: `QuoteStatus` (NEW/ACCEPTED/BOOKED/DECLINED), `Recommendation` (REPAIR/REPLACE/DIAGNOSTIC_VISIT), `AttributeSource` (MANUAL/VISION), `JobKind` (REPAIR/REPLACE), `QuoteInboxCard` (11 fields), `QuoteResponse` (13 fields), `PriceBookLineItem`, `PriceBook`. `gen:api:check` stays green (hand-written, no regen).
+- **QuoteInbox** (`admin/home-services/QuoteInbox.tsx`) — status-filter tabs (All / New / Accepted / Booked / Declined), card list with equipment type + price range + recommendation badge, detail view with: price range, mandatory `estimateDisclaimer`, recommendation + rationale, financing flag (REPLACE only), equipment attributes (type / source / confidence).
+- **PriceBookConfig** (`admin/home-services/PriceBookConfig.tsx`) — two sections: (1) `PriceBookEditor` (nested `useState` for complex structure — per-line-item fields: equipmentType, jobKind, low/high, typicalLifespanYears, agePerYearPct, ageMaxPct, severeFailurePct, severeFailureKeywords; diagnostic visit low/high fee; book name; save with toast); (2) `TokenIssuePanel` (POST /quoting/tokens + copy homeowner widget URL). Config is ADMIN-gated via the BE; both routes use `RequireNotContractor`.
+- **Nav items:** `ClipboardList` icon "Job estimates" (`/instant-quotes`) + `Settings2` icon "Estimate settings" (`/quote-settings`); both `hideForContractor: true`. Labels chosen specifically to avoid Playwright partial-match collision with the existing "Quotes" nav item.
+- **New labels** in `admin/labels.ts`: `QUOTE_NOW_STATUS_LABELS` (NEW→"New", ACCEPTED→"Accepted", BOOKED→"Booked", DECLINED→"Declined"), `QUOTE_NOW_RECOMMENDATION_LABELS` (REPAIR→"Repair recommended", REPLACE→"Replace recommended", DIAGNOSTIC_VISIT→"Diagnostic visit needed").
+- **MSW**: `quotingStore` (store.ts) seeds 3 quotes (condenser REPAIR/NEW via VISION 87%, furnace REPLACE/NEW via MANUAL w/ `financingAvailable=true`, AC diagnostic ACCEPTED via VISION 31%) + seeded price book ("Comfort Air HVAC — 2026 price book", 2 line items) + token endpoint. Test-control `POST /quoting/price-book/test-clear` + `POST /quoting/quotes/test-reset`. Spec: `tests/quoting.spec.ts` (19).
+- **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md), homeowner-facing widget UI (separate FE surface).
+
 ## Health "Switchboard AI" — logistics config card + call-deflection stats (T4, SHIPPED)
 
 Admin UI for the backend T4 **Switchboard AI** — two panels on the FrontDesk console: a **call-deflection stats panel** (PHI-free counters: logistics-handled / clinical-tripwire / unmatched-handoff / deflection-rate) and a **logistics config card** (the per-tenant answer book: hours, location, booking/reschedule instructions, intake-form link, review link, clinical tripwire reply). Branch `health-switchboard-ai-fe`; smoke +10 specs (220→230).
