@@ -22,6 +22,8 @@ import type {
   ProposalDraftResult,
   SowDraft,
   PromiseToPay,
+  WaitlistEntry,
+  RescheduleFillStats,
   ActivityDTO,
   Appointment,
   AuditEventDTO,
@@ -5340,5 +5342,181 @@ export const reviewBoostStore = {
   /** GET /chairfill/reviewboost/config — returns the seeded config. */
   getConfig(): ReviewBoostConfig {
     return { ...SEED_REVIEW_BOOST_CONFIG };
+  },
+};
+
+// =============================================================================
+// Health "RescheduleFlow" (T7) — waitlist board + fill-rate stats
+// =============================================================================
+//
+// Three seeded waitlist entries with diverse states so all table states are
+// visible. Ada (OPEN, any provider) leads; Brook (OPEN, specific provider
+// preference + window) is mid-list; Casey (FULFILLED, already claimed a slot)
+// shows the lifecycle end-state. Fill stats seed a mid-run scenario: 48
+// cancellations → 41 offers → 38 claims → 32 filled (~67% fill rate).
+//
+// The join-POST is idempotent (accepts Idempotency-Key); duplicates with the
+// same key return the same entry without adding a new row.
+
+const RESCHEDULE_TENANT_ID = SMOKE_USER.tenantId;
+
+// Stable UUIDs for the seeded entries.
+const WAITLIST_ID_ADA = "bb000001-0000-0000-0000-000000000001";
+const WAITLIST_ID_BROOK = "bb000002-0000-0000-0000-000000000002";
+const WAITLIST_ID_CASEY = "bb000003-0000-0000-0000-000000000003";
+const PROVIDER_ID_SEED = "cc000001-0000-0000-0000-000000000001";
+
+const SEED_WAITLIST_ENTRIES: WaitlistEntry[] = [
+  {
+    id: WAITLIST_ID_ADA,
+    tenantId: RESCHEDULE_TENANT_ID,
+    contactId: "33333333-3333-3333-3333-333333333333",
+    slotType: "health-appt",
+    providerId: null,
+    earliestStart: null,
+    latestStart: null,
+    smsOptIn: true,
+    status: "OPEN",
+    notes: "Any afternoon works.",
+    priorNoShowCount: 0,
+    priorVisitCount: 4,
+    lastVisitAt: "2026-03-15T14:00:00Z",
+    version: 0,
+    createdAt: "2026-06-08T09:00:00Z",
+    updatedAt: "2026-06-08T09:00:00Z",
+  },
+  {
+    id: WAITLIST_ID_BROOK,
+    tenantId: RESCHEDULE_TENANT_ID,
+    contactId: "44444444-4444-4444-4444-444444444444",
+    slotType: "health-appt",
+    providerId: PROVIDER_ID_SEED,
+    earliestStart: "2026-06-16T08:00:00Z",
+    latestStart: "2026-06-30T17:00:00Z",
+    smsOptIn: true,
+    status: "OPEN",
+    notes: null,
+    priorNoShowCount: 1,
+    priorVisitCount: 2,
+    lastVisitAt: "2026-04-20T10:00:00Z",
+    version: 0,
+    createdAt: "2026-06-08T10:30:00Z",
+    updatedAt: "2026-06-08T10:30:00Z",
+  },
+  {
+    id: WAITLIST_ID_CASEY,
+    tenantId: RESCHEDULE_TENANT_ID,
+    contactId: "55555555-5555-5555-5555-555555555555",
+    slotType: "health-appt",
+    providerId: null,
+    earliestStart: "2026-06-10T00:00:00Z",
+    latestStart: "2026-06-20T23:59:00Z",
+    smsOptIn: false,
+    status: "FULFILLED",
+    notes: "Morning preferred.",
+    priorNoShowCount: 0,
+    priorVisitCount: 8,
+    lastVisitAt: "2026-05-01T09:00:00Z",
+    version: 1,
+    createdAt: "2026-06-07T14:00:00Z",
+    updatedAt: "2026-06-09T08:45:00Z",
+  },
+];
+
+// Mutable in-memory state.
+const waitlistEntries = new Map<string, WaitlistEntry>(
+  SEED_WAITLIST_ENTRIES.map((e) => [e.id, { ...e }]),
+);
+
+// Idempotency-Key dedup: maps key → id of the entry already created.
+const waitlistIdempotencyCache = new Map<string, string>();
+
+let rescheduleStats: RescheduleFillStats = {
+  cancellations: 48,
+  offers: 41,
+  claims: 38,
+  filled: 32,
+  fillRate: 32 / 48, // ~0.6667
+};
+
+export const rescheduleStore = {
+  /** GET /frontdesk/reschedule/waitlist — newest first, health-appt only. */
+  listWaitlist(): WaitlistEntry[] {
+    return Array.from(waitlistEntries.values())
+      .filter((e) => e.slotType === "health-appt")
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .map((e) => ({ ...e }));
+  },
+
+  /**
+   * POST /frontdesk/reschedule/waitlist — join the health waitlist. Idempotent:
+   * a repeated Idempotency-Key returns the same entry (201).
+   * Returns { code: 4421 } when contactId is missing.
+   */
+  joinWaitlist(
+    body: Partial<WaitlistEntry>,
+    idempotencyKey: string,
+  ): WaitlistEntry | { code: number; message: string } {
+    if (!body.contactId) {
+      return {
+        code: 4421,
+        message: "Reschedule waitlist join requires a contactId",
+      };
+    }
+
+    // Idempotency-Key dedup.
+    const existing = waitlistIdempotencyCache.get(idempotencyKey);
+    if (existing) {
+      const entry = waitlistEntries.get(existing);
+      if (entry) return { ...entry };
+    }
+
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+    const entry: WaitlistEntry = {
+      id,
+      tenantId: RESCHEDULE_TENANT_ID,
+      contactId: body.contactId,
+      slotType: "health-appt",
+      providerId: body.providerId ?? null,
+      earliestStart: body.earliestStart ?? null,
+      latestStart: body.latestStart ?? null,
+      smsOptIn: body.smsOptIn ?? true,
+      status: "OPEN",
+      notes: body.notes ?? null,
+      priorNoShowCount: body.priorNoShowCount ?? 0,
+      priorVisitCount: body.priorVisitCount ?? 0,
+      lastVisitAt: body.lastVisitAt ?? null,
+      version: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    waitlistEntries.set(id, entry);
+    waitlistIdempotencyCache.set(idempotencyKey, id);
+    return { ...entry };
+  },
+
+  /** GET /frontdesk/reschedule/fill-stats — PHI-free funnel counters. */
+  getFillStats(): RescheduleFillStats {
+    return { ...rescheduleStats };
+  },
+
+  /** Reset to seed state (test isolation). */
+  reset() {
+    waitlistEntries.clear();
+    waitlistIdempotencyCache.clear();
+    for (const e of SEED_WAITLIST_ENTRIES) {
+      waitlistEntries.set(e.id, { ...e });
+    }
+    rescheduleStats = {
+      cancellations: 48,
+      offers: 41,
+      claims: 38,
+      filled: 32,
+      fillRate: 32 / 48,
+    };
   },
 };

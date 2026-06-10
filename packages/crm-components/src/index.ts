@@ -265,6 +265,20 @@ export type {
   SwitchboardConfigRequest,
   SwitchboardDeflectionStats,
 } from "./api/frontdesk-switchboard";
+// Health "RescheduleFlow" (T7) — waitlist board + fill-rate stats. Hand-written
+// client (the BE RescheduleController is @ConditionalOnProperty(frontdesk)-gated
+// AND requires the waitlist module, so all routes are absent from the generated
+// openapi types — the T4 SwitchboardPanel / T5 CallbackQueue precedent).
+// PHI-free by construction (fence F1): logistics-only — provider + time window +
+// show-likelihood signals; no diagnosis, procedure, or clinical field.
+export { RescheduleBoard } from "./admin/frontdesk";
+export { useRescheduleApi } from "./hooks/useRescheduleApi";
+export type {
+  WaitlistEntry,
+  WaitlistEntryStatus,
+  WaitlistJoinRequest,
+  RescheduleFillStats,
+} from "./api/reschedule";
 // Health "RevenueRevive" (T2) — dormant-patient reactivation funnel. Hand-written
 // client (the BE routes are @ConditionalOnProperty(frontdesk)-gated AND the
 // shared nurture controller is nurture-module-gated, so both are absent from the

@@ -89,6 +89,7 @@ import {
   midnightResponderStore,
   frontDeskNurtureStore,
   switchboardStore,
+  rescheduleStore,
   recurringInvoiceStore,
   savedReportStore,
   taskStore2,
@@ -2542,4 +2543,64 @@ export const handlers = [
     if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
     return HttpResponse.json(reviewBoostStore.getConfig());
   }),
+
+  // ---------------------------------------------------------------------------
+  // Health "RescheduleFlow" (T7) — waitlist board + fill-rate stats
+  // ---------------------------------------------------------------------------
+  //
+  // POST /frontdesk/reschedule/waitlist — join; @IdempotentRoute; 4421 if no
+  //   contactId. Reads Idempotency-Key header for dedup (the T5 dispatch /
+  //   segment-and-enroll precedent). Returns 201 WaitlistEntry.
+  // GET  /frontdesk/reschedule/waitlist — the tenant's health waitlist entries.
+  // GET  /frontdesk/reschedule/fill-stats — PHI-free funnel counters.
+  //
+  // All three are ADMIN + frontdesk-AND-waitlist-module-gated on the BE.
+  // A contractor never reaches them (RequireNotContractor guard). PHI-free.
+
+  // TEST-ONLY control endpoint — resets the reschedule store (seed entries +
+  // fill stats) so smoke tests get a clean slate without a page reload.
+  http.post(
+    `${API_BASE}/frontdesk/reschedule/test-reset`,
+    () => {
+      rescheduleStore.reset();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // POST /frontdesk/reschedule/waitlist — idempotent join.
+  http.post(
+    `${API_BASE}/frontdesk/reschedule/waitlist`,
+    async ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      const idempotencyKey =
+        request.headers.get("Idempotency-Key") ?? crypto.randomUUID();
+      const body = (await request.json()) as Partial<{ contactId: string; providerId: string | null; earliestStart: string | null; latestStart: string | null; smsOptIn: boolean | null; notes: string | null; priorNoShowCount: number | null; priorVisitCount: number | null; lastVisitAt: string | null }>;
+      const result = rescheduleStore.joinWaitlist(body, idempotencyKey);
+      if ("code" in result) {
+        return HttpResponse.json(
+          { message: result.message, errorCode: result.code },
+          { status: 400 },
+        );
+      }
+      return HttpResponse.json(result, { status: 201 });
+    },
+  ),
+
+  // GET /frontdesk/reschedule/waitlist — newest first, health-appt only.
+  http.get(
+    `${API_BASE}/frontdesk/reschedule/waitlist`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(rescheduleStore.listWaitlist());
+    },
+  ),
+
+  // GET /frontdesk/reschedule/fill-stats — PHI-free fill-funnel counters.
+  http.get(
+    `${API_BASE}/frontdesk/reschedule/fill-stats`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      return HttpResponse.json(rescheduleStore.getFillStats());
+    },
+  ),
 ];

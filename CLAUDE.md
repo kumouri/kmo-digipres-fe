@@ -85,6 +85,23 @@ Admin UI for the backend T5 **Instant Callback** — the dispatcher surface on t
 - **Nav item:** `Zap` icon, `hideForContractor: true`, inserted after "Missed Calls" in `AppShell.tsx` NAV_ITEMS.
 - **Out of scope:** per-tenant module enablement, Twilio/A2P 10DLC go-live config (tracked in go-live-requirements.md).
 
+## Health "RescheduleFlow" — waitlist board + fill-rate stats (T7, SHIPPED)
+
+Admin UI for the backend T7 **RescheduleFlow** — the staff console for the health appointment waitlist + the gap-fill funnel analytics: a **fill-rate stats panel** (cancellations → offers → claims → filled + fill rate) + a **waitlist table** (each waiting patient: provider preference, availability window, SMS opt-in, lifecycle status) + an **add-to-waitlist form** (POST with `Idempotency-Key`). Branch `health-rescheduleflow-fe`; smoke +10 specs.
+
+| Area | Route | API surface |
+|---|---|---|
+| Reschedule board (`<RequireNotContractor>`) | `/reschedule-waitlist` | POST /frontdesk/reschedule/waitlist (`@IdempotentRoute` → `Idempotency-Key` minted per call) → `WaitlistEntry` (201; 4421/400 if no contactId); GET /frontdesk/reschedule/waitlist → `WaitlistEntry[]`; GET /frontdesk/reschedule/fill-stats → `RescheduleFillStats{cancellations,offers,claims,filled,fillRate}` |
+
+- **Hand-written client** `api/reschedule.ts` + hook `useRescheduleApi` — the RescheduleController is `@ConditionalOnProperty(frontdesk)`-gated AND requires the waitlist module, so all routes are **absent from `openapi.json`** (the T4 SwitchboardController / T5 CallbackController precedent). DTOs typed field-by-field from the BE records: `WaitlistEntry` (18 fields mirroring `model/waitlist/WaitlistEntry`), `WaitlistJoinRequest` (logistics-only; no clinical field), `RescheduleFillStats` (5-field counters). The POST sends `Idempotency-Key: crypto.randomUUID()` per submission (the T5 dispatch / segment-and-enroll precedent). `gen:api:check` stays green (hand-written, no regen).
+- **Component** `admin/frontdesk/RescheduleBoard.tsx` — three sections: (1) `FillStatsPanel` (TanStack Query → 5 stat cards: cancellations / offers / claims / filled / fill-rate; no-data empty state); (2) `WaitlistTableSection` (TanStack Query → table rows per entry; OPEN/FULFILLED/CANCELLED status badge; empty-state banner); (3) `AddToWaitlistCard` (react-hook-form + zod; contact ID required; provider, window, SMS-opt-in, notes optional; POST on submit with minted Idempotency-Key). Route: `/reschedule-waitlist`.
+- **Route guard:** behind `RequireNotContractor` grouped with the other FrontDesk IQ surfaces (the T4 SwitchboardPanel precedent). The BE endpoints are ADMIN-guarded (`RoleGuard.requireRole("ADMIN")`, 1800).
+- **PHI-free by construction (fence F1):** all fields are scheduling logistics — provider + time window + show-likelihood signals (priorNoShowCount / priorVisitCount / lastVisitAt). No diagnosis, procedure, or clinical detail is accepted or surfaced. `slotType` is the fixed logistics token "health-appt" (never a procedure).
+- **New labels** in `admin/labels.ts`: `WAITLIST_ENTRY_STATUS_LABELS` (OPEN→"Waiting", FULFILLED→"Slot filled", CANCELLED→"Removed").
+- **MSW**: `rescheduleStore` (store.ts) seeds 3 waitlist entries (Ada OPEN/any-provider, Brook OPEN/specific-provider+window, Casey FULFILLED — all three states visible) + seeded fill stats (48 cancellations / 41 offers / 38 claims / 32 filled / ~67% fill rate). `joinWaitlist` is idempotent (Idempotency-Key cache); `reset()` restores seed state. Spec: `tests/reschedule.spec.ts` (10).
+- **Nav item:** `CalendarCheck` icon, `hideForContractor: true`, inserted after "Switchboard AI" in `AppShell.tsx` NAV_ITEMS.
+- **Out of scope:** per-tenant module enablement, Twilio + A2P 10DLC go-live config (tracked in go-live-requirements.md).
+
 ## Health "Switchboard AI" — logistics config card + call-deflection stats (T4, SHIPPED)
 
 Admin UI for the backend T4 **Switchboard AI** — two panels on the FrontDesk console: a **call-deflection stats panel** (PHI-free counters: logistics-handled / clinical-tripwire / unmatched-handoff / deflection-rate) and a **logistics config card** (the per-tenant answer book: hours, location, booking/reschedule instructions, intake-form link, review link, clinical tripwire reply). Branch `health-switchboard-ai-fe`; smoke +10 specs (220→230).
