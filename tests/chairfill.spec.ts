@@ -82,14 +82,14 @@ test("the risk view renders upcoming bookings with color-coded risk badges", asy
 
 test("waitlist nav item is visible to staff", async ({ page }) => {
   await login(page);
-  await expect(page.getByRole("link", { name: "Waitlist" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Waitlist", exact: true })).toBeVisible();
 });
 
 test("the waitlist board renders OPEN entries and recent offers", async ({
   page,
 }) => {
   await login(page);
-  await page.getByRole("link", { name: "Waitlist" }).click();
+  await page.getByRole("link", { name: "Waitlist", exact: true }).click();
   await expect(page).toHaveURL(/\/waitlist$/);
   await expect(page.getByTestId("waitlist-board-page")).toBeVisible();
 
@@ -186,7 +186,7 @@ test("a contractor cannot see or reach the ChairFill surfaces", async ({
 
   // The nav items are hidden…
   await expect(page.getByRole("link", { name: "No-show risk" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Waitlist" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Waitlist", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Salon reviews" })).toHaveCount(0);
 
   // …and deep-links are bounced back to the dashboard by RequireNotContractor.

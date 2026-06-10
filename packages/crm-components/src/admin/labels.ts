@@ -514,6 +514,21 @@ export const RESPONDER_LEAD_TIER_LABELS: Record<string, string> = {
 // manager knows at a glance whether the feature is actually wired up.
 // Plain, non-technical labels — a front-desk manager, not an engineer, reads these.
 
+// --- Health "RescheduleFlow" (T7) — waitlist board + fill-rate stats ---------
+// PHI-free by construction. These labels cover the logistics lifecycle of a
+// health waitlist entry — never a clinical status or procedure name.
+
+/**
+ * The generic WaitlistEntry's lifecycle (WaitlistEntry.Status on the BE):
+ * OPEN = waiting for an offer; FULFILLED = patient claimed a freed slot;
+ * CANCELLED = staff removed the entry.
+ */
+export const WAITLIST_ENTRY_STATUS_LABELS: Record<string, string> = {
+  OPEN: "Waiting",
+  FULFILLED: "Slot filled",
+  CANCELLED: "Removed",
+};
+
 /** Short label for a boolean ReviewBoost flag when it is ON. */
 export const REVIEW_BOOST_FLAG_ON = "On";
 

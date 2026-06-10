@@ -192,6 +192,11 @@ const SwitchboardPanel = lazy(() =>
     default: m.SwitchboardPanel,
   })),
 );
+const RescheduleBoard = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({
+    default: m.RescheduleBoard,
+  })),
+);
 const RiskDayView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.RiskDayView })),
 );
@@ -409,6 +414,13 @@ export const router = createBrowserRouter([
                   // surfaces (the T2 RevenueRevive precedent). PHI-free by
                   // construction: config holds only logistics answers.
                   { path: "switchboard", element: <SwitchboardPanel /> },
+                  // Health "RescheduleFlow" (T7) — waitlist board + fill-rate
+                  // stats. The BE RescheduleController is ADMIN + frontdesk-AND-
+                  // waitlist-module-gated; gated behind RequireNotContractor
+                  // alongside the other FrontDesk IQ surfaces (the T4
+                  // SwitchboardPanel precedent). PHI-free by construction:
+                  // logistics-only — provider + time window + show-likelihood.
+                  { path: "reschedule-waitlist", element: <RescheduleBoard /> },
                   { path: "reports", element: <ReportsList /> },
                   { path: "reports/:id", element: <ReportDetail /> },
                   { path: "dashboards", element: <DashboardsList /> },

@@ -5,3 +5,4 @@ export { ReviewInbox } from "./ReviewInbox";
 export { AppointmentConsole } from "./AppointmentConsole";
 export { RevenueReviveDashboard } from "./RevenueReviveDashboard";
 export { SwitchboardPanel } from "./SwitchboardPanel";
+export { RescheduleBoard } from "./RescheduleBoard";
