@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../primitives/table";
+import { safeHref } from "../../primitives/utils";
 import { useSalonReviewBoostApi } from "../../hooks/useSalonReviewBoostApi";
 import type { StylistReviewStats } from "../../api/salon-reviewboost";
 import {
@@ -460,9 +461,12 @@ function ConfigStatusCard() {
           >
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">Google review link</span>
-              {config.reviewLinkConfigured && config.reviewLink ? (
+              {/* Security FE-01: the review link is tenant-supplied — only
+                  render it as a clickable href when it is an http(s) URL.
+                  A non-http(s) value is shown as inert text, never a link. */}
+              {config.reviewLinkConfigured && safeHref(config.reviewLink) ? (
                 <a
-                  href={config.reviewLink}
+                  href={safeHref(config.reviewLink)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="truncate text-xs text-primary hover:underline"
@@ -470,6 +474,13 @@ function ConfigStatusCard() {
                 >
                   {config.reviewLink}
                 </a>
+              ) : config.reviewLinkConfigured && config.reviewLink ? (
+                <span
+                  className="truncate text-xs text-muted-foreground"
+                  data-testid="review-boost-config-review-link-url"
+                >
+                  {config.reviewLink}
+                </span>
               ) : (
                 <span className="text-xs text-muted-foreground">
                   Not configured — requests cannot be sent until this is set.

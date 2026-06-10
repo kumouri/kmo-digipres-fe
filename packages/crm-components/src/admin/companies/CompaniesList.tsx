@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 
 import { Badge } from "@kmosf/crm-components";
 import { Button } from "@kmosf/crm-components";
+import { safeHref } from "@kmosf/crm-components";
 import {
   Dialog,
   DialogContent,
@@ -45,10 +46,16 @@ const columns: Column<CompanyDTO>[] = [
   {
     key: "website",
     header: "Website",
-    cell: (c) =>
-      c.website ? (
+    cell: (c) => {
+      if (!c.website)
+        return <span className="text-muted-foreground">—</span>;
+      // Security FE-01: only render a clickable link for http(s) URLs.
+      // A non-http(s) value (e.g. a stored `javascript:` URI) is shown as
+      // inert text — never as a navigable href.
+      const href = safeHref(c.website);
+      return href ? (
         <a
-          href={c.website}
+          href={href}
           target="_blank"
           rel="noreferrer"
           className="text-primary underline-offset-2 hover:underline"
@@ -57,8 +64,9 @@ const columns: Column<CompanyDTO>[] = [
           {c.website}
         </a>
       ) : (
-        <span className="text-muted-foreground">—</span>
-      ),
+        <span className="text-muted-foreground">{c.website}</span>
+      );
+    },
   },
   {
     key: "tags",
