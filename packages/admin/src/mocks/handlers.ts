@@ -98,6 +98,7 @@ import {
   ticketStore,
   timeEntryStore,
   timesheetStore,
+  quotingStore,
 } from "./store";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -2602,6 +2603,89 @@ export const handlers = [
     ({ request }) => {
       if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
       return HttpResponse.json(rescheduleStore.getFillStats());
+    },
+  ),
+
+  // ---------------------------------------------------------------------------
+  // Home Services T8 "QuoteNow" — office quote-inbox + price book + token
+  // ---------------------------------------------------------------------------
+  //
+  // GET  /quoting/quotes[?status=] — inbox list (staff-accessible)
+  // GET  /quoting/quotes/{id}      — quote detail (4435 if absent)
+  // GET  /quoting/price-book       — price book (ADMIN; 4431/404 if none)
+  // PUT  /quoting/price-book       — upsert (ADMIN)
+  // POST /quoting/tokens           — issue widget token (ADMIN)
+  //
+  // TEST-ONLY controls:
+  // POST /quoting/price-book/test-clear  — clears the price book (4431 path)
+  // POST /quoting/quotes/test-reset      — resets quote rows to seeds
+
+  // GET /quoting/quotes[?status=]
+  http.get(`${API_BASE}/quoting/quotes`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status") ?? undefined;
+    return HttpResponse.json(quotingStore.list(status));
+  }),
+
+  // GET /quoting/quotes/{id}
+  http.get(`${API_BASE}/quoting/quotes/:id`, ({ request, params }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const { id } = params as { id: string };
+    const detail = quotingStore.get(id);
+    if (!detail) {
+      return HttpResponse.json(
+        { message: "Quote not found", errorCode: 4435 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(detail);
+  }),
+
+  // GET /quoting/price-book — 4431/404 if none
+  http.get(`${API_BASE}/quoting/price-book`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const book = quotingStore.getPriceBook();
+    if (!book) {
+      return HttpResponse.json(
+        { message: "Price book not found", errorCode: 4431 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(book);
+  }),
+
+  // PUT /quoting/price-book
+  http.put(`${API_BASE}/quoting/price-book`, async ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    const body = await request.json() as Parameters<typeof quotingStore.savePriceBook>[0];
+    const saved = quotingStore.savePriceBook(body);
+    return HttpResponse.json(saved);
+  }),
+
+  // POST /quoting/tokens
+  http.post(`${API_BASE}/quoting/tokens`, ({ request }) => {
+    if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(quotingStore.issueToken(), { status: 201 });
+  }),
+
+  // TEST-ONLY: clear price book (exercises the 4431 empty-state path)
+  http.post(
+    `${API_BASE}/quoting/price-book/test-clear`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      quotingStore.clearPriceBook();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // TEST-ONLY: reset quote rows to seeds
+  http.post(
+    `${API_BASE}/quoting/quotes/test-reset`,
+    ({ request }) => {
+      if (!requireAuth(request)) return new HttpResponse(null, { status: 401 });
+      quotingStore.resetQuotes();
+      return new HttpResponse(null, { status: 204 });
     },
   ),
 ];

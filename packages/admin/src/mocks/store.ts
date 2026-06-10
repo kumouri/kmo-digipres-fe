@@ -13,6 +13,9 @@ import type {
   CallbackConfig,
   SalonReviewBoard,
   ReviewBoostConfig,
+  QuoteInboxCard,
+  QuoteResponse,
+  PriceBook,
   NurtureCampaign,
   NurtureCampaignAnalytics,
   SegmentationResult,
@@ -5343,6 +5346,238 @@ export const reviewBoostStore = {
   /** GET /chairfill/reviewboost/config — returns the seeded config. */
   getConfig(): ReviewBoostConfig {
     return { ...SEED_REVIEW_BOOST_CONFIG };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Home Services T8 "QuoteNow" — office quote-inbox + price-book config
+// ---------------------------------------------------------------------------
+//
+// Seeds:
+//  - 3 homeowner quote submissions: a REPAIR/CONDENSER (NEW), a REPLACE/FURNACE
+//    with financing flag (NEW), and a DIAGNOSTIC_VISIT (ACCEPTED/DECLINED mix).
+//  - A seeded price book with 2 line items (condenser repair + furnace replace).
+//  - Token-issue: always returns a stable fake token.
+
+type QuoteStore = {
+  quoteId: string;
+  contactId: string | null;
+  contactPhone: string | null;
+  equipmentType: string | null;
+  low: number | null;
+  high: number | null;
+  currency: string | null;
+  recommendation: "REPAIR" | "REPLACE" | "DIAGNOSTIC_VISIT" | null;
+  diagnosticOnly: boolean;
+  status: "NEW" | "ACCEPTED" | "BOOKED" | "DECLINED";
+  createdAt: string;
+  // Detail-only fields
+  basis: string | null;
+  estimateDisclaimer: string | null;
+  recommendationRationale: string | null;
+  financingAvailable: boolean;
+  attributeSource: "MANUAL" | "VISION" | null;
+  confidence: number;
+};
+
+const SEED_QUOTES: QuoteStore[] = [
+  {
+    quoteId: "qqq00001-0000-0000-0000-000000000001",
+    contactId: "cc000001-0000-0000-0000-000000000001",
+    contactPhone: "+1 555 0301",
+    equipmentType: "Condenser",
+    low: 450,
+    high: 750,
+    currency: "USD",
+    recommendation: "REPAIR",
+    diagnosticOnly: false,
+    status: "NEW",
+    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 min ago
+    basis: "condenser / REPAIR",
+    estimateDisclaimer:
+      "This is an estimate — the final price is confirmed after an on-site inspection.",
+    recommendationRationale:
+      "The unit is 4 years old — well within its 15-year lifespan. Repair cost ($450–$750) is well below replacement ($3,500–$6,000). Recommend repair.",
+    financingAvailable: false,
+    attributeSource: "VISION",
+    confidence: 0.87,
+  },
+  {
+    quoteId: "qqq00002-0000-0000-0000-000000000002",
+    contactId: null,
+    contactPhone: "+1 555 0302",
+    equipmentType: "Furnace",
+    low: 3800,
+    high: 6200,
+    currency: "USD",
+    recommendation: "REPLACE",
+    diagnosticOnly: false,
+    status: "NEW",
+    createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(), // 90 min ago
+    basis: "furnace / REPLACE",
+    estimateDisclaimer:
+      "This is an estimate — the final price is confirmed after an on-site inspection.",
+    recommendationRationale:
+      "The furnace is 19 years old — past its 20-year lifespan and repair cost ($1,200–$1,800) is approaching replacement. Recommend full replacement for long-term efficiency.",
+    financingAvailable: true,
+    attributeSource: "MANUAL",
+    confidence: 1.0,
+  },
+  {
+    quoteId: "qqq00003-0000-0000-0000-000000000003",
+    contactId: null,
+    contactPhone: "+1 555 0303",
+    equipmentType: null,
+    low: 89,
+    high: 149,
+    currency: "USD",
+    recommendation: "DIAGNOSTIC_VISIT",
+    diagnosticOnly: true,
+    status: "ACCEPTED",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hr ago
+    basis: null,
+    estimateDisclaimer:
+      "This is an estimate — the final price is confirmed after an on-site inspection.",
+    recommendationRationale:
+      "Not enough information to advise remotely. A paid diagnostic visit is recommended to assess the equipment.",
+    financingAvailable: false,
+    attributeSource: "VISION",
+    confidence: 0.31,
+  },
+];
+
+let quoteRows: QuoteStore[] = SEED_QUOTES.map((q) => ({ ...q }));
+
+let priceBookRow: PriceBook | null = {
+  id: "pb000001-0000-0000-0000-000000000001",
+  tenantId: "22222222-2222-2222-2222-222222222222",
+  name: "Comfort Air HVAC — 2026 price book",
+  currency: "USD",
+  lineItems: [
+    {
+      equipmentType: "Condenser",
+      jobKind: "REPAIR",
+      low: 450,
+      high: 750,
+      typicalLifespanYears: 15,
+      agePerYearPct: 1.5,
+      ageMaxPct: 20,
+      severeFailurePct: 0,
+      severeFailureKeywords: ["compressor", "cracked"],
+    },
+    {
+      equipmentType: "Furnace",
+      jobKind: "REPLACE",
+      low: 3800,
+      high: 6200,
+      typicalLifespanYears: 20,
+      agePerYearPct: 0,
+      ageMaxPct: 0,
+      severeFailurePct: 0,
+      severeFailureKeywords: null,
+    },
+  ],
+  diagnosticVisitLow: 89,
+  diagnosticVisitHigh: 149,
+  version: 0,
+  createdAt: "2026-06-01T00:00:00Z",
+  updatedAt: "2026-06-01T00:00:00Z",
+};
+
+function quoteToInboxCard(q: QuoteStore): QuoteInboxCard {
+  return {
+    quoteId: q.quoteId,
+    contactId: q.contactId,
+    contactPhone: q.contactPhone,
+    equipmentType: q.equipmentType,
+    low: q.low,
+    high: q.high,
+    currency: q.currency,
+    recommendation: q.recommendation,
+    diagnosticOnly: q.diagnosticOnly,
+    status: q.status,
+    createdAt: q.createdAt,
+  };
+}
+
+function quoteToResponse(q: QuoteStore): QuoteResponse {
+  return {
+    quoteId: q.quoteId,
+    low: q.low,
+    high: q.high,
+    currency: q.currency,
+    basis: q.basis,
+    estimateDisclaimer: q.estimateDisclaimer,
+    diagnosticOnly: q.diagnosticOnly,
+    recommendation: q.recommendation,
+    recommendationRationale: q.recommendationRationale,
+    financingAvailable: q.financingAvailable,
+    equipmentType: q.equipmentType,
+    attributeSource: q.attributeSource,
+    confidence: q.confidence,
+  };
+}
+
+export const quotingStore = {
+  /**
+   * GET /quoting/quotes[?status=<QuoteStatus>] — inbox list newest-first.
+   * Optional status filter.
+   */
+  list(status?: string): QuoteInboxCard[] {
+    const rows = status
+      ? quoteRows.filter((q) => q.status === status)
+      : quoteRows;
+    return rows
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(quoteToInboxCard);
+  },
+
+  /**
+   * GET /quoting/quotes/{id} — full detail (4435 if absent).
+   */
+  get(id: string): QuoteResponse | null {
+    const q = quoteRows.find((r) => r.quoteId === id);
+    return q ? quoteToResponse(q) : null;
+  },
+
+  /**
+   * GET /quoting/price-book — the tenant's book (null → 4431/404).
+   */
+  getPriceBook(): PriceBook | null {
+    return priceBookRow ? { ...priceBookRow, lineItems: priceBookRow.lineItems.map((l) => ({ ...l })) } : null;
+  },
+
+  /**
+   * PUT /quoting/price-book — upsert (replaces the whole book).
+   */
+  savePriceBook(body: PriceBook): PriceBook {
+    priceBookRow = {
+      ...body,
+      id: priceBookRow?.id ?? "pb000001-0000-0000-0000-000000000001",
+      tenantId: "22222222-2222-2222-2222-222222222222",
+      version: (priceBookRow?.version ?? 0) + 1,
+      createdAt: priceBookRow?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    return { ...priceBookRow, lineItems: priceBookRow.lineItems.map((l) => ({ ...l })) };
+  },
+
+  /**
+   * POST /quoting/tokens — issue a stable fake widget token.
+   */
+  issueToken(): { token: string } {
+    return { token: "msw-quote-intake-token-abc123" };
+  },
+
+  /** TEST-ONLY: clear the price book (exercises the 4431 empty-state path). */
+  clearPriceBook() {
+    priceBookRow = null;
+  },
+
+  /** TEST-ONLY: reset quote rows to seeds. */
+  resetQuotes() {
+    quoteRows = SEED_QUOTES.map((q) => ({ ...q }));
   },
 };
 

@@ -141,6 +141,12 @@ const MissedCallInbox = lazy(() =>
 const CallbackQueue = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.CallbackQueue })),
 );
+const QuoteInbox = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.QuoteInbox })),
+);
+const PriceBookConfig = lazy(() =>
+  import("@kmosf/crm-components").then((m) => ({ default: m.PriceBookConfig })),
+);
 const NoShowRiskView = lazy(() =>
   import("@kmosf/crm-components").then((m) => ({ default: m.NoShowRiskView })),
 );
@@ -350,6 +356,15 @@ export const router = createBrowserRouter([
                   // SwitchboardPanel precedent). A contractor deep-linking is
                   // bounced.
                   { path: "callback-queue", element: <CallbackQueue /> },
+                  // Home Services T8 "QuoteNow" — office quote-inbox (list +
+                  // detail: attributes, price range, repair-vs-replace, status)
+                  // + price-book config card + homeowner widget token-issue.
+                  // The BE controllers are @ConditionalOnProperty(quoting)-
+                  // gated; gated behind RequireNotContractor grouped with the
+                  // other Home Services surfaces (the T5 CallbackQueue
+                  // precedent). A contractor deep-linking is bounced.
+                  { path: "instant-quotes", element: <QuoteInbox /> },
+                  { path: "quote-settings", element: <PriceBookConfig /> },
                   // ChairFill salon flagship (CF-5) — staff-visible, like
                   // missed-calls (the BE board/review-draft routes are
                   // STAFF-gated). A contractor deep-linking is bounced.
