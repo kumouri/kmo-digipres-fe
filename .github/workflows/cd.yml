@@ -1,0 +1,140 @@
+name: cd
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build crm-admin (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build @kmosf/crm-admin (production)
+        env:
+          VITE_API_BASE_URL: https://api.kmosolutionsfoundry.com/api/v1
+          VITE_USE_MOCKS: "false"
+        run: npm run build -w @kmosf/crm-admin
+
+      # Self-check: verify the real API URL is present in the built bundle.
+      # A missing URL means the env var wasn't injected — fail loudly here
+      # rather than silently deploying a broken build.
+      - name: Self-check — real API base URL present in dist
+        run: |
+          if ! grep -r "api.kmosolutionsfoundry.com" packages/admin/dist/ --include="*.js" -q; then
+            echo "ERROR: api.kmosolutionsfoundry.com not found in dist — VITE_API_BASE_URL was not injected correctly."
+            exit 1
+          fi
+          echo "OK: api.kmosolutionsfoundry.com found in dist."
+
+      # Self-check: verify that the mocks-enabled path was NOT baked in.
+      # Vite replaces import.meta.env.VITE_USE_MOCKS with the literal "false" at
+      # build time, so the comparison `"false" !== "true"` is a dead branch that
+      # tree-shaking eliminates. If the string "mockServiceWorker" survives into
+      # the bundle it means mocks were accidentally enabled — fail the build.
+      - name: Self-check — mock service worker absent from dist
+        run: |
+          if grep -r "mockServiceWorker" packages/admin/dist/ --include="*.js" -q; then
+            echo "ERROR: mockServiceWorker found in dist — mocks may have been baked into the production bundle."
+            exit 1
+          fi
+          echo "OK: mockServiceWorker absent from dist (mocks correctly stripped)."
+
+      - name: Package dist
+        run: |
+          tar -czf crm-admin-dist.tar.gz -C packages/admin dist
+          echo "Tarball sha256: $(sha256sum crm-admin-dist.tar.gz | cut -d' ' -f1)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-admin-dist
+          path: crm-admin-dist.tar.gz
+          retention-days: 30
+
+      - name: Step summary
+        run: |
+          echo "### crm-admin production build" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tarball sha256:** $(sha256sum crm-admin-dist.tar.gz | cut -d' ' -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact:** crm-admin-dist (retention: 30 days)" >> $GITHUB_STEP_SUMMARY
+
+  # ############################################################################
+  # DEPLOY — GATED OFF BY DEFAULT
+  #
+  # This job is intentionally disabled until the repo variable PROD_DEPLOY_ENABLED
+  # is set to "true" by the owner. Until then it is a no-op.
+  #
+  # UNVERIFIED: this step has not been exercised against the live prod box.
+  # It mirrors the manual runbook in kmosf-hq ops/z2-crm/README.md.
+  #
+  # Owner must set before enabling:
+  #   - Repository variable:  PROD_DEPLOY_ENABLED = true
+  #   - Repository secret:    PROD_SSH_KEY         (private key, no passphrase)
+  #   - Repository secret:    PROD_SSH_HOST        (e.g. 5.78.75.49)
+  #   - Repository secret:    PROD_SSH_USER        (e.g. kmosf)
+  #   - Repository secret:    PROD_SSH_KNOWN_HOSTS (output of ssh-keyscan <host>)
+  # ############################################################################
+  deploy:
+    name: deploy to prod (gated)
+    needs: build
+    if: vars.PROD_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: crm-admin-dist
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Copy tarball to prod box
+        run: |
+          scp -i ~/.ssh/id_rsa \
+            crm-admin-dist.tar.gz \
+            ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }}:/tmp/crm-admin-dist.tar.gz
+
+      - name: Extract and atomic-swap on prod box
+        run: |
+          ssh -i ~/.ssh/id_rsa \
+            ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }} \
+            bash -s << 'EOF'
+          set -euo pipefail
+          # Extract into staging directory
+          rm -rf /opt/kmosf/crm-admin-dist.new
+          mkdir -p /opt/kmosf/crm-admin-dist.new
+          tar -xzf /tmp/crm-admin-dist.tar.gz -C /opt/kmosf/crm-admin-dist.new --strip-components=1
+          # Atomic-ish swap (Caddy serves /opt/kmosf/crm-admin-dist directly — no service restart needed)
+          rm -rf /opt/kmosf/crm-admin-dist.old
+          if [ -d /opt/kmosf/crm-admin-dist ]; then
+            mv /opt/kmosf/crm-admin-dist /opt/kmosf/crm-admin-dist.old
+          fi
+          mv /opt/kmosf/crm-admin-dist.new /opt/kmosf/crm-admin-dist
+          rm -f /tmp/crm-admin-dist.tar.gz
+          echo "Deploy complete: /opt/kmosf/crm-admin-dist updated."
+          EOF
