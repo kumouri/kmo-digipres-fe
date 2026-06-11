@@ -46,18 +46,22 @@ jobs:
           fi
           echo "OK: api.kmosolutionsfoundry.com found in dist."
 
-      # Self-check: verify that the mocks-enabled path was NOT baked in.
-      # Vite replaces import.meta.env.VITE_USE_MOCKS with the literal "false" at
-      # build time, so the comparison `"false" !== "true"` is a dead branch that
-      # tree-shaking eliminates. If the string "mockServiceWorker" survives into
-      # the bundle it means mocks were accidentally enabled — fail the build.
-      - name: Self-check — mock service worker absent from dist
+      # Self-check: verify that the mocks-enabled registration path was NOT baked
+      # into the compiled JS bundles.
+      # Note: public/mockServiceWorker.js is copied to dist/ unconditionally by
+      # Vite (it is a static asset) — that is fine and expected. What we check is
+      # that the JS bundles do NOT contain the mock-registration code path, i.e.
+      # the dynamic `import(./mocks/browser)` that only runs when
+      # VITE_USE_MOCKS=true. Vite replaces import.meta.env.VITE_USE_MOCKS with
+      # the literal "false" at build time, so the conditional branch is
+      # tree-shaken out of the bundle entirely.
+      - name: Self-check — mock registration code absent from JS bundles
         run: |
-          if grep -r "mockServiceWorker" packages/admin/dist/ --include="*.js" -q; then
-            echo "ERROR: mockServiceWorker found in dist — mocks may have been baked into the production bundle."
+          if grep -r "mocks/browser\|worker\.start" packages/admin/dist/assets/ --include="*.js" -q 2>/dev/null; then
+            echo "ERROR: mock registration code found in compiled JS bundles — mocks may have been baked into the production bundle."
             exit 1
           fi
-          echo "OK: mockServiceWorker absent from dist (mocks correctly stripped)."
+          echo "OK: mock registration code absent from compiled JS bundles (mocks correctly stripped)."
 
       - name: Package dist
         run: |
