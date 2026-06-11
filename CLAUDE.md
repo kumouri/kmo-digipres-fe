@@ -392,6 +392,13 @@ When adding new resource pages, derive `types/api.ts` types from the generated `
 
 For unplanned fixes outside any plan, use `feat/<desc>` or `fix/<desc>`. See the workspace [`CLAUDE.md`](../../CLAUDE.md) for the full convention.
 
+## Branching & CI (Git Flow, adopted 2026-06-10)
+- Two long-lived branches: `develop` (default; integration) and `main` (release/production).
+- Feature/fix/plan branches: branch off `develop`, PR back into `develop`. PRs run the full lane: codegen drift check, typecheck, build, Playwright smoke.
+- Release: open a PR `develop` → `main`. The same checks gate the merge — never merge red. Merging triggers `cd.yml`: builds the production `@kmosf/crm-admin` bundle (real API base, mocks off, bundle self-check) as an artifact; the prod-deploy leg (crm.kmosolutionsfoundry.com) is gated OFF behind repo variable `PROD_DEPLOY_ENABLED` + SSH secrets (owner-enabled).
+- Hotfix: branch off `main`, PR into `main`, then back-merge `main` → `develop` via PR.
+- Merge commits only; never push directly to `develop` or `main` (org ruleset enforces both).
+
 ## Stack
 
 - **Vite 6** · **React 18** · **TypeScript 5** (full strict — `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `noUncheckedSideEffectImports`)

@@ -1,18 +1,12 @@
 name: ci
 
 on:
-  push:
-    branches: [main]
-    # CI-04: doc-only merges skip CI; mirrors the pull_request filter below.
-    paths-ignore:
-      - '**/*.md'
-      - '.claude/**'
-      - 'LICENSE'
   pull_request:
     paths-ignore:
       - '**/*.md'
       - '.claude/**'
       - 'LICENSE'
+  workflow_dispatch: {}
 
 concurrency:
   group: ci-${{ github.ref }}
