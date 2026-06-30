@@ -10,6 +10,8 @@ The "digipres" / `com.kumouri` naming is historical and shared with the backend.
 
 For end-user docs (how to run it, env vars, tenant bootstrap), see [`README.md`](README.md). This file is for the engineering conventions.
 
+**License (2026-06-30):** the repo is licensed under **PolyForm Noncommercial 1.0.0** (`LICENSE`; `license` field in `package.json`) — personal/noncommercial use only, all commercial rights reserved by KMO Solutions Foundry LLC (`licensing@kmosolutionsfoundry.com`). The `README.md` now leads with the stack + a mermaid architecture diagram. Prepped for public portfolio publishing; do not relicense without owner direction.
+
 ## On-demand reference files
 
 For the history of what shipped in each build phase, read `.claude/phase-history.md`.
