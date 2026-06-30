@@ -2,6 +2,7 @@
   "name": "kmo-digipres-fe",
   "private": true,
   "version": "0.0.1",
+  "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
   "engines": {
     "node": ">=22"
   },
