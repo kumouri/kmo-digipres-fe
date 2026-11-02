@@ -3242,7 +3242,7 @@ function seedRealEstate(): void {
   const listing: Listing = {
     id: RE_LISTING_ID,
     addressLine: "1442 Lindenwood Ave",
-    city: "O'Fallon",
+    city: "Springfield",
     state: "IL",
     zip: "62269",
     mlsNumber: "MLS-884213",
@@ -3343,11 +3343,11 @@ function seedRealEstate(): void {
     pieces: [
       {
         channel: "MLS_REMARKS",
-        text: "Beautifully updated 4-bed, 2.5-bath in O'Fallon with a finished walk-out basement, dual-zone HVAC (2022), and a 2021 roof. Bright open kitchen, generous primary suite, and a fenced backyard backing to green space. Neighborhood pool and low-maintenance living via the HOA.",
+        text: "Beautifully updated 4-bed, 2.5-bath in Springfield with a finished walk-out basement, dual-zone HVAC (2022), and a 2021 roof. Bright open kitchen, generous primary suite, and a fenced backyard backing to green space. Neighborhood pool and low-maintenance living via the HOA.",
       },
       {
         channel: "INSTAGRAM",
-        text: "Just listed in O'Fallon ✨ 4 beds · finished walk-out basement · 2021 roof · neighborhood pool. Move-in ready and waiting. DM for a showing! #ofallonil #justlisted",
+        text: "Just listed in Springfield ✨ 4 beds · finished walk-out basement · 2021 roof · neighborhood pool. Move-in ready and waiting. DM for a showing! #springfield #justlisted",
       },
       {
         channel: "FACEBOOK",
@@ -3355,7 +3355,7 @@ function seedRealEstate(): void {
       },
       {
         channel: "EMAIL_BLAST",
-        text: "Just listed: 1442 Lindenwood Ave, O'Fallon — $425,000. Four bedrooms, a finished walk-out basement, and major systems already updated (2021 roof, 2022 HVAC). Reply to schedule a private showing.",
+        text: "Just listed: 1442 Lindenwood Ave, Springfield — $425,000. Four bedrooms, a finished walk-out basement, and major systems already updated (2021 roof, 2022 HVAC). Reply to schedule a private showing.", // public-censor: allow demo listing price in mock data, not personal finance
       },
     ],
     photoCaptions: [
@@ -3843,7 +3843,7 @@ const seedSocialCalendar: SocialPost[] = [
     weekIndex: 1,
     dayOffset: 4,
     channel: "X",
-    copy: "New listing alert: 1442 Lindenwood Ave, 3bd/2ba. Roof 2021, HVAC 2022. DM for a private tour. #realestate #ofallon",
+    copy: "New listing alert: 1442 Lindenwood Ave, 3bd/2ba. Roof 2021, HVAC 2022. DM for a private tour. #realestate #springfield",
     fairHousingSafe: true,
     heldReason: null,
   },
@@ -3927,7 +3927,7 @@ const SEED_PREP_PACK_1: ListingPrepPack = {
   mlsDescription:
     "Beautifully maintained 3-bedroom, 2-bath home at 1442 Lindenwood Ave. Soaring ceilings and hardwood floors flow through an open-plan living and dining area. The chef's kitchen features granite counters, stainless appliances, and a gas range. The primary suite has a renovated en-suite bath with heated floors. Roof replaced 2021 (architectural shingles, transferable warranty), HVAC 2022, all windows 2023 (double-pane argon, transferable warranty). Oversized backyard with a patio — great for entertaining. Attached 2-car garage. Convenient access to I-64 and Metro East amenities. List price $430,000 — priced in line with recent comps.",
   emailCampaign:
-    "Subject: Just Listed — 1442 Lindenwood Ave | 3 BD / 2 BA | $430,000\n\nHi [First Name],\n\nA beautifully maintained home just hit the market in O'Fallon and I wanted you to be among the first to know.\n\n1442 Lindenwood Ave — 3 BD / 2 BA — $430,000\n\nHighlights:\n• Roof replaced 2021 (transferable warranty)\n• HVAC replaced 2022\n• All windows replaced 2023 (double-pane, transferable warranty)\n• Renovated primary bath with heated floors\n• Open-plan kitchen with granite counters + gas range\n• Oversized backyard with patio\n\nThis one is priced right and priced to move. Reply to this email or call me directly to schedule a private showing this week.\n\nBest,\n[Agent Name]",
+    "Subject: Just Listed — 1442 Lindenwood Ave | 3 BD / 2 BA | $430,000\n\nHi [First Name],\n\nA beautifully maintained home just hit the market in Springfield and I wanted you to be among the first to know.\n\n1442 Lindenwood Ave — 3 BD / 2 BA — $430,000\n\nHighlights:\n• Roof replaced 2021 (transferable warranty)\n• HVAC replaced 2022\n• All windows replaced 2023 (double-pane, transferable warranty)\n• Renovated primary bath with heated floors\n• Open-plan kitchen with granite counters + gas range\n• Oversized backyard with patio\n\nThis one is priced right and priced to move. Reply to this email or call me directly to schedule a private showing this week.\n\nBest,\n[Agent Name]", // public-censor: allow demo listing price in mock data, not personal finance
   socialCalendar: seedSocialCalendar,
   photoCaptions: [
     {

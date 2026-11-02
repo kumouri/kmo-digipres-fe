@@ -169,7 +169,7 @@ function NewListingDialog() {
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 disabled={create.isPending}
-                placeholder="O'Fallon"
+                placeholder="Springfield"
               />
             </div>
             <div className="flex flex-col gap-1.5">

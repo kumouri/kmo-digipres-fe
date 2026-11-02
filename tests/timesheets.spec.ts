@@ -21,6 +21,11 @@ const CONTRACTOR_EMAIL = "contractor@example.test";
 // the right admin row deterministically.
 const SEED_SUBMITTED_PERIOD_START = "2026-05-11";
 
+// The Wednesday after the seeded weeks: the prior week is the SUBMITTED seed and
+// the one before it the sent-back seed (mocks/store.ts). The current-week OPEN
+// seed keeps its own period because this is a later week than both.
+const SEEDED_WEEKS_TODAY = new Date("2026-05-20T12:00:00Z");
+
 async function loginAs(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
@@ -127,6 +132,10 @@ test("ADMIN sends a submitted timesheet back with a required note", async ({
 test("CONTRACTOR sees a sent-back week's note and can reopen or resubmit it", async ({
   page,
 }) => {
+  // Pin "today" before the first load: the week navigator and the store's
+  // current-week seed both read the clock, and the sent-back seed is a fixed date.
+  await page.clock.setFixedTime(SEEDED_WEEKS_TODAY);
+
   await loginAs(page, CONTRACTOR_EMAIL);
   await page.goto("/timesheet");
   await expect(page.getByTestId("timesheet-page")).toBeVisible();
